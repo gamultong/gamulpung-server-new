@@ -5,7 +5,8 @@ class ClientMessage:
     from .internal.base import ClientMessage as Base
 
     from .internal.client import (
-        Chat
+        Chat,
+        SetWindow
     )
 
 
@@ -14,5 +15,6 @@ class ServerMessage:
 
     from .internal.server import (
         Chat,
-        MyCursor
+        MyCursor,
+        CursorsState
     )
