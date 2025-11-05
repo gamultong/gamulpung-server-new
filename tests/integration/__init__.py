@@ -5,6 +5,7 @@ from .join import JoinScenario
 from .quit import QuitScenario
 from .set_window import SetWindowScenario
 from .move import MoveScenario
+from .open_tile import OpenTilesScenario
 
 if __name__ == "__main__":
     from unittest import main

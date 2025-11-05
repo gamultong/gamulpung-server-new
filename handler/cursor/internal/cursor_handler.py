@@ -6,6 +6,7 @@ from core.broker import EventBroker
 
 from data.cursor import Cursor
 from data.payload import IdPayload, IdDataPayload
+from data.board import is_overlap, PointRange
 
 
 class CursorHandler:
@@ -78,3 +79,11 @@ class CursorHandler:
     @classmethod
     async def update(cls, cursor: Cursor):
         cls.cursor_dict[cursor.id] = cursor.copy()
+
+    @classmethod
+    async def get_cursor_by_watching_range(cls, range: PointRange):
+        return [
+            cursor.copy()
+            for key, cursor in cls.cursor_dict.items()
+            if is_overlap(range, cursor.window)
+        ]

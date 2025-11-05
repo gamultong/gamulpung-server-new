@@ -7,7 +7,8 @@ class ClientMessage:
     from .internal.client import (
         Chat,
         SetWindow,
-        Move
+        Move,
+        OpenTiles
     )
 
 

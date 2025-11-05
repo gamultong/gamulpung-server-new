@@ -1,5 +1,5 @@
 from data.board import PointRange, Tiles, Point, Tile, get_overlap
-from data.payload import ServerMessage
+from data.payload import IdDataPayload
 from core.event import Event
 from core.broker import EventBroker
 from .section import Section, Config
@@ -149,13 +149,22 @@ class BoardHandler:
         rel_p = abs_to_rel(point)
 
         section = BoardHandler.section_dict[sec_p]
-        tile = section.tiles.at_tile(rel_p)
+        old_tile = section.tiles.at_tile(rel_p)
+        new_tile = old_tile.copy()
 
-        tile.is_open = True
+        new_tile.is_open = True
 
-        section.tiles.update_at(rel_p, tile)
+        section.tiles.update_at(rel_p, new_tile)
 
-        # await publish_data_event(BoardEvent.UPDATE, data=tile, id=point)
+        event = Event(
+            event_name="NOTIFY-TILES",
+            payload=IdDataPayload(
+                PointRange(point, point),
+                data=old_tile
+            )
+        )
+
+        await EventBroker.publish(event)
 
     @classmethod
     async def fetch_point(cls, point: Point) -> Tile:

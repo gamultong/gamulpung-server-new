@@ -1,12 +1,28 @@
 from core.dataobj import DataObj
 from data.board import Point, PointRange
 
+INTERACTION_RANGE = 1
+
 
 class Cursor(DataObj):
     id: str
     position: Point
     width: int
     height: int
+
+    @property
+    def window(self):
+        return PointRange(
+            Point(self.position.x-self.width, self.position.y+self.height),
+            Point(self.position.x+self.width, self.position.y-self.height)
+        )
+
+    def in_interaction_range(self, point: Point):
+        interaction_range = PointRange(
+            Point(self.position.x-INTERACTION_RANGE, self.position.y+INTERACTION_RANGE),
+            Point(self.position.x+INTERACTION_RANGE, self.position.y-INTERACTION_RANGE)
+        )
+        return interaction_range.is_in(point)
 
     def get_window_range(self):
         left = self.position.x-self.width
