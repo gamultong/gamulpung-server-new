@@ -38,6 +38,8 @@ def abs_to_sec(abs_point: Point):
 
 
 def h_append_tiles(left_tiles: Tiles, right_tiles: Tiles):
+    # comment : https://github.com/gamultong/gamulpung-server-new/pull/4#discussion_r2494054098
+
     assert left_tiles.height == right_tiles.height
 
     data = bytearray()
@@ -59,7 +61,7 @@ def h_append_tiles(left_tiles: Tiles, right_tiles: Tiles):
     )
 
 
-def v_merge_tiles(top_tile: Tiles, bottom_tile: Tiles):
+def v_append_tiles(top_tile: Tiles, bottom_tile: Tiles):
     assert top_tile.width == bottom_tile.width
 
     data = top_tile.data + bottom_tile.data
@@ -94,7 +96,6 @@ class BoardHandler:
         section_left = section_top_left.x
         section_right = section_bottom_right.x
 
-        # 반환할 데이터 공간 미리 할당
         result = Tiles(bytearray(), out_width, 0)
 
         # top -> bottom 탐색
@@ -118,10 +119,10 @@ class BoardHandler:
                 if h_tiles is None:
                     h_tiles = out_tiles
                 else:
-                    h_tiles = h_merge_tiles(h_tiles, out_tiles)
+                    h_tiles = h_append_tiles(h_tiles, out_tiles)
 
             assert h_tiles
-            result = v_merge_tiles(result, h_tiles)
+            result = v_append_tiles(result, h_tiles)
 
         assert result.width == out_width
         assert result.height == out_height
