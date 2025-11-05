@@ -1,8 +1,8 @@
-from typing import Generic, TypeVar, Type, get_args
+from typing import Generic, TypeVar, Type
 
 from core.dataobj import DataObj
 from core.event import Event
-from data.payload import ClientMessage, IdDataPayload
+from data.payload import ClientMessage
 from json import loads
 
 EVENT_TYPE = TypeVar("EVENT_TYPE", bound=Event)
@@ -44,6 +44,8 @@ def get_payload_by_event_name(event_name: str) -> Type[ClientMessage.Base]:  # t
     match event_name:
         case "CHAT":
             return ClientMessage.Chat
+        case "SET-WINDOW":
+            return ClientMessage.SetWindow
     assert "wtf"
 
 

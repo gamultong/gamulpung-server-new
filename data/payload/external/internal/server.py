@@ -1,4 +1,5 @@
 from .base import ServerMessage
+from data.cursor import Cursor
 
 
 class Chat(ServerMessage):
@@ -8,3 +9,7 @@ class Chat(ServerMessage):
 
 class MyCursor(ServerMessage):
     id: str
+
+
+class CursorsState(ServerMessage):
+    cursors: list[Cursor]
