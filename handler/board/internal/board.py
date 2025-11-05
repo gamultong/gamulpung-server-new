@@ -159,5 +159,5 @@ class BoardHandler:
     @classmethod
     async def fetch_point(cls, point: Point) -> Tile:
         tiles = await cls.fetch(PointRange(point, point))
-        tile = tiles.at_tile(point)
+        tile = tiles.at_tile(Point(0, 0))
         return tile

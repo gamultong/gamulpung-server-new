@@ -6,21 +6,18 @@ from data.cursor import Cursor
 
 from handler.cursor import CursorHandler
 
-SET_WINDOW_EVENT = Event[IdDataPayload[str, ClientMessage.SetWindow] | IdPayload[str]]
+SET_WINDOW_EVENT = Event[IdDataPayload[str, ClientMessage.SetWindow]]
 
 
 @EventBroker.add_receiver("SET-WINDOW")
-async def set_windwo_receiver(event: SET_WINDOW_EVENT):
+async def set_window_receiver(event: SET_WINDOW_EVENT):
     id = event.payload.id
+    data = event.payload.data
 
-    # Handle both IdDataPayload (from client) and IdPayload (from internal trigger)
-    if hasattr(event.payload, 'data'):
-        data = event.payload.data
+    cursor = Cursor.create(
+        id=id,
+        width=data.width,
+        height=data.height
+    )
 
-        cursor = Cursor.create(
-            id=id,
-            width=data.width,
-            height=data.height
-        )
-
-        await CursorHandler.create(cursor)
+    await CursorHandler.create(cursor)
