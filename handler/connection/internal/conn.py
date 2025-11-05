@@ -48,6 +48,7 @@ class Conn():
         if self.conn.application_state == WebSocketState.DISCONNECTED:
             return
 
+        # comment : https://github.com/gamultong/gamulpung-server-new/pull/1#discussion_r2492845020
         try:
             await self.conn.send_json(msg.to_dict())
         except (ConnectionClosed, WebSocketDisconnect):
