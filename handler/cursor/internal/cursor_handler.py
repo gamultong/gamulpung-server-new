@@ -5,7 +5,7 @@ from core.event import Event
 from core.broker import EventBroker
 
 from data.cursor import Cursor
-from data.payload import IdDataPayload
+from data.payload import IdPayload
 
 
 class CursorHandler:
@@ -17,13 +17,25 @@ class CursorHandler:
 
         event = Event(
             event_name="NOTIFY-CURSORS",
-            payload=IdDataPayload(
-                id=cursor.id,
-                data=cursor.copy()
+            payload=IdPayload(
+                id=cursor.id
             )
         )
 
         await EventBroker.publish(event=event)
+
+        event = Event(
+            event_name="SET-WINDOW",
+            payload=IdPayload(
+                id=cursor.id
+            )
+        )
+
+        await EventBroker.publish(event=event)
+
+    @classmethod
+    async def get_by_id(cls, id: str):
+        return cls.cursor_dict[id].copy()
 
     @classmethod
     async def get_cursors_by_cursor_window(cls, cursor: Cursor) -> list[Cursor]:

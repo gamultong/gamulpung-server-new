@@ -1,21 +1,21 @@
 from core.event import Event
 from core.broker import EventBroker
 
-from data.payload import IdDataPayload, ServerMessage
+from data.payload import IdDataPayload, ServerMessage, IdPayload
 from data.cursor import Cursor
 
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler
 
-NOTIFY_CURSORS_EVENT = Event[IdDataPayload[str, Cursor]]
+NOTIFY_CURSORS_EVENT = Event[IdPayload[str] | IdDataPayload[str, Cursor]]
 
 
 @EventBroker.add_receiver("NOTIFY-CURSORS")
 async def notify_cursors_receiver(event: NOTIFY_CURSORS_EVENT):
     id = event.payload.id
-    data = event.payload.data
+    cursor = await CursorHandler.get_by_id(id)
 
-    cursors = await CursorHandler.get_cursors_by_cursor_window(data)
+    cursors = await CursorHandler.get_cursors_by_cursor_window(cursor)
 
     _event = Event(
         event_name="CURSORS-STATE",
