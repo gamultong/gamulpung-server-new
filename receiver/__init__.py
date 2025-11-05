@@ -1,5 +1,6 @@
 from .external.chat import chat_receiver
-from .external.set_window import set_windwo_receiver
+from .external.set_window import set_window_receiver
+from .external.move import move_receiver
 
 from .trigger.join import join_receiver
 from .trigger.quit import quit_receiver
