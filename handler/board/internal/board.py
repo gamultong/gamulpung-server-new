@@ -37,7 +37,7 @@ def abs_to_sec(abs_point: Point):
     )
 
 
-def h_merge_tiles(left_tiles: Tiles, right_tiles: Tiles):
+def h_append_tiles(left_tiles: Tiles, right_tiles: Tiles):
     assert left_tiles.height == right_tiles.height
 
     data = bytearray()
