@@ -35,7 +35,13 @@ class ConnectionHandler:
     async def quit(cls, conn: Conn):
         del ConnectionHandler.conn_dict[conn.id]
 
-        # TODO : quit publish
+        payload = IdPayload(conn.id)
+        event = Event(
+            event_name="QUIT",
+            payload=payload
+        )
+
+        await EventBroker.publish(event)
 
     @classmethod
     async def publish_client_event(cls, event: Event):

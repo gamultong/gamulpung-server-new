@@ -56,7 +56,7 @@ class TestClientManager:
         @patch("handler.connection.Conn.create", side_effect=_side_effect)
         def wrapper(test, *args, **kwargs):
             # patch:Conn.create
-            self.conn_create_mock = args[-1]
+            self.conn_create_mock = args[0]
             with TestClient(self.app) as client:
                 with ExitStack() as stack:
                     sockets = {
@@ -72,6 +72,6 @@ class TestClientManager:
                     kwargs["tcm"] = self
 
                     # patch:Conn.create 제거 -> tcm으로 접근 가능
-                    return func(test, *args[:-1], **kwargs)
+                    return func(test, *args[1:], **kwargs)
 
         return wrapper
