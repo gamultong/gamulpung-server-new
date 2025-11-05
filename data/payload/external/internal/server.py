@@ -1,5 +1,7 @@
 from .base import ServerMessage
+from core.dataobj import DataObj
 from data.cursor import Cursor
+from data.board import PointRange
 
 
 class Chat(ServerMessage):
@@ -13,3 +15,11 @@ class MyCursor(ServerMessage):
 
 class CursorsState(ServerMessage):
     cursors: list[Cursor]
+
+
+class TilesState(ServerMessage):
+    class Elem(DataObj):
+        data: str
+        range: PointRange
+
+    tiles_li: list[Elem]

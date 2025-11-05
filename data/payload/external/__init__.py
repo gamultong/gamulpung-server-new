@@ -16,5 +16,6 @@ class ServerMessage:
     from .internal.server import (
         Chat,
         MyCursor,
-        CursorsState
+        CursorsState,
+        TilesState
     )
