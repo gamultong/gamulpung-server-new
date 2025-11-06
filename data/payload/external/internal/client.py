@@ -13,3 +13,7 @@ class SetWindow(ClientMessage):
 
 class Move(ClientMessage):
     position: Point
+
+
+class OpenTiles(ClientMessage):
+    position: Point
