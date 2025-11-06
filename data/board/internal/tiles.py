@@ -1,3 +1,4 @@
+from __future__ import annotations
 from core.dataobj import DataObj
 from dataclasses import dataclass
 from .point import Point, PointRange
@@ -87,3 +88,9 @@ class Tiles(DataObj):
         res = super().to_dict()
 
         res["data"] = self.to_str()
+
+    def __eq__(self, value: Tiles) -> bool:
+        r = self.to_str() == value.to_str()
+        r &= self.width == value.width
+        r &= self.height == value.height
+        return r
