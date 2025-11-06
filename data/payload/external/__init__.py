@@ -8,7 +8,8 @@ class ClientMessage:
         Chat,
         SetWindow,
         Move,
-        OpenTiles
+        OpenTiles,
+        SetFlag
     )
 
 

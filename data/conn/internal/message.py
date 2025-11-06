@@ -50,6 +50,8 @@ def get_payload_by_event_name(event_name: str) -> Type[ClientMessage.Base]:  # t
             return ClientMessage.Move
         case "OPEN-TILES":
             return ClientMessage.OpenTiles
+        case "SET-FLAG":
+            return ClientMessage.SetFlag
     assert "wtf"
 
 

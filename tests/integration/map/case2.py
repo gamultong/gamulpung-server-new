@@ -22,6 +22,13 @@ MINE_TILE = Tile(
     number=0
 ).data
 
+FLAGED_TILE = Tile(
+    is_open=False,
+    is_mine=False,
+    is_flag=True,
+    number=0
+).data
+
 data1 = bytearray([
     CLOSED_TILE, CLOSED_TILE,
     CLOSED_TILE, MINE_TILE,
@@ -29,6 +36,10 @@ data1 = bytearray([
 data2 = bytearray([
     CLOSED_TILE, CLOSED_TILE,
     OPENED_TILE, CLOSED_TILE,
+])
+data2_f = bytearray([
+    CLOSED_TILE, CLOSED_TILE,
+    OPENED_TILE, FLAGED_TILE,
 ])
 data3 = bytearray([
     CLOSED_TILE, CLOSED_TILE,
@@ -41,6 +52,7 @@ data4 = bytearray([
 
 tiles1 = Tiles(data1, 2, 2)
 tiles2 = Tiles(data2, 2, 2)
+tiles2_f = Tiles(data2_f, 2, 2)
 tiles3 = Tiles(data3, 2, 2)
 tiles4 = Tiles(data4, 2, 2)
 
@@ -62,6 +74,15 @@ def case_2_map():
     return {
         point1: Section(point1, tiles1.copy()),
         point2: Section(point2, tiles2.copy()),
+        point3: Section(point3, tiles3.copy()),
+        point4: Section(point4, tiles4.copy())
+    }
+
+
+def case_2_map_f():
+    return {
+        point1: Section(point1, tiles1.copy()),
+        point2: Section(point2, tiles2_f.copy()),
         point3: Section(point3, tiles3.copy()),
         point4: Section(point4, tiles4.copy())
     }
