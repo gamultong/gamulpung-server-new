@@ -1,4 +1,5 @@
 from .base import ClientMessage
+from data.board import Point
 
 
 class Chat(ClientMessage):
@@ -8,3 +9,7 @@ class Chat(ClientMessage):
 class SetWindow(ClientMessage):
     width: int
     height: int
+
+
+class Move(ClientMessage):
+    position: Point

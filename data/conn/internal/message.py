@@ -46,6 +46,8 @@ def get_payload_by_event_name(event_name: str) -> Type[ClientMessage.Base]:  # t
             return ClientMessage.Chat
         case "SET-WINDOW":
             return ClientMessage.SetWindow
+        case "MOVE":
+            return ClientMessage.Move
     assert "wtf"
 
 
