@@ -17,3 +17,7 @@ class Move(ClientMessage):
 
 class OpenTiles(ClientMessage):
     position: Point
+
+
+class SetFlag(ClientMessage):
+    position: Point
