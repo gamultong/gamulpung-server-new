@@ -135,13 +135,22 @@ class BoardHandler:
         rel_p = abs_to_rel(point)
 
         section = BoardHandler.section_dict[sec_p]
-        tile = section.tiles.at_tile(rel_p)
+        old_tile = section.tiles.at_tile(rel_p)
+        new_tile = old_tile.copy()
 
-        tile.is_flag = not tile.is_flag
+        new_tile.is_flag = not new_tile.is_flag
 
-        section.tiles.update_at(rel_p, tile)
+        section.tiles.update_at(rel_p, new_tile)
 
-        # await publish_data_event(BoardEvent.UPDATE, data=tile, id=point)
+        event = Event(
+            event_name="NOTIFY-TILES",
+            payload=IdDataPayload(
+                PointRange(point, point),
+                data=old_tile
+            )
+        )
+
+        await EventBroker.publish(event)
 
     @classmethod
     async def open_tiles(cls, point: Point):
