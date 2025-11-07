@@ -1,8 +1,9 @@
-from functools import cache, wraps
+from functools import cache
 import aiosqlite
 from contextlib import asynccontextmanager
-from data.board import Tiles, Point, PointRange
+from data.board import Point, PointRange, Tiles
 from config import BoardConfig
+from .section import Section
 import os
 
 SQL_PATH = os.path.join(os.path.dirname(__file__), "sql") + os.sep
@@ -11,6 +12,7 @@ TABLE_SET = "table.sql"
 SECTION_GET = "get_section.sql"
 SECTION_GET_BY_RANGE = "get_section_range.sql"
 SECTION_UPDATE = "update_section.sql"
+SECTION_FLAG_UPDATE = "update_section_flag.sql"
 SECTION_CREATE = "create_section.sql"
 
 DB = aiosqlite.Connection
@@ -56,14 +58,19 @@ async def get_section(db: DB, point: Point):
         return None
 
     length = BoardConfig.LENGTH
-    return Tiles(
+    tiles = Tiles(
         bytearray(row[0]),
         length,
         length
     )
+    return Section(
+        point=point,
+        tiles=tiles,
+        flag=row[1]
+    )
 
 
-async def get_section_range(db: DB, point_range: PointRange) -> dict[Point, Tiles]:
+async def get_section_range(db: DB, point_range: PointRange):
     query = get_sql(SECTION_GET_BY_RANGE)
     pr = point_range
 
@@ -79,21 +86,42 @@ async def get_section_range(db: DB, point_range: PointRange) -> dict[Point, Tile
             length
         )
 
-    return {
-        Point(row["x"], row["y"]): make_tiles(row["data"])
+    return [
+        Section(
+            point=Point(row["x"], row["y"]),
+            tiles=make_tiles(row["data"]),
+            flag=row["flag"]
+        )
         for row in seq
-    }
+    ]
 
 
-async def create_section(db: DB, tiles: Tiles, point: Point):
+async def create_section(db: DB, section: Section):
+    point = section.point
+    tiles = section.tiles
+    flag = section.flag
+
     query = get_sql(SECTION_CREATE)
 
-    await db.execute(query, (point.x, point.y, tiles.data))
+    await db.execute(query, (point.x, point.y, tiles.data, flag))
     await db.commit()
 
 
-async def update_section(db: DB, tiles: Tiles, point: Point):
+async def update_section(db: DB, section: Section):
+    point = section.point
+    tiles = section.tiles
+
     query = get_sql(SECTION_UPDATE)
 
     await db.execute(query, (tiles.data, point.x, point.y))
+    await db.commit()
+
+
+async def update_section_flag(db: DB, section: Section):
+    point = section.point
+    flag = section.flag
+
+    query = get_sql(SECTION_FLAG_UPDATE)
+
+    await db.execute(query, (flag, point.x, point.y))
     await db.commit()

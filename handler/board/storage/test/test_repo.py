@@ -3,7 +3,17 @@ from unittest import IsolatedAsyncioTestCase
 from config import BoardConfig
 import tempfile
 import os
-from handler.board.storage import _get_db, set_table, get_section, create_section, update_section, get_section_range
+from handler.board.storage import (
+    _get_db,
+    set_table,
+    get_section,
+    create_section,
+    update_section,
+    get_section_range,
+    update_section_flag,
+    Section,
+    SectionFlag,
+)
 from data.board import Tile, Tiles, Point, PointRange
 
 OPENED_TILE = Tile(
@@ -91,27 +101,45 @@ class Repo_TestCase(DB_TestCase):
 
 class SectionRepo_TestCase(Repo_TestCase):
     async def test_normal(self):
-        await create_section(self.db, EXAMPLE_TILES, Point(0, 0))
-        tiles = await get_section(self.db, Point(0, 0))
-        self.assertEqual(EXAMPLE_TILES, tiles)
+        example_section = Section(Point(0, 0), EXAMPLE_TILES)
+        changed_section = Section(Point(0, 0), CHANGED_TILES)
 
-        await update_section(self.db, CHANGED_TILES, Point(0, 0))
-        tiles = await get_section(self.db, Point(0, 0))
-        self.assertEqual(CHANGED_TILES, tiles)
+        await create_section(self.db, example_section)
+        section = await get_section(self.db, Point(0, 0))
+        self.assertEqual(section, example_section)
+
+        await update_section(self.db, changed_section)
+        section = await get_section(self.db, Point(0, 0))
+        self.assertEqual(section, changed_section)
+
+    async def test_update_flag(self):
+        example_section = Section(Point(0, 0), EXAMPLE_TILES, flag=SectionFlag.CREATED)
+        changed_section = Section(Point(0, 0), EXAMPLE_TILES, flag=SectionFlag.INTERACTIONAL)
+
+        await create_section(self.db, example_section)
+
+        await update_section_flag(self.db, changed_section)
+        section = await get_section(self.db, Point(0, 0))
+        self.assertEqual(section, changed_section)
 
     async def test_get_range(self):
-        await create_section(self.db, EXAMPLE_TILES, Point(0, 0))
-        await create_section(self.db, EXAMPLE_TILES, Point(1, 0))
-        await create_section(self.db, EXAMPLE_TILES, Point(2, 0))
-        await create_section(self.db, EXAMPLE_TILES, Point(3, 0))
+        example_section_1 = Section(Point(0, 0), EXAMPLE_TILES)
+        example_section_2 = Section(Point(1, 0), EXAMPLE_TILES)
+        example_section_3 = Section(Point(2, 0), EXAMPLE_TILES)
+        example_section_4 = Section(Point(3, 0), EXAMPLE_TILES)
+
+        await create_section(self.db, example_section_1)
+        await create_section(self.db, example_section_2)
+        await create_section(self.db, example_section_3)
+        await create_section(self.db, example_section_4)
 
         tiles_d = await get_section_range(self.db, PointRange(Point(1, 1), Point(2, 0)))
-        self.assertDictEqual(
+        self.assertCountEqual(
             tiles_d,
-            {
-                Point(1, 0): EXAMPLE_TILES,
-                Point(2, 0): EXAMPLE_TILES,
-            }
+            [
+                example_section_2,
+                example_section_3
+            ]
         )
 
 

@@ -1,16 +1,17 @@
 from handler.board import BoardHandler, Section
-from handler.board.internal.section import Config
+from config import BoardConfig
 from data.board import Point, Tile, Tiles, PointRange
 from core.event import Event
 from data.payload import ServerMessage
 from data.cursor import Cursor
 from data.conn import Message
-from unittest import TestCase
-from .map.case2 import case_2_map, case_2_map_f, CLOSED_TILE, OPENED_TILE, FLAGED_TILE
+from .map.case2 import CLOSED_TILE, OPENED_TILE, FLAGED_TILE
+from .map.helpers import setup_case_2_map, setup_case_2_map_f
 from server import app
 from typing import cast
 from unittest.mock import AsyncMock, call, patch
 from tests.utils import assert_wait_call, TestClientManager
+from tests.integration.base import IntegrationTestCase
 
 SET_WINDOW_MSG = {
     "header": {"event": "SET-WINDOW"},
@@ -50,17 +51,25 @@ jungdap_2 = Tiles(
 )
 
 
-class SetFlagScenario(TestCase):
+class SetFlagScenario(IntegrationTestCase):
     def setUp(self) -> None:
-        Config.LENGTH = 2  # type:ignore
+        super().setUp()
+        self.section_length_patch = patch.object(BoardConfig, "LENGTH", new=2)
+        self.section_length_patch.start()
 
     def tearDown(self) -> None:
-        BoardHandler.section_dict = {}
-        Config.LENGTH = 100
+        self.section_length_patch.stop()
+        super().tearDown()
+
+    async def asyncSetUp(self) -> None:
+        await super().asyncSetUp()
+        await setup_case_2_map(self.db)
+
+    async def asyncTearDown(self) -> None:
+        await super().asyncTearDown()
 
     @clinetmanager
     def test_set_flag(self, tcm: TestClientManager):
-        BoardHandler.section_dict = case_2_map()
 
         cl_a = tcm.get_client(CL_A)
         cl_a.ws.send_json(SET_WINDOW_MSG)
@@ -87,9 +96,26 @@ class SetFlagScenario(TestCase):
             call=call(event)
         )
 
+
+class UnsetFlagScenario(IntegrationTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.section_length_patch = patch.object(BoardConfig, "LENGTH", new=2)
+        self.section_length_patch.start()
+
+    def tearDown(self) -> None:
+        self.section_length_patch.stop()
+        super().tearDown()
+
+    async def asyncSetUp(self) -> None:
+        await super().asyncSetUp()
+        await setup_case_2_map_f(self.db)
+
+    async def asyncTearDown(self) -> None:
+        await super().asyncTearDown()
+
     @clinetmanager
     def test_unset_flag(self, tcm: TestClientManager):
-        BoardHandler.section_dict = case_2_map_f()
 
         cl_a = tcm.get_client(CL_A)
         cl_a.ws.send_json(SET_WINDOW_MSG)
