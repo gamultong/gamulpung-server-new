@@ -5,9 +5,10 @@ from config import BoardConfig
 
 
 class SectionFlag(IntFlag):
-    CREATED = 0
-    NUMBERING = 1
-    INTERACTIONAL = 2
+    EMPTY = 0
+    CLOSED = 1
+    NUMBERING = 2
+    INTERACTIONAL = 3
 
 
 def abs_to_sec(abs_point: Point):
@@ -24,24 +25,26 @@ def abs_to_sec(abs_point: Point):
 class Section():
     point: Point
     tiles: Tiles
-    flag: SectionFlag = SectionFlag.CREATED
+    flag: SectionFlag = SectionFlag.CLOSED
 
     @property
     def range(self):
         """section의 범위"""
         l = BoardConfig.LENGTH
+        top_left_point = Point(self.point.x * l, (self.point.y + 1) * l - 1)
+        bottom_right_point = Point((self.point.x + 1) * l - 1, self.point.y * l)
         return PointRange(
-            top_left=Point(self.point.x*l, (self.point.y+1)*l-1),
-            bottom_right=Point((self.point.x+1)*l-1, self.point.y*l)
+            top_left=top_left_point,
+            bottom_right=bottom_right_point
         )
 
     def at_tiles_by_abs_range(self, point_range: PointRange):
         overlap = get_overlap(self.range, point_range)
-        top_left = self.get_point_rel_by_abs(overlap.top_left)
-        bottom_right = self.get_point_rel_by_abs(overlap.bottom_right)
+        rel_top_left = self.get_point_rel_by_abs(overlap.top_left)
+        rel_bottom_right = self.get_point_rel_by_abs(overlap.bottom_right)
 
         return self.tiles.at_tiles(
-            PointRange(top_left, bottom_right)
+            PointRange(rel_top_left, rel_bottom_right)
         )
 
     def at_tile_by_abs_point(self, point: Point):
@@ -58,11 +61,9 @@ class Section():
         assert self.range.is_in(abs_point)
 
         sec_p = abs_to_sec(abs_point)
+        length = BoardConfig.LENGTH
 
-        def abs_to_rel_int(abs: int, sec: int):
-            return abs - (sec * BoardConfig.LENGTH)
+        rel_x = abs_point.x - (sec_p.x * length)
+        rel_y = abs_point.y - (sec_p.y * length)
 
-        return Point(
-            abs_to_rel_int(abs_point.x, sec_p.x),
-            abs_to_rel_int(abs_point.y, sec_p.y)
-        )
+        return Point(rel_x, rel_y)

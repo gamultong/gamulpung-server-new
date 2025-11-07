@@ -113,7 +113,7 @@ class SectionRepo_TestCase(Repo_TestCase):
         self.assertEqual(section, changed_section)
 
     async def test_update_flag(self):
-        example_section = Section(Point(0, 0), EXAMPLE_TILES, flag=SectionFlag.CREATED)
+        example_section = Section(Point(0, 0), EXAMPLE_TILES, flag=SectionFlag.CLOSED)
         changed_section = Section(Point(0, 0), EXAMPLE_TILES, flag=SectionFlag.INTERACTIONAL)
 
         await create_section(self.db, example_section)

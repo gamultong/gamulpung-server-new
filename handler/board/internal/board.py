@@ -1,10 +1,11 @@
-from data.board import PointRange, Tiles, Point, Tile, get_overlap
+from data.board import PointRange, Tiles, Point, Tile
 from data.payload import IdDataPayload
 from core.event import Event
 from core.broker import EventBroker
-from handler.board.storage import _get_db, get_section_range, Section, abs_to_sec, get_section, update_section
+from handler.board.storage import _get_db, get_section_range, abs_to_sec, get_section, update_section, SectionFlag
 
 from config import BoardConfig
+from .create_section import upgrade_interaction_sections
 
 
 class BoardHandler:
@@ -65,7 +66,12 @@ class BoardHandler:
 
         async with _get_db() as db:
             section = await get_section(db, sec_p)
+            # 섹션이 반드시 존재해야 함
             assert section
+
+            # 섹션이 NUMBERING 상태여야만 상호작용 가능
+            if section.flag == SectionFlag.NUMBERING:
+                await upgrade_interaction_sections(db, sec_p)
 
             old_tile = section.at_tile_by_abs_point(point)
             new_tile = old_tile.copy()
@@ -91,7 +97,12 @@ class BoardHandler:
 
         async with _get_db() as db:
             section = await get_section(db, sec_p)
+            # 섹션이 반드시 존재해야 함
             assert section
+
+            # 섹션이 NUMBERING 상태여야만 상호작용 가능
+            if section.flag == SectionFlag.NUMBERING:
+                await upgrade_interaction_sections(db, sec_p)
 
             old_tile = section.at_tile_by_abs_point(point)
             new_tile = old_tile.copy()
