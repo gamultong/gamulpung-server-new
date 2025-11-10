@@ -1,5 +1,5 @@
 from data.board import Point, Tile, Tiles
-from handler.board import Section
+from handler.board import Section, SectionFlag
 
 OPENED_TILE = Tile(
     is_open=True,
@@ -59,8 +59,8 @@ CCC|CCC
 
 def case_1_map():
     return {
-        point1: Section(point1, tiles1.copy()),
-        point2: Section(point2, tiles2.copy()),
-        point3: Section(point3, tiles3.copy()),
-        point4: Section(point4, tiles4.copy())
+        point1: Section(point1, tiles1.copy(), flag=SectionFlag.INTERACTIONAL),
+        point2: Section(point2, tiles2.copy(), flag=SectionFlag.INTERACTIONAL),
+        point3: Section(point3, tiles3.copy(), flag=SectionFlag.INTERACTIONAL),
+        point4: Section(point4, tiles4.copy(), flag=SectionFlag.INTERACTIONAL)
     }

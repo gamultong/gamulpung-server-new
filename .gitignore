@@ -3,3 +3,4 @@ labs/
 *.pyc
 
 .claude/
+*.db

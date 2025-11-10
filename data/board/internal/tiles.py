@@ -1,3 +1,4 @@
+from __future__ import annotations
 from core.dataobj import DataObj
 from dataclasses import dataclass
 from .point import Point, PointRange
@@ -21,8 +22,8 @@ class Tiles(DataObj):
     height: int
 
     def at_tile(self, point: Point) -> Tile:
-        assert 0 <= point.x <= self.width
-        assert 0 <= point.y <= self.height
+        assert 0 <= point.x < self.width
+        assert 0 <= point.y < self.height
 
         idx = (self.height - point.y) - 1
         idx *= self.width
@@ -34,8 +35,8 @@ class Tiles(DataObj):
         return tile
 
     def at_tiles(self, point_range: PointRange):
-        assert 0 <= point_range.top_left.x <= point_range.bottom_right.x <= self.width
-        assert 0 <= point_range.bottom_right.y <= point_range.top_left.y <= self.width
+        assert 0 <= point_range.top_left.x <= point_range.bottom_right.x < self.width
+        assert 0 <= point_range.bottom_right.y <= point_range.top_left.y < self.width
 
         data = bytearray()
         width = point_range.width
@@ -82,8 +83,57 @@ class Tiles(DataObj):
             b &= mask
             self.data[idx] = b
 
+    def h_append(self, *values: Tiles):
+        """가로 병합"""
+        for value in values:
+            assert self.height == value.height
+
+        data = bytearray()
+        for i in range(self.height):
+            line = bytearray()
+            for tiles in (self, *values):
+                start = tiles.width * i
+                end = start + tiles.width
+                line += tiles.data[start:end]
+
+            data += line
+
+        total_width = 0
+        for tiles in (self, *values):
+            total_width += tiles.width
+
+        return Tiles(
+            data=data,
+            width=total_width,
+            height=self.height
+        )
+
+    def v_append(self, *values: Tiles):
+        """세로 병합"""
+        for value in values:
+            assert self.width == value.width, f"self: {self}\n value:{value}"
+
+        data = bytearray()
+        total_height = 0
+        for tiles in (self, *values):
+            total_height += tiles.height
+
+            data += tiles.data
+
+        return Tiles(
+            data=data,
+            width=self.width,
+            height=total_height
+        )
+
     def to_dict(self):
         self.hide_info()
         res = super().to_dict()
 
         res["data"] = self.to_str()
+
+    def __eq__(self, value: Tiles) -> bool:
+        r = self.to_str() == value.to_str()
+        r &= self.width == value.width
+        r &= self.height == value.height
+        return r
