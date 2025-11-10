@@ -1,7 +1,7 @@
 from .base import ServerMessage
 from core.dataobj import DataObj
 from data.cursor import Cursor
-from data.board import PointRange
+from data.board import PointRange, Point
 
 
 class Chat(ServerMessage):
@@ -23,3 +23,7 @@ class TilesState(ServerMessage):
         range: PointRange
 
     tiles_li: list[Elem]
+
+
+class Explosion(ServerMessage):
+    position: Point

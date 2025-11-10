@@ -7,6 +7,9 @@ from handler.board.storage import (
     _get_db,
     set_table,
 )
+from datetime import datetime
+
+from freezegun import freeze_time
 
 
 class IntegrationTestCase(IsolatedAsyncioTestCase):
@@ -17,7 +20,12 @@ class IntegrationTestCase(IsolatedAsyncioTestCase):
         self.db_patch = patch.object(BoardConfig, "DB_PATH", new=self.path)
         self.db_patch.start()
 
+        self.now = datetime.now()
+        self.freezer_context = freeze_time(self.now)
+        self.freezer = self.freezer_context.__enter__()
+
     def tearDown(self) -> None:
+        self.freezer_context.__exit__()
         self.db_patch.stop()
         os.close(self.fd)
         os.remove(self.path)

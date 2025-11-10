@@ -1,5 +1,6 @@
 from core.dataobj import DataObj
 from data.board import Point, PointRange
+from datetime import datetime
 
 INTERACTION_RANGE = 1
 
@@ -9,6 +10,7 @@ class Cursor(DataObj):
     position: Point
     width: int
     height: int
+    active_at: datetime
 
     @property
     def window(self):
@@ -43,10 +45,13 @@ class Cursor(DataObj):
         return dict
 
     @classmethod
-    def create(cls, id: str, position=Point(0, 0), width=0, height=0):
+    def create(cls, id: str, position=Point(0, 0), width=0, height=0, active_at: datetime | None = None):
+        if active_at is None:
+            active_at = datetime.now()
         return cls(
             id=id,
             position=position.copy(),
             width=width,
-            height=height
+            height=height,
+            active_at=active_at
         )

@@ -1,5 +1,5 @@
 from data.board import PointRange, Tiles, Point, Tile
-from data.payload import IdDataPayload
+from data.payload import IdDataPayload, IdPayload
 from core.event import Event
 from core.broker import EventBroker
 from handler.board.storage import _get_db, get_section_range, abs_to_sec, get_section, update_section, SectionFlag
@@ -82,9 +82,8 @@ class BoardHandler:
 
         event = Event(
             event_name="NOTIFY-TILES",
-            payload=IdDataPayload(
-                PointRange(point, point),
-                data=old_tile
+            payload=IdPayload(
+                PointRange(point, point)
             )
         )
 
@@ -104,6 +103,11 @@ class BoardHandler:
                 await upgrade_interaction_sections(db, sec_p)
 
             old_tile = section.at_tile_by_abs_point(point)
+
+            # 깃발 설치 시 타일 오픈 불가
+            if old_tile.is_flag:
+                return
+
             new_tile = old_tile.copy()
 
             new_tile.is_open = True
@@ -113,13 +117,23 @@ class BoardHandler:
 
         event = Event(
             event_name="NOTIFY-TILES",
-            payload=IdDataPayload(
+            payload=IdPayload(
                 PointRange(point, point),
-                data=old_tile
             )
         )
 
         await EventBroker.publish(event)
+
+        if new_tile.is_mine:
+            event = Event(
+                event_name="NOTIFY-EXPLOSION",
+                payload=IdDataPayload(
+                    point,
+                    data=old_tile
+                )
+            )
+
+            await EventBroker.publish(event)
 
     @classmethod
     async def fetch_point(cls, point: Point) -> Tile:
