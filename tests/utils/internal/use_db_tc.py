@@ -7,6 +7,9 @@ from handler.board.storage import (
     _get_db,
     set_table,
 )
+from datetime import datetime
+
+from freezegun import freeze_time
 
 
 class UseDB_TestCase(IsolatedAsyncioTestCase):
@@ -17,6 +20,10 @@ class UseDB_TestCase(IsolatedAsyncioTestCase):
         self.db_fd, self.db_path = tempfile.mkstemp(suffix=".db")
         self.db_patch = patch.object(BoardConfig, "DB_PATH", new=self.db_path)
         self.db_patch.start()
+
+        self.now = datetime.now()
+        self.freezer_context = freeze_time(self.now)
+        self.freezer = self.freezer_context.__enter__()
 
     def tearDown(self) -> None:
         super().tearDown()
