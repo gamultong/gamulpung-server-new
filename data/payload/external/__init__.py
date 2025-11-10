@@ -20,5 +20,6 @@ class ServerMessage:
         Chat,
         MyCursor,
         CursorsState,
-        TilesState
+        TilesState,
+        Explosion
     )

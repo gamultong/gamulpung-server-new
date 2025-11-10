@@ -17,7 +17,7 @@ CLOSED_TILE = Tile(
 
 MINE_TILE = Tile(
     is_open=False,
-    is_mine=False,
+    is_mine=True,
     is_flag=False,
     number=0
 ).data
