@@ -5,7 +5,7 @@ from core.broker import EventBroker
 from handler.board.storage import _get_db, get_section_range, abs_to_sec, get_section, update_section, SectionFlag
 
 from config import BoardConfig
-from .create_section import upgrade_interaction_sections
+from .create_section import upgrade_interaction_sections, make_closed_section
 
 
 class BoardHandler:
@@ -41,8 +41,7 @@ class BoardHandler:
                 sec_point = Point(x, y)
 
                 if sec_point not in section_dict:
-                    # create section
-                    raise
+                    await make_closed_section(db, sec_point)
                 else:
                     section = section_dict[sec_point]
 
@@ -69,7 +68,7 @@ class BoardHandler:
             # 섹션이 반드시 존재해야 함
             assert section
 
-            # 섹션이 NUMBERING 상태여야만 상호작용 가능
+            # 섹션이 INTERACTION 상태여야만 상호작용 가능
             if section.flag == SectionFlag.NUMBERING:
                 await upgrade_interaction_sections(db, sec_p)
 
@@ -100,7 +99,7 @@ class BoardHandler:
             # 섹션이 반드시 존재해야 함
             assert section
 
-            # 섹션이 NUMBERING 상태여야만 상호작용 가능
+            # 섹션이 INTERACTION 상태여야만 상호작용 가능
             if section.flag == SectionFlag.NUMBERING:
                 await upgrade_interaction_sections(db, sec_p)
 

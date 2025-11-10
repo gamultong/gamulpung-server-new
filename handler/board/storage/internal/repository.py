@@ -63,6 +63,7 @@ async def get_section(db: DB, point: Point):
         length,
         length
     )
+
     return Section(
         point=point,
         tiles=tiles,

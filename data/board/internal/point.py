@@ -64,6 +64,11 @@ class PointRange(DataObj):
             self.top_left.x <= point.x <= self.bottom_right.x and \
             self.top_left.y >= point.y >= self.bottom_right.y
 
+    def iter(self):
+        for y in range(self.top, self.bottom-1, -1):
+            for x in range(self.left, self.right+1):
+                yield Point(x, y)
+
     @staticmethod
     def create_by_mid(mid: Point, height: int, width: int):
         top_left = Point(mid.x - width, mid.y+height)

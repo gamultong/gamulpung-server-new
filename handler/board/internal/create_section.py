@@ -1,4 +1,4 @@
-from data.board import PointRange, Tiles, Point, Tile
+from data.board import PointRange, Tiles, Point, Tile, get_overlap
 from handler.board.storage import _get_db, get_section_range, Section, create_section, update_section_flag, SectionFlag, DB
 
 from config import BoardConfig
@@ -46,12 +46,27 @@ def rand_tiles():
     ), count
 
 
+async def make_closed_section(db: DB, point: Point):
+    length = BoardConfig.LENGTH
+    tiles = Tiles(
+        bytearray([
+            TILE
+            for _ in range(length)
+            for _ in range(length)
+        ]), length, length
+    )
+    section = Section(point, tiles)
+    await create_section(db, section)
+
+    return section
+
+
 def make_section(point: Point):
     length = BoardConfig.LENGTH
     m = (length**2)/BoardConfig.MINE_RATIO
 
     tiles, count = rand_tiles()
-    while count < m/2 or m*2 < count:
+    while m/2 <= count <= m*2:
         tiles, count = rand_tiles()
 
     return Section(point, tiles)
@@ -157,3 +172,112 @@ async def upgrade_interaction_sections(db: DB, sec_point: Point):
             # CLOSED 상태면 numbering으로 격상
             if existing_section.flag == SectionFlag.CLOSED:
                 existing_section = await upgrade_numbering_sections(db, neighbor_point)
+
+
+def merge_sections(center: Point, sections: dict[Point, Section]):
+    """3*3 크기의 section의 tiles merge 후 return"""
+    length = BoardConfig.LENGTH
+
+    result = Tiles(bytearray(), length*3, 0)
+    for y in range(center.y-1, center.y+2):
+        line = Tiles(bytearray(), 0, length)
+        for x in range(center.x-1, center.x+2):
+            point = Point(x, y)
+            section = sections[point]
+
+            line = line.h_append(section.tiles)
+        result = result.v_append(line)
+
+    return result
+
+
+def count_mine(tiles: Tiles):
+    """3*3의 tiles의 가운데 제외 지뢰 갯수"""
+    assert tiles.width == tiles.height == 3
+
+    count = 0
+    point_range = PointRange(Point(0, 2), Point(2, 0))
+
+    for point in point_range.iter():
+        if point == Point(1, 1):
+            continue
+        tile = tiles.at_tile(point)
+        count += tile.is_mine
+
+    return count
+
+
+def numbering_tiles(tiles: Tiles):
+    """merge된 section의 tiles를 받아 가운데 section tiles만 numbering 후 return"""
+    length = BoardConfig.LENGTH
+    around_range = PointRange(Point(length-1, length*2), Point(length*2, length-1))
+    point_range = PointRange(Point(1, length), Point(length, 1))
+
+    around_tiles = tiles.at_tiles(around_range)
+
+    for point in point_range.iter():
+        pr = PointRange.create_by_mid(point, 1, 1)
+        tiles = around_tiles.at_tiles(pr)
+        tile = around_tiles.at_tile(point)
+        tile.number = count_mine(tiles)
+
+        around_tiles.update_at(point, tile)
+
+    result = around_tiles.at_tiles(point_range)
+    assert result.width == result.height == length
+    return result
+
+
+def numbering(center: Point, sections: dict[Point, Section]):
+    """3*3 section이 주어지면 가운데 section numbering"""
+    tiles = merge_sections(center, sections)
+    tiles = numbering_tiles(tiles)
+    sections[center].tiles = tiles
+
+
+def set_start_point(section: Section):
+    """start point 설정"""
+    tile = section.tiles.at_tile(Point(0, 0))
+
+    tile.is_mine = False
+    tile.is_open = True
+    section.tiles.update_at(Point(0, 0), tile)
+
+
+async def initialize_start_map(db: DB):
+    """
+    초기 맵 설정
+
+    CCC
+    CNC
+    CCC
+    C -> CLOSED_SECTION
+    N -> NUMBERING_SECTION
+    의 초기 맵 구성 후 N을 INTERACTION_SECTION으로 upgrade 진행
+    """
+    sections = {}
+
+    center_p = Point(0, 0)
+    center_sec = make_section(center_p)
+    sections[center_p] = center_sec
+    set_start_point(center_sec)
+
+    numbering_range = PointRange.create_by_mid(center_p, 1, 1)
+
+    for point in numbering_range.iter():
+        if point == center_p:
+            continue
+        section = make_section(point)
+        sections[point] = section
+
+    # Numbering 계산
+    numbering(center_p, sections)
+
+    # 상태 설정 및 저장
+    center_sec.flag = SectionFlag.NUMBERING
+
+    for _, section in sections.items():
+        await create_section(db, section)
+
+    # upgrade_interaction_sections 호출로 자동 격상 및 테두리 생성
+    await upgrade_interaction_sections(db, Point(0, 0))
