@@ -1,32 +1,39 @@
-#!/bin/bash
+# !/bin/bash
 
-set -e
+# docker가 없다면, docker 설치
+if ! type docker > /dev/null
+then
+  echo "docker does not exist"
+  echo "Start installing docker"
+  sudo apt-get update
+  sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+  sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
+  sudo apt update
+  apt-cache policy docker-ce
+  sudo apt install -y docker-ce
+fi
 
-echo "🚀 시작: Gamulpung 서버 배포"
 
-cd /opt/gamulpung-server
+IMAGE_NAME="dojini/gamulpung-dev:latest"
+CONTAINER_NAME="gamulpung-dev"
+ENV_FILE_PATH=".env"
+VOLUME_MOUNT_PATH="/var/lib/gamulpung"
 
-# Git 최신 코드 가져오기
-echo "📥 최신 코드 가져오는 중..."
-git pull origin main
+# 컨테이너가 존재하는지 확인
+if sudo docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"
+then
+  sudo docker rm -f $CONTAINER_NAME
+fi 
 
-# Docker 이미지 빌드
-echo "🐳 Docker 이미지 빌드 중..."
-docker build -t gamulpung-server:latest .
+if sudo docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${IMAGE_NAME}$"
+then
+  sudo docker rmi $IMAGE_NAME
+fi
 
-# 기존 컨테이너 중지 및 제거
-echo "🛑 기존 컨테이너 중지/제거 중..."
-docker stop gamulpung-server || true
-docker rm gamulpung-server || true
-
-# 새 컨테이너 실행
-echo "✅ 새 컨테이너 실행 중..."
-docker run -d \
-  --name gamulpung-server \
-  --restart unless-stopped \
-  -p 8000:8000 \
-  --env-file game.env \
-  gamulpung-server:latest
-
-echo "✨ 배포 완료!"
-docker ps | grep gamulpung-server
+sudo docker run -it -d \
+  -p 80:8000 \
+  -v ".:$VOLUME_MOUNT_PATH" \
+  --env-file $ENV_FILE_PATH \
+  --name $CONTAINER_NAME \
+  $IMAGE_NAME
