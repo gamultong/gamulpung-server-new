@@ -4,3 +4,5 @@ labs/
 
 .claude/
 *.db
+.ssh/
+github-action.env
