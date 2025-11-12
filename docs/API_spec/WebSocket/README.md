@@ -34,10 +34,14 @@ Domain에서 정의된 특정 상태 변화가 발생하였을 경우 발행합�
 ```md
 # EventName
 
-Description of the event.
+event 설명 입니다
 
 ## payload
-Description of the payload format.
+event payload입니다. 이는 json 형태로 정의되어 있습니다
+
+## SINARIO(Clinet-Event)
+envet sinario입니다.
+연결되어 발행되는 event를 설명합니다.
 ```
 
 ## Event Naming Convention

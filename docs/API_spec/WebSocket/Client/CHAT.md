@@ -8,3 +8,7 @@
     "message": string
 }
 ```
+
+## Sinario
+1. `CHAT`(client) 발행
+2. 나를 보는 커서들에게 `CHAT`(server) 발행

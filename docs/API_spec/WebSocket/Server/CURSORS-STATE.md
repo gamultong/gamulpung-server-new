@@ -13,6 +13,11 @@
 
 // <cursor>
 {
-    "id":str
+    "id":str,
+    "position": {
+        "x": int,
+        "y": int
+    },
+    "active_at": datetime
 }
 ```
