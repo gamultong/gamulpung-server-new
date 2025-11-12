@@ -2,13 +2,13 @@ from core.event import Event
 from core.broker import EventBroker
 
 from data.payload import IdDataPayload, ServerMessage, IdPayload
-from data.board import PointRange, Tiles
+from data.board import PointRange
 
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler
 from handler.board import BoardHandler
 
-NOTIFY_TILES_EVENT = Event[IdDataPayload[PointRange, Tiles]]
+NOTIFY_TILES_EVENT = Event[IdPayload[PointRange]]
 
 
 @EventBroker.add_receiver("NOTIFY-TILES")

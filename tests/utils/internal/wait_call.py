@@ -10,10 +10,11 @@ def assert_wait_call(mock: AsyncMock, call: _Call, timeout=1.5, step=0.01):
     integration test에 mock call시 사용 권장
     """
 
-    end = time.monotonic() + timeout
-    while time.monotonic() < end:
+    end = 0
+    while end < timeout:
         if call in mock.await_args_list:
             return
         time.sleep(step)
+        end += step
     print(mock.await_args_list)
     raise AssertionError(f"TimeOut : {call}이 {timeout}초 동안 호출되지 않음")

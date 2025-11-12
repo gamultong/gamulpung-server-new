@@ -7,6 +7,7 @@ from core.broker import EventBroker
 from data.cursor import Cursor
 from data.payload import IdPayload, IdDataPayload
 from data.board import is_overlap, PointRange
+from datetime import datetime, timedelta
 
 
 class CursorHandler:
@@ -77,6 +78,28 @@ class CursorHandler:
         await EventBroker.publish(event=event)
 
     @classmethod
+    async def death(cls, cursor: Cursor):
+        # old_cur get 없이 cursor 그냥 써도됨
+        old_cur = await cls.get_by_id(cursor.id)
+        if old_cur.active_at > datetime.now():
+            # TODO : exception or skip
+            raise "already death"  # type:ignore
+
+        new_cur = old_cur.copy()
+        new_cur.active_at = datetime.now() + timedelta(seconds=30)
+
+        await cls.update(new_cur)
+
+        event = Event(
+            event_name="NOTIFY-CURSORS",
+            payload=IdDataPayload(
+                id=cursor.id,
+                data=old_cur
+            )
+        )
+        await EventBroker.publish(event=event)
+
+    @classmethod
     async def update(cls, cursor: Cursor):
         cls.cursor_dict[cursor.id] = cursor.copy()
 
@@ -86,4 +109,12 @@ class CursorHandler:
             cursor.copy()
             for key, cursor in cls.cursor_dict.items()
             if is_overlap(range, cursor.window)
+        ]
+
+    @classmethod
+    async def get_cursor_in_range(cls, range: PointRange):
+        return [
+            cursor.copy()
+            for key, cursor in cls.cursor_dict.items()
+            if range.is_in(cursor.position)
         ]
