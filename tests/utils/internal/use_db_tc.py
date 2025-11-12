@@ -21,10 +21,6 @@ class UseDB_TestCase(IsolatedAsyncioTestCase):
         self.db_patch = patch.object(BoardConfig, "DB_PATH", new=self.db_path)
         self.db_patch.start()
 
-        self.now = datetime.now()
-        self.freezer_context = freeze_time(self.now)
-        self.freezer = self.freezer_context.__enter__()
-
     def tearDown(self) -> None:
         super().tearDown()
         self.db_patch.stop()
