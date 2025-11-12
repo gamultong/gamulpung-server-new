@@ -1,8 +1,29 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, Response, WebSocketDisconnect
 from websockets.exceptions import ConnectionClosed
 from handler.connection import ConnectionHandler, Conn
+from handler.board import initialize_start_map
+from handler.board.storage import _get_db, set_table
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # setup
+
+    # TODO : is table 같은거 구현 S
+    async with _get_db() as db:
+        try:
+            await set_table(db)
+        except:
+            pass
+
+        await initialize_start_map(db)
+
+    yield  # app 실행
+
+    # teardown
+
+app = FastAPI(lifespan=lifespan)
 
 
 @app.websocket("/session")

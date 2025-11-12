@@ -244,6 +244,16 @@ def set_start_point(section: Section):
     section.tiles.update_at(Point(0, 0), tile)
 
 
+async def check_is_init(db: DB):
+    range = PointRange.create_by_mid(Point(0, 0), 2, 2)
+
+    li = await get_section_range(db, range)
+    if len(li) > 0:
+        return True
+
+    return False
+
+
 async def initialize_start_map(db: DB):
     """
     초기 맵 설정
@@ -255,6 +265,9 @@ async def initialize_start_map(db: DB):
     N -> NUMBERING_SECTION
     의 초기 맵 구성 후 N을 INTERACTION_SECTION으로 upgrade 진행
     """
+    if await check_is_init(db):
+        return
+
     sections = {}
 
     center_p = Point(0, 0)
