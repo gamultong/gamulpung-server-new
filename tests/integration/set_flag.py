@@ -10,8 +10,7 @@ from .map.helpers import setup_case_2_map, setup_case_2_map_f
 from server import app
 from typing import cast
 from unittest.mock import AsyncMock, call, patch
-from tests.utils import assert_wait_call, TestClientManager
-from tests.integration.base import IntegrationTestCase
+from tests.utils import assert_wait_call, TestClientManager, TestCase, set_board
 
 SET_WINDOW_MSG = {
     "header": {"event": "SET-WINDOW"},
@@ -51,7 +50,7 @@ jungdap_2 = Tiles(
 )
 
 
-class SetFlagScenario(IntegrationTestCase):
+class SetFlagScenario(TestCase.IntegrationTestCase):
     def setUp(self) -> None:
         super().setUp()
         self.section_length_patch = patch.object(BoardConfig, "LENGTH", new=2)
@@ -63,11 +62,11 @@ class SetFlagScenario(IntegrationTestCase):
 
     async def asyncSetUp(self) -> None:
         await super().asyncSetUp()
-        await setup_case_2_map(self.db)
 
     async def asyncTearDown(self) -> None:
         await super().asyncTearDown()
 
+    @set_board(setup_case_2_map)
     @clinetmanager
     def test_set_flag(self, tcm: TestClientManager):
 
@@ -97,7 +96,7 @@ class SetFlagScenario(IntegrationTestCase):
         )
 
 
-class UnsetFlagScenario(IntegrationTestCase):
+class UnsetFlagScenario(TestCase.IntegrationTestCase):
     def setUp(self) -> None:
         super().setUp()
         self.section_length_patch = patch.object(BoardConfig, "LENGTH", new=2)
@@ -109,11 +108,11 @@ class UnsetFlagScenario(IntegrationTestCase):
 
     async def asyncSetUp(self) -> None:
         await super().asyncSetUp()
-        await setup_case_2_map_f(self.db)
 
     async def asyncTearDown(self) -> None:
         await super().asyncTearDown()
 
+    @set_board(setup_case_2_map_f)
     @clinetmanager
     def test_unset_flag(self, tcm: TestClientManager):
 
