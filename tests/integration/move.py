@@ -1,6 +1,5 @@
-from handler.board import BoardHandler, Section
 from config import BoardConfig
-from data.board import Point, Tile, Tiles, PointRange
+from data.board import Point, Tiles, PointRange
 from core.event import Event
 from data.payload import ServerMessage
 from data.cursor import Cursor
@@ -10,8 +9,7 @@ from .map.helpers import setup_case_1_map
 from server import app
 from typing import cast
 from unittest.mock import AsyncMock, call, patch
-from tests.utils import assert_wait_call, TestClientManager
-from tests.integration.base import IntegrationTestCase
+from tests.utils import assert_wait_call, TestClientManager, TestCase, set_board
 
 SET_WINDOW_MSG = {
     "header": {"event": "SET-WINDOW"},
@@ -51,7 +49,7 @@ jungdap = Tiles(
 )
 
 
-class MoveScenario(IntegrationTestCase):
+class MoveScenario(TestCase.IntegrationTestCase):
     def setUp(self) -> None:
         super().setUp()
         self.section_length_patch = patch.object(BoardConfig, "LENGTH", new=3)
@@ -63,11 +61,11 @@ class MoveScenario(IntegrationTestCase):
 
     async def asyncSetUp(self) -> None:
         await super().asyncSetUp()
-        await setup_case_1_map(self.db)
 
     async def asyncTearDown(self) -> None:
         await super().asyncTearDown()
 
+    @set_board(setup_case_1_map)
     @clinetmanager
     def test_normal(self, tcm: TestClientManager):
 

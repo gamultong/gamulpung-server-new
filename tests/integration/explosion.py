@@ -10,8 +10,8 @@ from .map.helpers import setup_case_2_map
 from server import app
 from typing import cast
 from unittest.mock import AsyncMock, call, patch
-from tests.utils import assert_wait_call, TestClientManager
-from tests.integration.base import IntegrationTestCase
+from tests.utils import assert_wait_call, TestClientManager, set_board
+from tests.utils import TestCase
 from datetime import timedelta
 
 SET_WINDOW_MSG = {
@@ -35,7 +35,7 @@ clinetmanager = (
 )
 
 
-class ExplosionScenario(IntegrationTestCase):
+class ExplosionScenario(TestCase.IntegrationTestCase):
     def setUp(self) -> None:
         super().setUp()
         self.section_length_patch = patch.object(BoardConfig, "LENGTH", new=2)
@@ -47,11 +47,11 @@ class ExplosionScenario(IntegrationTestCase):
 
     async def asyncSetUp(self) -> None:
         await super().asyncSetUp()
-        await setup_case_2_map(self.db)
 
     async def asyncTearDown(self) -> None:
         await super().asyncTearDown()
 
+    @set_board(setup_case_2_map)
     @clinetmanager
     def test_normal(self, tcm: TestClientManager):
         cl_a = tcm.get_client(CL_A)
