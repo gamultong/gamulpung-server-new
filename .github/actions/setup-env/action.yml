@@ -1,0 +1,20 @@
+name: "setup-env"
+description: "Create .env file from secrets"
+
+inputs:
+  dotenv:
+    required: true
+    description: "Full .env content"
+
+runs:
+  using: "composite"
+  # environment: production # 추후 dev/prod 로 구분
+  steps:
+    - name: Create .env file
+      shell: bash
+      run: |
+        if [ -z "${{ secrets.dotenv }}" ]; then
+          echo "❌ ERROR: dotenv is required but not provided."
+          exit 1
+        fi
+        echo "${{ secrets.dotenv }}" >> .env

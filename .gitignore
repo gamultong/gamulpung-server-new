@@ -5,5 +5,9 @@ labs/
 .claude/
 *.db
 .ssh/
-github-action.env
 .env
+
+.secrets
+
+# deperated : .secret으로 변경 
+github-action.env 
