@@ -4,7 +4,7 @@ create(id)
 from core.event import Event
 from core.broker import EventBroker
 
-from data.cursor import Cursor
+from data.cursor import Cursor, CursorRankRange, RankRange
 from data.payload import IdPayload, IdDataPayload
 from data.board import is_overlap, PointRange, Point
 from datetime import datetime, timedelta
@@ -61,9 +61,13 @@ class CursorHandler:
         new_cur.position = position
         new_cur.score += 1
 
+        rank_range = RankRange(1, 10)
+        old_cur_rank_range = await cls.get_cursor_by_rank_range(rank_range)
+
         await cls.update(new_cur)
 
-        await cls.get_cursor_by_rank_range(1, 10)
+        new_cur_rank_range = await cls.get_cursor_by_rank_range(rank_range)
+        await cls.scoreboard_modify(old_cur_rank_range, new_cur_rank_range)
 
         event = Event(
             event_name="NOTIFY-CURSORS",
@@ -95,7 +99,13 @@ class CursorHandler:
         new_cur.score = 0
         new_cur.active_at = datetime.now() + timedelta(seconds=30)
 
+        rank_range = RankRange(1, 10)
+        old_cur_rank_range = await cls.get_cursor_by_rank_range(rank_range)
+
         await cls.update(new_cur)
+
+        new_cur_rank_range = await cls.get_cursor_by_rank_range(rank_range)
+        await cls.scoreboard_modify(old_cur_rank_range, new_cur_rank_range)
 
         event = Event(
             event_name="NOTIFY-CURSORS",
@@ -113,7 +123,13 @@ class CursorHandler:
         new_cur = old_cur.copy()
         new_cur.score += score
 
+        rank_range = RankRange(1, 10)
+        old_cur_rank_range = await cls.get_cursor_by_rank_range(rank_range)
+
         await cls.update(new_cur)
+
+        new_cur_rank_range = await cls.get_cursor_by_rank_range(rank_range)
+        await cls.scoreboard_modify(old_cur_rank_range, new_cur_rank_range)
 
         event = Event(
             event_name="NOTIFY-CURSORS",
@@ -125,7 +141,10 @@ class CursorHandler:
         await EventBroker.publish(event=event)
 
     @classmethod
-    async def get_cursor_by_rank_range(cls, start, end):
+    async def get_cursor_by_rank_range(cls, rank_range: RankRange):
+        start = rank_range.start
+        end = rank_range.end
+
         li = sorted(
             (
                 cursor
@@ -137,7 +156,25 @@ class CursorHandler:
 
         end = end if len(li) > end else len(li)
 
-        return li[start-1:end]
+        return CursorRankRange(
+            rank_range,
+            li[start-1:end]
+        )
+
+    @classmethod
+    async def scoreboard_modify(cls, old_cur_range: CursorRankRange, new_cur_range: CursorRankRange):
+        old_cursors = old_cur_range.cursors
+        new_cursors = new_cur_range.cursors
+        if old_cursors != new_cursors:
+            event = Event(
+                event_name="NOTIFY-SCOREBOARD",
+                payload=IdDataPayload(
+                    id=old_cur_range.range,
+                    data=old_cur_range
+                )
+            )
+
+            await EventBroker.publish(event=event)
 
     @classmethod
     async def update(cls, cursor: Cursor):

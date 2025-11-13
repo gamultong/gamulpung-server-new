@@ -108,6 +108,22 @@ class MoveScenario(TestCase.IntegrationTestCase):
             call=call(event)
         )
 
+        event = Message(
+            Event(
+                event_name="SCOREBOARD-STATE",
+                payload=ServerMessage.ScoreBoardState(
+                    scoreboard={
+                        1: 1
+                    }
+                )
+            )
+        )
+
+        assert_wait_call(
+            conn_a_send_mock,
+            call=call(event)
+        )
+
 
 if __name__ == "__main__":
     from unittest import main
