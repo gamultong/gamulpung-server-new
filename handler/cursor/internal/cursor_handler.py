@@ -6,7 +6,7 @@ from core.broker import EventBroker
 
 from data.cursor import Cursor
 from data.payload import IdPayload, IdDataPayload
-from data.board import is_overlap, PointRange
+from data.board import is_overlap, PointRange, Point
 from datetime import datetime, timedelta
 
 
@@ -46,18 +46,24 @@ class CursorHandler:
         return [cls.cursor_dict[cursor.id].copy()]
 
     @classmethod
-    async def move(cls, cursor: Cursor):
+    async def move(cls, cursor: Cursor, position: Point):
         old_cur = await cls.get_by_id(cursor.id)
 
         old_x = old_cur.position.x
         old_y = old_cur.position.y
-        new_x = cursor.position.x
-        new_y = cursor.position.y
+        new_x = position.x
+        new_y = position.y
 
         assert old_x-1 <= new_x <= old_x+1
         assert old_y-1 <= new_y <= old_y+1
 
-        await cls.update(cursor)
+        new_cur = old_cur.copy()
+        new_cur.position = position
+        new_cur.score += 1
+
+        await cls.update(new_cur)
+
+        await cls.get_cursor_by_rank_range(1, 10)
 
         event = Event(
             event_name="NOTIFY-CURSORS",
@@ -86,6 +92,7 @@ class CursorHandler:
             raise "already death"  # type:ignore
 
         new_cur = old_cur.copy()
+        new_cur.score = 0
         new_cur.active_at = datetime.now() + timedelta(seconds=30)
 
         await cls.update(new_cur)
@@ -98,6 +105,39 @@ class CursorHandler:
             )
         )
         await EventBroker.publish(event=event)
+
+    @classmethod
+    async def increase_score(cls, cursor: Cursor, score: int):
+        old_cur = await cls.get_by_id(cursor.id)
+
+        new_cur = old_cur.copy()
+        new_cur.score += score
+
+        await cls.update(new_cur)
+
+        event = Event(
+            event_name="NOTIFY-CURSORS",
+            payload=IdDataPayload(
+                id=cursor.id,
+                data=old_cur
+            )
+        )
+        await EventBroker.publish(event=event)
+
+    @classmethod
+    async def get_cursor_by_rank_range(cls, start, end):
+        li = sorted(
+            (
+                cursor
+                for key, cursor in cls.cursor_dict.items()
+            ),
+            reverse=True,
+            key=lambda cur: cur.score
+        )
+
+        end = end if len(li) > end else len(li)
+
+        return li[start-1:end]
 
     @classmethod
     async def update(cls, cursor: Cursor):

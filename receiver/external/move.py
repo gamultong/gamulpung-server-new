@@ -19,6 +19,5 @@ async def move_receiver(event: MOVE_EVENT):
     assert target_tile.is_open
 
     cursor = await CursorHandler.get_by_id(id)
-    cursor.position = data.position
 
-    await CursorHandler.move(cursor)
+    await CursorHandler.move(cursor, data.position)

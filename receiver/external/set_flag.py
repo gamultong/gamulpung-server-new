@@ -17,3 +17,5 @@ async def set_flag_receiver(event: SET_FLAG_EVENT):
     assert cursor.in_interaction_range(data.position)
 
     await BoardHandler.togle_flag(data.position)
+
+    await CursorHandler.increase_score(cursor, 10)

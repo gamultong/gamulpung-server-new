@@ -79,7 +79,7 @@ class MoveScenario(TestCase.IntegrationTestCase):
             Event(
                 event_name="CURSORS-STATE",
                 payload=ServerMessage.CursorsState(
-                    [Cursor.create(id=CL_A, width=2, height=2, position=Point(-1, 0))]
+                    [Cursor.create(id=CL_A, width=2, height=2, position=Point(-1, 0), score=1)]
                 )
             )
         )

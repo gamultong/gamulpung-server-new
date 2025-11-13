@@ -5,6 +5,8 @@ from handler.connection import ConnectionHandler, Conn
 from handler.board import initialize_start_map
 from handler.board.storage import _get_db, set_table
 
+from fastapi import FastAPI
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

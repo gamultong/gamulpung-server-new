@@ -95,6 +95,20 @@ class SetFlagScenario(TestCase.IntegrationTestCase):
             call=call(event)
         )
 
+        event = Message(
+            Event(
+                event_name="CURSORS-STATE",
+                payload=ServerMessage.CursorsState(
+                    [Cursor.create(id=CL_A, width=1, height=1, position=Point(0, 0), score=10)]
+                )
+            )
+        )
+
+        assert_wait_call(
+            conn_a_send_mock,
+            call=call(event)
+        )
+
 
 class UnsetFlagScenario(TestCase.IntegrationTestCase):
     def setUp(self) -> None:
@@ -132,6 +146,20 @@ class UnsetFlagScenario(TestCase.IntegrationTestCase):
                 event_name="TILES-STATE",
                 payload=ServerMessage.TilesState(
                     [elem]
+                )
+            )
+        )
+
+        assert_wait_call(
+            conn_a_send_mock,
+            call=call(event)
+        )
+
+        event = Message(
+            Event(
+                event_name="CURSORS-STATE",
+                payload=ServerMessage.CursorsState(
+                    [Cursor.create(id=CL_A, width=1, height=1, position=Point(0, 0), score=10)]
                 )
             )
         )

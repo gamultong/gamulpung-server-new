@@ -11,6 +11,7 @@ class Cursor(DataObj):
     width: int
     height: int
     active_at: datetime
+    score: int
 
     @property
     def window(self):
@@ -45,7 +46,7 @@ class Cursor(DataObj):
         return dict
 
     @classmethod
-    def create(cls, id: str, position=Point(0, 0), width=0, height=0, active_at: datetime | None = None):
+    def create(cls, id: str, position=Point(0, 0), width=0, height=0, active_at: datetime | None = None, score: int = 0):
         if active_at is None:
             active_at = datetime.now()
         return cls(
@@ -53,5 +54,6 @@ class Cursor(DataObj):
             position=position.copy(),
             width=width,
             height=height,
-            active_at=active_at
+            active_at=active_at,
+            score=score
         )
