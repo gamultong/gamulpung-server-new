@@ -23,7 +23,7 @@ jobs:
       - name: setup-env
         uses: ./.github/actions/setup-env
         with:
-          dotenv: ${{ secrets.DOTENV_SERVER }}
+          dotenv: ${{ secrets.DOTENV }}
 
       - name: Install dependencies
         run: |
