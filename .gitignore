@@ -6,3 +6,4 @@ labs/
 *.db
 .ssh/
 github-action.env
+.env

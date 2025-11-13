@@ -4,6 +4,15 @@ from websockets.exceptions import ConnectionClosed
 from handler.connection import ConnectionHandler, Conn
 from handler.board import initialize_start_map
 from handler.board.storage import _get_db, set_table
+import sentry_sdk
+from config import SentryConfig
+
+sentry_sdk.init(
+    dsn=SentryConfig.SENTRY_DSN,
+    # Add data like request headers and IP for users,
+    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+    send_default_pii=True,
+)
 
 
 @asynccontextmanager
@@ -49,6 +58,11 @@ async def session(ws: WebSocket):
 @app.get("/")
 def health_check():
     return Response()
+
+
+@app.get("/sentry-debug")
+def div_zero():
+    error = 1 / 0
 
 
 if __name__ == "__main__":
