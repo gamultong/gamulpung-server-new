@@ -10,6 +10,11 @@ class Chat(ServerMessage):
 
 
 class MyCursor(ServerMessage):
+
+    id: str
+
+
+class QuitCursor(ServerMessage):
     id: str
 
 
