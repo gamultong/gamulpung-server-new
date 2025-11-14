@@ -9,4 +9,13 @@ QUIT = Event[IdPayload[str]]
 
 @EventBroker.add_receiver("QUIT")
 async def quit_receiver(event: QUIT):
-    pass
+    id = event.payload.id
+
+    _event = Event(
+        event_name="QUIT-CURSOR",
+        payload=ServerMessage.QuitCursor(
+            id=id
+        )
+    )
+
+    await ConnectionHandler.broadcast(_event)

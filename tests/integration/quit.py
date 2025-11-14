@@ -3,36 +3,62 @@ from data.payload import IdPayload
 from unittest import TestCase
 from server import app
 from unittest.mock import AsyncMock, call, patch
-from tests.utils import assert_wait_call, TestClientManager
+from tests.utils import assert_wait_call, TestClientManager, TestCase
+from data.payload import ServerMessage
+from data.conn import Message
+from config import BoardConfig
+from typing import cast
 
 CL_A = "Example_A"
+CL_B = "Example_B"
+
+SET_WINDOW_MSG = {
+    "header": {"event": "SET-WINDOW"},
+    "payload": {"width": 1, "height": 1},
+}
 
 clinetmanager = (
     TestClientManager(app)
     .append_client(CL_A)
+    .append_client(CL_B)
 )
 
 
-class QuitScenario(TestCase):
+class QuitScenario(TestCase.IntegrationTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.section_length_patch = patch.object(BoardConfig, "LENGTH", new=3)
+        self.section_length_patch.start()
+
+    def tearDown(self) -> None:
+        self.section_length_patch.stop()
+        super().tearDown()
+
     @clinetmanager
-    @patch("core.broker.EventBroker.publish")
-    def test_normal(self, event_broker: AsyncMock, tcm: TestClientManager):
+    def test_normal(self, tcm: TestClientManager):
         """
         현재 quit시 external 없음
         그래서 broker mock 이후 quit 호출 test
         """
         cl_a = tcm.get_client(CL_A)
+        cl_b = tcm.get_client(CL_B)
 
         cl_a.ws.close()
 
-        event = Event(
-            event_name="QUIT",
-            payload=IdPayload(id=CL_A)
+        conn_b_send_mock = cast(AsyncMock, cl_b.conn.send)
+
+        event = Message(
+            Event(
+                event_name="QUIT-CURSOR",
+                payload=ServerMessage.QuitCursor(
+                    id=CL_A
+                )
+            )
         )
 
         assert_wait_call(
-            event_broker,
-            call(event)
+            conn_b_send_mock,
+            call=call(event)
         )
 
 
