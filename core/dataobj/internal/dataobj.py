@@ -53,6 +53,17 @@ class DataObj:
         def __item_parsing(item):
             if isinstance(item, DataObj):
                 return item.to_dict()
+            if type(item) is list:
+                return [
+                    __item_parsing(v)
+                    for v in item
+                ]
+            if type(item) is dict:
+                return {
+                    k: __item_parsing(v)
+                    for k, v in item.items()
+                }
+
             return item
 
         return {

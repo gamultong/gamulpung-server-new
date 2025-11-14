@@ -1,3 +1,5 @@
+from loguru import logger
+from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, Response, WebSocketDisconnect
 from websockets.exceptions import ConnectionClosed
@@ -14,13 +16,14 @@ sentry_sdk.init(
     send_default_pii=True,
 )
 
-from fastapi import FastAPI
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # setup
 
+    logger.add("log.log")
+
+    logger.debug("init start")
     # TODO : is table 같은거 구현 S
     async with _get_db() as db:
         try:
@@ -29,6 +32,7 @@ async def lifespan(app: FastAPI):
             pass
 
         await initialize_start_map(db)
+    logger.debug("init end")
 
     yield  # app 실행
 
@@ -46,14 +50,15 @@ async def session(ws: WebSocket):
     while True:
         try:
             message = await conn.receive()
+            logger.debug(f"[{conn.id}]client-message : \n{message}")
 
             client_event = message.event
-            # print(client_event) # debug 용
             await ConnectionHandler.publish_client_event(client_event)
         except (WebSocketDisconnect, ConnectionClosed) as e:
             # 연결 종료됨
             break
 
+    logger.debug(f"[{conn.id}]client-quit")
     await ConnectionHandler.quit(conn)
 
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 import asyncio
 from typing import Callable, Coroutine
 from core.event import Event
+from loguru import logger
 
 
 class Receiver:
@@ -37,6 +38,7 @@ class EventBroker:
 
     @staticmethod
     async def publish(event: Event):
+        logger.debug(f"event-publish: \n{event}")
         coroutines = []
 
         receivers = EventBroker.event_dict[event.event_name]
