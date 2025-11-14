@@ -19,6 +19,12 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: "3.13"
+      
+      - name: setup-env
+        uses: ./.github/actions/setup-env
+        with:
+          dotenv: ${{ secrets.DOTENV }}
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
