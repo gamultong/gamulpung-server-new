@@ -14,6 +14,8 @@ sentry_sdk.init(
     send_default_pii=True,
 )
 
+from fastapi import FastAPI
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

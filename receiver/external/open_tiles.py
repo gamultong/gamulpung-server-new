@@ -17,3 +17,5 @@ async def open_tiles_receiver(event: OPEN_TILES_EVENT):
     assert cursor.in_interaction_range(data.position)
 
     await BoardHandler.open_tiles(data.position)
+
+    await CursorHandler.increase_score(cursor, 100)

@@ -27,3 +27,7 @@ class TilesState(ServerMessage):
 
 class Explosion(ServerMessage):
     position: Point
+
+
+class ScoreBoardState(ServerMessage):
+    scoreboard: dict[int, int]

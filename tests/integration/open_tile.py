@@ -88,6 +88,36 @@ class OpenTilesScenario(TestCase.IntegrationTestCase):
             call=call(event)
         )
 
+        event = Message(
+            Event(
+                event_name="CURSORS-STATE",
+                payload=ServerMessage.CursorsState(
+                    [Cursor.create(id=CL_A, width=1, height=1, position=Point(0, 0), score=100)]
+                )
+            )
+        )
+
+        assert_wait_call(
+            conn_a_send_mock,
+            call=call(event)
+        )
+
+        event = Message(
+            Event(
+                event_name="SCOREBOARD-STATE",
+                payload=ServerMessage.ScoreBoardState(
+                    scoreboard={
+                        1: 100
+                    }
+                )
+            )
+        )
+
+        assert_wait_call(
+            conn_a_send_mock,
+            call=call(event)
+        )
+
 
 if __name__ == "__main__":
     from unittest import main

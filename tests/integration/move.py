@@ -79,7 +79,7 @@ class MoveScenario(TestCase.IntegrationTestCase):
             Event(
                 event_name="CURSORS-STATE",
                 payload=ServerMessage.CursorsState(
-                    [Cursor.create(id=CL_A, width=2, height=2, position=Point(-1, 0))]
+                    [Cursor.create(id=CL_A, width=2, height=2, position=Point(-1, 0), score=1)]
                 )
             )
         )
@@ -99,6 +99,22 @@ class MoveScenario(TestCase.IntegrationTestCase):
                 event_name="TILES-STATE",
                 payload=ServerMessage.TilesState(
                     [elem]
+                )
+            )
+        )
+
+        assert_wait_call(
+            conn_a_send_mock,
+            call=call(event)
+        )
+
+        event = Message(
+            Event(
+                event_name="SCOREBOARD-STATE",
+                payload=ServerMessage.ScoreBoardState(
+                    scoreboard={
+                        1: 1
+                    }
                 )
             )
         )

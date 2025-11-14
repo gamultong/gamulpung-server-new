@@ -21,5 +21,6 @@ class ServerMessage:
         MyCursor,
         CursorsState,
         TilesState,
-        Explosion
+        Explosion,
+        ScoreBoardState
     )
