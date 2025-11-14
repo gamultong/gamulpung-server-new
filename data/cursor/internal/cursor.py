@@ -42,6 +42,8 @@ class Cursor(DataObj):
         del dict["width"]
         del dict["height"]
 
+        dict["active_at"] = self.active_at.isoformat()
+
         return dict
 
     @classmethod
