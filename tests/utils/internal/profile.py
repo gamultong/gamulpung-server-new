@@ -22,14 +22,14 @@ def profile(name=None, interval=0.01):
             return await _run_profile(fn, args, kwargs, name, interval, async_mode=True)
 
         def sync_wrapper(*args, **kwargs):
-            return _run_profile(fn, args, kwargs, name, interval, async_mode=False)
+            return asyncio.run(_run_profile(fn, args, kwargs, name, interval, async_mode=False))
 
         return async_wrapper if is_async else sync_wrapper
 
     return decorator
 
 
-def _run_profile(fn, args, kwargs, name, interval, async_mode):
+async def _run_profile(fn, args, kwargs, name, interval, async_mode):
     profiler = Profiler()
     profiler.start()
 
@@ -57,7 +57,7 @@ def _run_profile(fn, args, kwargs, name, interval, async_mode):
     # --- run function ---
     try:
         if async_mode:
-            result = asyncio.run(fn(*args, **kwargs))
+            result = await fn(*args, **kwargs)
         else:
             result = fn(*args, **kwargs)
     finally:
