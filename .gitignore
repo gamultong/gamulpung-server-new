@@ -8,6 +8,7 @@ labs/
 .env
 
 .secrets
+log.log
 
 # deperated : .secret으로 변경 
 github-action.env 

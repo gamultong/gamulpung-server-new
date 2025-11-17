@@ -7,6 +7,7 @@ from core.event import Event
 from dataclasses import dataclass
 from uuid import uuid4
 import json
+from loguru import logger
 
 """
 {
@@ -38,6 +39,7 @@ class Conn():
 
     async def receive(self) -> Message[Event[IdDataPayload]]:
         row = await self.conn.receive_text()
+        logger.debug(f"[{self.id}]client-message row: \n{row}")
 
         message = Message[Event].from_string(row)
         message.event.payload = IdDataPayload(id=self.id, data=message.event.payload)
@@ -45,12 +47,15 @@ class Conn():
         return message
 
     async def send(self, msg: Message):
+        logger.debug(f"[{self.id}]server-message: \n{msg}")
         if self.conn.application_state == WebSocketState.DISCONNECTED:
             return
 
         # comment : https://github.com/gamultong/gamulpung-server-new/pull/1#discussion_r2492845020
         try:
-            await self.conn.send_json(msg.to_dict())
+            message = msg.to_dict()
+            logger.debug(f"[{self.id}]server-message row: \n{message}")
+            await self.conn.send_json(message)
         except (ConnectionClosed, WebSocketDisconnect):
             # 커넥션이 종료되었는데도 타이밍 문제로 인해 커넥션을 가져왔을 수 있음.
             return
