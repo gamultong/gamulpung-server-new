@@ -1,3 +1,4 @@
+from .internal.profile import profile
 from .internal.conn_mock import TestClientManager
 from .internal.wait_call import assert_wait_call
 from .internal.set_board import set_board
