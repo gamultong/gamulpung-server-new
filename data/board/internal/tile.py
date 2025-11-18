@@ -2,9 +2,11 @@ from core.dataobj import DataObj
 
 from dataclasses import dataclass
 from .exceptions import InvalidTileException
+from functools import cache
 
 
 class Tile(DataObj):
+    __dataclass_config__ = {"frozen": True, "slots": True}
     is_open: bool
     is_mine: bool
     is_flag: bool
@@ -40,6 +42,7 @@ class Tile(DataObj):
 
         return d
 
+    @cache
     @staticmethod
     def create(
         is_open: bool,
@@ -59,10 +62,11 @@ class Tile(DataObj):
             number=number
         )
 
-        if (t.number is not None) and (t.number >= 8 or t.number < 0):
+        if (t.number is not None) and (t.number > 8 or t.number < 0):
             # 숫자는 음수이거나 8 이상일 수 없음
+            # re-> 8이상을 허용해도 될 것 같음
             raise InvalidTileException(t.__dict__)
-        if t.is_mine and (t.number is not None):
+        if t.is_mine and t.number > 0:
             # 지뢰 타일은 숫자를 가지고있지 않음
             raise InvalidTileException(t.__dict__)
         if is_open and is_flag:
@@ -77,6 +81,7 @@ class Tile(DataObj):
 
         return t
 
+    @cache
     @staticmethod
     def from_int(b: int):
         is_open = bool(b & 0b10000000)
@@ -100,8 +105,22 @@ class Tile(DataObj):
 
         return t
 
+    def with_is_open(self, is_open: bool) -> 'Tile':
+        """is_open을 변경한 캐싱된 Tile 반환"""
+        return Tile.create(is_open=is_open, is_mine=self.is_mine, is_flag=self.is_flag, number=self.number)
+
+    def with_is_mine(self, is_mine: bool) -> 'Tile':
+        """is_mine을 변경한 캐싱된 Tile 반환"""
+        return Tile.create(is_open=self.is_open, is_mine=is_mine, is_flag=self.is_flag, number=self.number)
+
+    def with_is_flag(self, is_flag: bool) -> 'Tile':
+        """is_flag를 변경한 캐싱된 Tile 반환"""
+        return Tile.create(is_open=self.is_open, is_mine=self.is_mine, is_flag=is_flag, number=self.number)
+
+    def with_number(self, number: int) -> 'Tile':
+        """number를 변경한 캐싱된 Tile 반환"""
+        return Tile.create(is_open=self.is_open, is_mine=self.is_mine, is_flag=self.is_flag, number=number)
+
 
 def hide_info(t: Tile):
-    t.is_mine = False
-    t.number = 0
-    return t
+    return t.with_is_mine(False).with_number(0)

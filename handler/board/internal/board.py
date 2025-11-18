@@ -73,9 +73,7 @@ class BoardHandler:
                 await upgrade_interaction_sections(db, sec_p)
 
             old_tile = section.at_tile_by_abs_point(point)
-            new_tile = old_tile.copy()
-
-            new_tile.is_flag = not new_tile.is_flag
+            new_tile = old_tile.with_is_flag(not old_tile.is_flag)
 
             section.update_by_abs_point(point, new_tile)
             await update_section(db, section)
@@ -108,9 +106,7 @@ class BoardHandler:
             if old_tile.is_flag:
                 return
 
-            new_tile = old_tile.copy()
-
-            new_tile.is_open = True
+            new_tile = old_tile.with_is_open(True)
 
             section.update_by_abs_point(point, new_tile)
             await update_section(db, section)
