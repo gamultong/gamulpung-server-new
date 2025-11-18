@@ -1,8 +1,21 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, Field
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Literal
 from typing_extensions import dataclass_transform
+
+DATACLASS_OPTION = Literal[
+    "init",
+    "repr",
+    "eq",
+    "order",
+    "unsafe_hash",
+    "frozen",
+    "atch_args",
+    "kw_only",
+    "slots",
+    "weakref_slot"
+]
 
 
 @dataclass_transform()
@@ -15,7 +28,7 @@ class DataObj:
     idea -> default를 freeze and slots 적용
     """
     __auto_dataclass__: ClassVar[bool] = True
-    __dataclass_config__: ClassVar[dict] = {}
+    __dataclass_config__: ClassVar[dict[DATACLASS_OPTION, bool]] = {}
     __dataclass_fields__: ClassVar[dict[str, Field[Any]]]
 
     def __init_subclass__(cls, **kwargs):

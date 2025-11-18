@@ -1,0 +1,19 @@
+from tests.utils import TestCase, profile
+from handler.board.internal.create_section import initialize_start_map
+import asyncio
+
+
+class InitializeStartMap_Profile(TestCase.UseTable_TestCase):
+    def setUp(self) -> None:
+        loop = asyncio.get_event_loop()
+        loop.set_debug(False)
+        super().setUp()
+
+    @profile("after1")
+    async def test_section_layer_constraint(self):
+        await initialize_start_map(self.db)
+
+
+if __name__ == "__main__":
+    from unittest import main
+    main()

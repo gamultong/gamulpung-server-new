@@ -1,5 +1,5 @@
 from unittest.mock import patch
-from unittest import IsolatedAsyncioTestCase
+from tests.utils import TestCase
 from config import BoardConfig
 import tempfile
 import os
@@ -16,34 +16,12 @@ from data.board import Point, PointRange
 import asyncio
 
 
-class IntegrationTestCase(IsolatedAsyncioTestCase):
-    """Base class for integration tests that need database access"""
-
+class InitializeStartMap_TestCase(TestCase.UseTable_TestCase):
     def setUp(self) -> None:
         loop = asyncio.get_event_loop()
         loop.set_debug(False)
-        self.fd, self.path = tempfile.mkstemp(suffix=".db")
-        self.db_patch = patch.object(BoardConfig, "DB_PATH", new=self.path)
-        self.db_patch.start()
+        super().setUp()
 
-    def tearDown(self) -> None:
-        self.db_patch.stop()
-        os.close(self.fd)
-        os.remove(self.path)
-
-    async def asyncSetUp(self) -> None:
-        """Initialize database for tests"""
-        self.db_context = _get_db()
-        self.db = await self.db_context.__aenter__()
-        await set_table(self.db)
-
-    async def asyncTearDown(self) -> None:
-        """Clean up database after tests"""
-        if self.db_context:
-            await self.db_context.__aexit__(None, None, None)
-
-
-class InitializeStartMap_TestCase(IntegrationTestCase):
     async def test_section_layer_constraint(self):
         """Section layer 제약이 지켜지는지 확인"""
         await initialize_start_map(self.db)
