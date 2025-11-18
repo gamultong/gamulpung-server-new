@@ -104,7 +104,7 @@ def number_section(section: Section):
                         mine_count += 1
 
             # 계산된 숫자로 타일 업데이트
-            new_tile = tile.with_number(mine_count)
+            new_tile = tile.changed(number=mine_count)
             section.tiles.update_at(tile_point, new_tile)
 
     # 섹션 상태를 NUMBERING으로 설정
@@ -220,7 +220,7 @@ def numbering_tiles(tiles: Tiles):
         tile = around_tiles.at_tile(point)
         if tile.is_mine:
             continue
-        new_tile = tile.with_number(count_mine(tiles))
+        new_tile = tile.changed(number=count_mine(tiles))
 
         around_tiles.update_at(point, new_tile)
 
@@ -240,7 +240,7 @@ def set_start_point(section: Section):
     """start point 설정"""
     tile = section.tiles.at_tile(Point(0, 0))
 
-    new_tile = tile.with_is_mine(False).with_is_open(True)
+    new_tile = tile.changed(is_mine=False, is_open=True)
     section.tiles.update_at(Point(0, 0), new_tile)
 
 

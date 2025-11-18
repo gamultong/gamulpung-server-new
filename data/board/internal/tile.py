@@ -105,22 +105,23 @@ class Tile(DataObj):
 
         return t
 
-    def with_is_open(self, is_open: bool) -> 'Tile':
-        """is_open을 변경한 캐싱된 Tile 반환"""
-        return Tile.create(is_open=is_open, is_mine=self.is_mine, is_flag=self.is_flag, number=self.number)
-
-    def with_is_mine(self, is_mine: bool) -> 'Tile':
-        """is_mine을 변경한 캐싱된 Tile 반환"""
-        return Tile.create(is_open=self.is_open, is_mine=is_mine, is_flag=self.is_flag, number=self.number)
-
-    def with_is_flag(self, is_flag: bool) -> 'Tile':
-        """is_flag를 변경한 캐싱된 Tile 반환"""
-        return Tile.create(is_open=self.is_open, is_mine=self.is_mine, is_flag=is_flag, number=self.number)
-
-    def with_number(self, number: int) -> 'Tile':
-        """number를 변경한 캐싱된 Tile 반환"""
-        return Tile.create(is_open=self.is_open, is_mine=self.is_mine, is_flag=self.is_flag, number=number)
+    def changed(
+        self,
+        is_open: bool | None = None,
+        is_mine: bool | None = None,
+        is_flag: bool | None = None,
+        number: int | None = None
+    ):
+        if is_open is None:
+            is_open = self.is_open
+        if is_mine is None:
+            is_mine = self.is_mine
+        if is_flag is None:
+            is_flag = self.is_flag
+        if number is None:
+            number = self.number
+        return Tile.create(is_open=is_open, is_mine=is_mine, is_flag=is_flag, number=number)
 
 
 def hide_info(t: Tile):
-    return t.with_is_mine(False).with_number(0)
+    return t.changed(is_mine=False, number=0)
