@@ -1,7 +1,7 @@
 from __future__ import annotations
 from core.dataobj import DataObj
 from dataclasses import dataclass
-from .point import Point, PointRange
+from .point import Point, PointRange, get_overlap
 from .tile import Tile
 
 

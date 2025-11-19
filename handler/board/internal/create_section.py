@@ -1,5 +1,5 @@
-from data.board import PointRange, Tiles, Point, Tile, get_overlap
-from handler.board.storage import _get_db, get_section_range, Section, create_section, update_section_flag, SectionFlag, DB
+from data.board import PointRange, Tiles, Point, Tile, get_overlap, Section, SectionFlag
+from handler.board.storage import _get_db, get_section_range, create_section, update_section_flag, DB
 
 from config import BoardConfig
 from random import randint
@@ -46,7 +46,7 @@ def rand_tiles():
     ), count
 
 
-async def make_closed_section(db: DB, point: Point):
+def make_closed_section(point: Point):
     length = BoardConfig.LENGTH
     tiles = Tiles(
         bytearray([
@@ -56,7 +56,6 @@ async def make_closed_section(db: DB, point: Point):
         ]), length, length
     )
     section = Section(point, tiles)
-    await create_section(db, section)
 
     return section
 

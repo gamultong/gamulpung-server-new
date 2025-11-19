@@ -1,9 +1,8 @@
 from functools import cache
 import aiosqlite
 from contextlib import asynccontextmanager
-from data.board import Point, PointRange, Tiles
+from data.board import Point, PointRange, Tiles, Section
 from config import BoardConfig
-from .section import Section
 import os
 
 SQL_PATH = os.path.join(os.path.dirname(__file__), "sql") + os.sep

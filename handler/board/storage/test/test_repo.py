@@ -11,10 +11,9 @@ from handler.board.storage import (
     update_section,
     get_section_range,
     update_section_flag,
-    Section,
-    SectionFlag,
+
 )
-from data.board import Tile, Tiles, Point, PointRange
+from data.board import Tile, Tiles, Point, PointRange, Section, SectionFlag
 
 OPENED_TILE = Tile(
     is_open=True,

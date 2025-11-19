@@ -1,5 +1,9 @@
-from data.board import Point, Tiles, PointRange, get_overlap, Tile
-from dataclasses import dataclass
+from .point import Point, PointRange, get_overlap
+from .tile import Tile
+from .tiles import Tiles
+
+from core.dataobj import DataObj
+
 from enum import IntFlag
 from config import BoardConfig
 
@@ -21,8 +25,7 @@ def abs_to_sec(abs_point: Point):
     )
 
 
-@dataclass
-class Section():
+class Section(DataObj):
     point: Point
     tiles: Tiles
     flag: SectionFlag = SectionFlag.CLOSED

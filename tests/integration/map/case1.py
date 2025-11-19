@@ -1,5 +1,4 @@
-from data.board import Point, Tile, Tiles
-from handler.board import Section, SectionFlag
+from data.board import Point, Tile, Tiles, Section, SectionFlag
 
 OPENED_TILE = Tile(
     is_open=True,
