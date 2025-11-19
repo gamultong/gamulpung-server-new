@@ -1,7 +1,8 @@
 """Helper functions to set up test data in the database"""
+from data.board import Section
+
 from handler.board.storage import (
-    create_section,
-    Section,
+    create_section
 )
 from .case2 import point1 as case2_point1, point2 as case2_point2, point3 as case2_point3, point4 as case2_point4
 from .case2 import tiles1 as case2_tiles1, tiles2 as case2_tiles2, tiles2_f as case2_tiles2_f, tiles3 as case2_tiles3, tiles4 as case2_tiles4

@@ -1,6 +1,6 @@
-from handler.board import BoardHandler, Section
+from handler.board import BoardHandler
 from config import BoardConfig
-from data.board import Point, Tile, Tiles, PointRange
+from data.board import Point, Tile, Tiles, PointRange, Section
 from core.event import Event
 from data.payload import ServerMessage
 from data.cursor import Cursor

@@ -1,11 +1,11 @@
-from data.board import PointRange, Tiles, Point, Tile
+from data.board import PointRange, Tiles, Point, Tile, abs_to_sec, SectionFlag
 from data.payload import IdDataPayload, IdPayload
 from core.event import Event
 from core.broker import EventBroker
-from handler.board.storage import _get_db, get_section_range, abs_to_sec, get_section, update_section, SectionFlag
+from handler.board.storage import _get_db, get_section_range, get_section, update_section
 
 from config import BoardConfig
-from .create_section import upgrade_interaction_sections, make_closed_section
+from .create_section import upgrade_interaction_sections, make_closed_section, upgrade_numbering_sections
 
 
 class BoardHandler:
@@ -41,7 +41,7 @@ class BoardHandler:
                 sec_point = Point(x, y)
 
                 if sec_point not in section_dict:
-                    await make_closed_section(db, sec_point)
+                    section = make_closed_section(sec_point)
                 else:
                     section = section_dict[sec_point]
 
@@ -132,7 +132,7 @@ class BoardHandler:
             await EventBroker.publish(event)
 
     @classmethod
-    async def fetch_point(cls, point: Point) -> Tile:
+    async def fetch_tile(cls, point: Point) -> Tile:
         sec_p = abs_to_sec(point)
 
         async with _get_db() as db:
@@ -141,3 +141,14 @@ class BoardHandler:
 
         tile = section.at_tile_by_abs_point(point)
         return tile
+
+    @classmethod
+    async def fetch_section(cls, sec_point: Point):
+        async with _get_db() as db:
+            section = await get_section(db, sec_point)
+            assert section
+
+            if section.flag == SectionFlag.CLOSED:
+                await upgrade_numbering_sections(db, sec_point)
+
+        return section

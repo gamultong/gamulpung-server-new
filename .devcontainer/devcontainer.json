@@ -22,7 +22,8 @@
 
 	  // ✅ 추가: 호스트 Docker를 컨테이너에서 사용
 	"features": {
-		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+		"ghcr.io/devcontainers/features/node:1": {}
 	},
 	"mounts": [
 		"source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"

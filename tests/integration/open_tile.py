@@ -1,16 +1,17 @@
-from handler.board import BoardHandler, Section
+from handler.board import BoardHandler
 from config import BoardConfig
-from data.board import Point, Tile, Tiles, PointRange
+from data.board import Point, Tile, Tiles, PointRange, Section
 from core.event import Event
 from data.payload import ServerMessage
 from data.cursor import Cursor
 from data.conn import Message
 from .map.case2 import CLOSED_TILE, OPENED_TILE
-from .map.helpers import setup_case_2_map
+from .map.open_tiles import case_open_tiles_map
 from server import app
 from typing import cast
 from unittest.mock import AsyncMock, call, patch
 from tests.utils import assert_wait_call, TestClientManager, TestCase, set_board
+from data.cursor import Cursor
 
 SET_WINDOW_MSG = {
     "header": {"event": "SET-WINDOW"},
@@ -21,7 +22,7 @@ OPEN_TILES_MSG = {
     "payload": {
         "position": {
             "x": 1,
-            "y": 0
+            "y": 1
         }
     },
 }
@@ -31,6 +32,9 @@ clinetmanager = (
     TestClientManager(app)
     .append_client(CL_A)
 )
+
+# TODO
+# - chaining open 된 곳 확인 해야함
 
 """
 CCC
@@ -43,11 +47,17 @@ jungdap = Tiles(
     ]), 1, 1
 )
 
+origin_create = Cursor.create
+
+
+def create_cursor_effect(id: str, width: int = 0, height: int = 0):
+    return origin_create(id, width=width, height=height, position=Point(0, 1))
+
 
 class OpenTilesScenario(TestCase.IntegrationTestCase):
     def setUp(self) -> None:
         super().setUp()
-        self.section_length_patch = patch.object(BoardConfig, "LENGTH", new=2)
+        self.section_length_patch = patch.object(BoardConfig, "LENGTH", new=4)
         self.section_length_patch.start()
 
     def tearDown(self) -> None:
@@ -60,9 +70,10 @@ class OpenTilesScenario(TestCase.IntegrationTestCase):
     async def asyncTearDown(self) -> None:
         await super().asyncTearDown()
 
-    @set_board(setup_case_2_map)
+    @set_board(case_open_tiles_map)
+    @patch("data.cursor.Cursor.create", side_effect=create_cursor_effect)
     @clinetmanager
-    def test_normal(self, tcm: TestClientManager):
+    def test_normal(self, a, tcm: TestClientManager):
         cl_a = tcm.get_client(CL_A)
         cl_a.ws.send_json(SET_WINDOW_MSG)
         cl_a.ws.send_json(OPEN_TILES_MSG)
@@ -71,7 +82,7 @@ class OpenTilesScenario(TestCase.IntegrationTestCase):
 
         elem = ServerMessage.TilesState.Elem(
             data=jungdap.to_str(),
-            range=PointRange(Point(1, 0), Point(1, 0))
+            range=PointRange(Point(1, 1), Point(1, 1))
         )
 
         event = Message(
@@ -92,7 +103,7 @@ class OpenTilesScenario(TestCase.IntegrationTestCase):
             Event(
                 event_name="CURSORS-STATE",
                 payload=ServerMessage.CursorsState(
-                    [Cursor.create(id=CL_A, width=1, height=1, position=Point(0, 0), score=100)]
+                    [origin_create(id=CL_A, width=1, height=1, position=Point(0, 1), score=800)]
                 )
             )
         )
@@ -107,7 +118,7 @@ class OpenTilesScenario(TestCase.IntegrationTestCase):
                 event_name="SCOREBOARD-STATE",
                 payload=ServerMessage.ScoreBoardState(
                     scoreboard={
-                        1: 100
+                        1: 800
                     }
                 )
             )

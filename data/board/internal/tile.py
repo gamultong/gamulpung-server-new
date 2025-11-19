@@ -2,7 +2,7 @@ from core.dataobj import DataObj
 
 from dataclasses import dataclass
 from .exceptions import InvalidTileException
-from functools import cache
+from functools import cache, lru_cache
 
 
 class Tile(DataObj):

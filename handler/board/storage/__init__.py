@@ -8,4 +8,3 @@ from .internal.repository import (
     update_section_flag,
     DB,  # 힌팅용
 )
-from .internal.section import Section, SectionFlag, abs_to_sec

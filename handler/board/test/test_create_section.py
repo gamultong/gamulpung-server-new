@@ -3,13 +3,14 @@ from tests.utils import TestCase
 from config import BoardConfig
 import tempfile
 import os
+
+from data.board import SectionFlag
 from handler.board.internal.create_section import initialize_start_map
 from handler.board.storage import (
     _get_db,
     set_table,
     get_section,
-    get_section_range,
-    SectionFlag,
+    get_section_range
 )
 from data.board import Point, PointRange
 
