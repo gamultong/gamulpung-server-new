@@ -1,39 +1,62 @@
-# !/bin/bash
+#!/bin/bash
 
-# docker가 없다면, docker 설치
-if ! type docker > /dev/null
-then
-  echo "docker does not exist"
-  echo "Start installing docker"
+set -e  # 에러 발생 시 즉시 종료
+
+# 환경변수 검증
+required_vars=("DOCKER_USERNAME" "DOCKER_REPONAME" "DOCKER_TAG" "ENVIRONMENT" "CONTAINER_NAME" "CONTAINER_PORT_MAPPING")
+for var in "${required_vars[@]}"; do
+  if [ -z "${!var}" ]; then
+    echo "❌ ERROR: Required environment variable $var is not set"
+    exit 1
+  fi
+done
+
+echo "🚀 Starting deployment for $ENVIRONMENT environment"
+echo "📦 Image: $DOCKER_USERNAME/$DOCKER_REPONAME:$DOCKER_TAG"
+echo "🐳 Container: $CONTAINER_NAME"
+echo "🔌 Port: $CONTAINER_PORT_MAPPING"
+
+# Docker 설치 확인 및 설치
+if ! type docker > /dev/null 2>&1; then
+  echo "📥 Docker not found. Installing..."
   sudo apt-get update
   sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
   sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
   sudo apt update
-  apt-cache policy docker-ce
   sudo apt install -y docker-ce
+  echo "✅ Docker installed successfully"
 fi
 
-
-IMAGE_NAME="dojini/gamulpung-dev:latest"
-CONTAINER_NAME="gamulpung-dev"
+# 환경변수로 이미지명 구성
+IMAGE_NAME="${DOCKER_USERNAME}/${DOCKER_REPONAME}:${DOCKER_TAG}"
 ENV_FILE_PATH=".env"
 VOLUME_MOUNT_PATH="/var/lib/gamulpung"
 
-# 컨테이너가 존재하는지 확인
-if sudo docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"
-then
-  sudo docker rm -f $CONTAINER_NAME
-fi 
-
-if sudo docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${IMAGE_NAME}$"
-then
-  sudo docker rmi $IMAGE_NAME
+# 기존 컨테이너 제거
+if sudo docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+  echo "🗑️  Removing existing container: $CONTAINER_NAME"
+  sudo docker rm -f "$CONTAINER_NAME"
 fi
 
+# 기존 이미지 제거
+if sudo docker images --format '{{.Repository}}:{{.Tag}}' | grep -q "^${IMAGE_NAME}$"; then
+  echo "🗑️  Removing old image: $IMAGE_NAME"
+  sudo docker rmi "$IMAGE_NAME"
+fi
+
+# 새 이미지 pull 및 실행
+echo "📥 Pulling new image: $IMAGE_NAME"
+sudo docker pull "$IMAGE_NAME"
+
+echo "🚀 Starting container: $CONTAINER_NAME"
 sudo docker run -it -d \
-  -p 80:8000 \
-  -v ".:$VOLUME_MOUNT_PATH" \
-  --env-file $ENV_FILE_PATH \
-  --name $CONTAINER_NAME \
-  $IMAGE_NAME
+  -p "$CONTAINER_PORT_MAPPING" \
+  -v "$PWD:$VOLUME_MOUNT_PATH" \
+  --env-file "$ENV_FILE_PATH" \
+  --name "$CONTAINER_NAME" \
+  "$IMAGE_NAME"
+
+echo "✅ Deployment completed successfully!"
+echo "📊 Container status:"
+sudo docker ps --filter "name=$CONTAINER_NAME" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"

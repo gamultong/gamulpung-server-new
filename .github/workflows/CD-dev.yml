@@ -1,12 +1,13 @@
-name: CD
+name: CD-dev
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["develop"]
 
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
+    environment: development
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -31,12 +32,12 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          # :latest 명시(배포 스크립트와 동일하게)
-          tags: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPONAME }}:latest
+          tags: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPONAME }}:dev
 
   deploy:
     needs: build-and-push-image
     runs-on: ubuntu-latest
+    environment: development
     steps:
       - name: Checkout only deploy script
         uses: actions/checkout@v4
@@ -45,17 +46,19 @@ jobs:
             tools/deploy.sh
           sparse-checkout-cone: true
 
-
       - name: executing remote ssh commands
-        uses: appleboy/ssh-action@v1.0.3   # master 지양, 버전 고정
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME || 'root' }}  # 실제 접속 성공 계정으로
-          key: ${{ secrets.KEY }}                     # act에 -s KEY=@... 로 주입
-          port: ${{ secrets.PORT || 22 }}
-          # 배포 스크립트에 필요한 값 전달(원격 환경변수로 사용)
-          envs: DOCKER_USERNAME,DOCKER_REPONAME
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          envs: DOCKER_USERNAME,DOCKER_REPONAME,DOCKER_TAG,ENVIRONMENT,CONTAINER_NAME,CONTAINER_PORT_MAPPING
           script_path: tools/deploy.sh
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_REPONAME: ${{ secrets.DOCKER_REPONAME }}
+          DOCKER_TAG: dev
+          ENVIRONMENT: dev
+          CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
+          CONTAINER_PORT_MAPPING: ${{ secrets.CONTAINER_PORT_MAPPING }}

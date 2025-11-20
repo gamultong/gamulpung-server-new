@@ -1,19 +1,26 @@
-# EVENT = push
 ACT = bin/act
+TYPE = dev
 
-.PHONY: act-all act-job act-wf
+.PHONY: act-ci act-cd-dev act-cd-prod
 
-## 전체 GitHub Actions 로컬 실행 (해당 EVENT 기준)
-act-all:
-	$(ACT) $(EVENT)
+## CI workflow 로컬 테스트
+act-ci:
+	$(ACT) pull_request -W .github/workflows/CI.yml \
+		--secret-file .secrets/$(TYPE).env
 
-## 특정 workflow 파일만 실행 (예: make act-wf WF=.github/workflows/ci.yml)
-act-wf:
-	@if [ -z "$(WF)" ]; then \
-		echo "❌ WF 파라미터가 필요합니다. 예: make act-wf WF=.github/workflows/ci.yml"; \
-		exit 1; \
-	fi
-	$(ACT) $(EVENT) -W .github/workflows/$(WF).yml
+## CD-dev workflow 로컬 테스트
+act-cd-dev:
+	@cat .secrets/.secrets .secrets/dev.env > /tmp/act-dev.secrets
+	$(ACT) push -W .github/workflows/CD-dev.yml \
+		--secret-file /tmp/act-dev.secrets
+	@rm /tmp/act-dev.secrets
+
+## CD-prod workflow 로컬 테스트
+act-cd-prod:
+	@cat .secrets/.secrets .secrets/prod.env > /tmp/act-prod.secrets
+	$(ACT) push -W .github/workflows/CD-prod.yml \
+		--secret-file /tmp/act-prod.secrets
+	@rm /tmp/act-prod.secrets
 
 
 test-all:
