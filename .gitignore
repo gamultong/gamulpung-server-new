@@ -10,5 +10,5 @@ labs/
 .secrets
 log.log
 
-# deperated : .secret으로 변경 
-github-action.env 
+# secrets directory (act용 로컬 테스트 secrets)
+secrets/
