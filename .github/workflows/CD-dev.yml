@@ -46,13 +46,24 @@ jobs:
             tools/deploy.sh
           sparse-checkout-cone: true
 
+      - name: Setup Cloudflared and start tunnel
+        run: |
+          curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          sudo dpkg -i cloudflared.deb
+          cloudflared access tcp \
+            --hostname ${{ secrets.CF_HOSTNAME }} \
+            --url localhost:2222 \
+            --service-token-id ${{ secrets.CF_SERVICE_TOKEN_ID }} \
+            --service-token-secret ${{ secrets.CF_SERVICE_TOKEN_SECRET }} &
+          sleep 5
+
       - name: executing remote ssh commands
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.HOST }}
+          host: localhost
+          port: 2222
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
           envs: DOCKER_USERNAME,DOCKER_REPONAME,DOCKER_TAG,ENVIRONMENT,CONTAINER_NAME,CONTAINER_PORT_MAPPING
           script_path: tools/deploy.sh
         env:
