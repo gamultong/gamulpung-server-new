@@ -16,6 +16,13 @@ echo "📦 Image: $DOCKER_USERNAME/$DOCKER_REPONAME:$DOCKER_TAG"
 echo "🐳 Container: $CONTAINER_NAME"
 echo "🔌 Port: $CONTAINER_PORT_MAPPING"
 
+# Memory limit (optional)
+MEMORY_ARGS=()
+if [ -n "${CONTAINER_MEMORY_LIMIT:-}" ]; then
+  MEMORY_ARGS+=(--memory "${CONTAINER_MEMORY_LIMIT}")
+  echo "💾 Memory limit: ${CONTAINER_MEMORY_LIMIT}"
+fi
+
 # Docker 설치 확인 및 설치
 if ! type docker > /dev/null 2>&1; then
   echo "📥 Docker not found. Installing..."
@@ -73,6 +80,7 @@ echo "🚀 Starting container: $CONTAINER_NAME"
 sudo docker run -d \
   -p "$CONTAINER_PORT_MAPPING" \
   -v "$PWD:$VOLUME_MOUNT_PATH" \
+  "${MEMORY_ARGS[@]}" \
   "${ENV_ARGS[@]}" \
   --name "$CONTAINER_NAME" \
   "$IMAGE_NAME"
