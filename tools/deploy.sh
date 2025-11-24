@@ -33,6 +33,7 @@ IMAGE_NAME="${DOCKER_USERNAME}/${DOCKER_REPONAME}:${DOCKER_TAG}"
 ENV_FILE_PATH=".env"
 VOLUME_MOUNT_PATH="/var/lib/gamulpung"
 
+
 # 기존 컨테이너 제거
 if sudo docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
   echo "🗑️  Removing existing container: $CONTAINER_NAME"
@@ -49,11 +50,30 @@ fi
 echo "📥 Pulling new image: $IMAGE_NAME"
 sudo docker pull "$IMAGE_NAME"
 
+echo "📂 Current dir: $(pwd)"
+
+ENV_ARGS=()
+if [ -f "$ENV_FILE_PATH" ]; then
+  echo "📄 Loading env from $ENV_FILE_PATH"
+  while IFS= read -r line; do
+    # 빈 줄 / 주석은 스킵
+    [ -z "$line" ] && continue
+    case "$line" in
+      \#*) continue ;;
+    esac
+
+    # KEY=VALUE 형태 그대로 --env 옵션으로 추가
+    ENV_ARGS+=(--env "$line")
+  done < "$ENV_FILE_PATH"
+else
+  echo "⚠️ $ENV_FILE_PATH 파일이 없습니다. env 없이 컨테이너를 실행합니다."
+fi
+
 echo "🚀 Starting container: $CONTAINER_NAME"
-sudo docker run -it -d \
+sudo docker run -d \
   -p "$CONTAINER_PORT_MAPPING" \
   -v "$PWD:$VOLUME_MOUNT_PATH" \
-  --env-file "$ENV_FILE_PATH" \
+  "${ENV_ARGS[@]}" \
   --name "$CONTAINER_NAME" \
   "$IMAGE_NAME"
 

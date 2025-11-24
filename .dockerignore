@@ -1,0 +1,35 @@
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Git
+.git
+.github
+.gitignore
+
+# Database
+*.db
+
+# Python
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Development
+.claude/
+labs/
+secrets/
+.secrets/
+
+# Logs
+*.log
+log.log
+
+# SSH
+.ssh/
+
+# IDE
+.vscode/
+.idea/
