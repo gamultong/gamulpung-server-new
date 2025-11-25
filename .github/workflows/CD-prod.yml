@@ -9,74 +9,65 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     outputs:
-      docker_tag: ${{ steps.docker-tags.outputs.docker_tag }}
+      docker_tag: ${{ steps.extract-version.outputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Verify tag is on main branch
         run: |
+          if [ -n "${ACT:-}" ]; then
+            echo "⚠️  Running in act (local), skipping main branch verification"
+            exit 0
+          fi
           git fetch origin main
           if ! git merge-base --is-ancestor ${{ github.sha }} origin/main; then
             echo "❌ ERROR: Tag must be created from main branch"
             exit 1
           fi
 
-      - name: setup-env
-        uses: ./.github/actions/setup-env
-        with:
-          dotenv: ${{ secrets.DOTENV }}
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Determine Docker tags
-        id: docker-tags
+      - name: Extract version from tag
+        id: extract-version
         run: |
           VERSION=${{ github.ref_name }}
-          TAGS="${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPONAME }}:latest,${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPONAME }}:${VERSION}"
-          echo "tags=${TAGS}" >> $GITHUB_OUTPUT
-          echo "docker_tag=${VERSION}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: ./.github/actions/build-and-push
         with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: ${{ steps.docker-tags.outputs.tags }}
+          docker_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_password: ${{ secrets.DOCKER_PASSWORD }}
+          docker_reponame: ${{ secrets.DOCKER_REPONAME }}
+          docker_tags: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPONAME }}:latest,${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPONAME }}:${{ steps.extract-version.outputs.version }}
 
   deploy:
     needs: build-and-push-image
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - name: Checkout only deploy script
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           sparse-checkout: |
-            tools/deploy.sh
-          sparse-checkout-cone: true
+            scripts/deploy
 
-      - name: executing remote ssh commands
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Setup env file
+        uses: ./.github/actions/setup-env
         with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          envs: DOCKER_USERNAME,DOCKER_REPONAME,DOCKER_TAG,ENVIRONMENT,CONTAINER_NAME,CONTAINER_PORT_MAPPING
-          script_path: tools/deploy.sh
+          dotenv: ${{ secrets.DOTENV }}
+
+      - name: Deploy to server
         env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_REPONAME: ${{ secrets.DOCKER_REPONAME }}
-          DOCKER_TAG: ${{ needs.build-and-push-image.outputs.docker_tag }}
-          ENVIRONMENT: prod
-          CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
-          CONTAINER_PORT_MAPPING: ${{ secrets.CONTAINER_PORT_MAPPING }}
+          CLOUDFLARE_TUNNEL_HOSTNAME: ${{ secrets.CLOUDFLARE_TUNNEL_HOSTNAME }}
+          CF_ACCESS_CLIENT_ID:        ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET:    ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+          SSH_USERNAME:               ${{ secrets.SSH_USERNAME }}
+          SSH_KEY_B64:                ${{ secrets.SSH_KEY_B64 }}
+          DOCKER_USERNAME:            ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_REPONAME:            ${{ secrets.DOCKER_REPONAME }}
+          DOCKER_TAG:                 ${{ needs.build-and-push-image.outputs.docker_tag }}
+          ENVIRONMENT:                prod
+          CONTAINER_NAME:             ${{ secrets.CONTAINER_NAME }}
+          CONTAINER_PORT_MAPPING:     ${{ secrets.CONTAINER_PORT_MAPPING }}
+          CONTAINER_MEMORY_LIMIT:     ${{ secrets.CONTAINER_MEMORY_LIMIT }}
+        run: bash scripts/deploy/main.sh
