@@ -45,6 +45,8 @@ VOLUME_MOUNT_PATH="/var/lib/gamulpung"
 if sudo docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
   echo "🗑️  Removing existing container: $CONTAINER_NAME"
   sudo docker rm -f "$CONTAINER_NAME"
+  # Wait for port to be released
+  sleep 2
 fi
 
 # 기존 이미지 제거
