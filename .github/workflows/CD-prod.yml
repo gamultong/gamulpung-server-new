@@ -50,6 +50,7 @@ jobs:
         with:
           sparse-checkout: |
             scripts/deploy
+            .github/actions
 
       - name: Setup env file
         uses: ./.github/actions/setup-env
