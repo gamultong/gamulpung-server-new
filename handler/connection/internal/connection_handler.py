@@ -32,10 +32,10 @@ class ConnectionHandler:
         await EventBroker.publish(event)
 
     @classmethod
-    async def quit(cls, conn: Conn):
-        del ConnectionHandler.conn_dict[conn.id]
+    async def quit(cls, id: str):
+        del ConnectionHandler.conn_dict[id]
 
-        payload = IdPayload(conn.id)
+        payload = IdPayload(id)
         event = Event(
             event_name="QUIT",
             payload=payload
@@ -49,7 +49,6 @@ class ConnectionHandler:
 
     @classmethod
     async def multicast(cls, target_ids: list[str], event: Event):
-        # TODO: 동기화 문제
         for id in target_ids:
             conn = cls.conn_dict[id]
 
@@ -58,7 +57,7 @@ class ConnectionHandler:
 
     @classmethod
     async def broadcast(cls, event: Event):
-        # TODO: 동기화 문제
-        for id, conn in cls.conn_dict.items():
+        snapshot = list(cls.conn_dict.items())
+        for id, conn in snapshot:
             msg = Message(event=event)
             await conn.send(msg)
