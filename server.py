@@ -59,7 +59,7 @@ async def session(ws: WebSocket):
             break
 
     logger.debug(f"[{conn.id}]client-quit")
-    await ConnectionHandler.quit(conn)
+    await ConnectionHandler.quit(conn.id)
 
 
 @app.get("/")
