@@ -21,7 +21,8 @@ async def open_tiles_receiver(event: OPEN_TILES_EVENT):
     point = data.position
 
     cursor = await CursorHandler.get_by_id(id)
-    assert cursor.in_interaction_range(point)
+    if not cursor.in_interaction_range(point):
+        return
 
     chaining_points = await chaining(point)
     for p in chaining_points:

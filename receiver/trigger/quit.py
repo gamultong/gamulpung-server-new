@@ -12,7 +12,7 @@ QUIT = Event[IdPayload[str]]
 async def quit_receiver(event: QUIT):
     id = event.payload.id
 
-    # TODO: await CursorHandler.delete(id)
+    await CursorHandler.delete(id)
 
     _event = Event(
         event_name="QUIT-CURSOR",

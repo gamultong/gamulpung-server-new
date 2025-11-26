@@ -36,6 +36,11 @@ class CursorHandler:
         await EventBroker.publish(event=event)
 
     @classmethod
+    async def delete(cls, id: str):
+        if id in cls.cursor_dict:
+            del cls.cursor_dict[id]
+
+    @classmethod
     async def get_by_id(cls, id: str):
         return cls.cursor_dict[id].copy()
 

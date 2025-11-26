@@ -49,9 +49,11 @@ class ConnectionHandler:
 
     @classmethod
     async def multicast(cls, target_ids: list[str], event: Event):
-        for id in target_ids:
-            conn = cls.conn_dict[id]
+        snapshot = list(cls.conn_dict.items())
 
+        for id, conn in snapshot:
+            if id not in target_ids:
+                continue
             msg = Message(event=event)
             await conn.send(msg)
 
