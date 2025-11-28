@@ -1,7 +1,7 @@
 from typing import Generic, TypeVar, Type
 
 from core.dataobj import DataObj
-from core.event import Event
+from core.event import Event, ExternalC2SEvent, EventEnum
 from data.payload import ClientMessage
 from json import loads
 
@@ -10,7 +10,7 @@ EVENT_TYPE = TypeVar("EVENT_TYPE", bound=Event)
 
 class MessageFormat(DataObj):
     class Header(DataObj):
-        event: str
+        event: EventEnum
 
     header: Header
     payload: dict
@@ -40,19 +40,19 @@ def json_to_format(json: dict):
     )
 
 
-def get_payload_by_event_name(event_name: str) -> Type[ClientMessage.Base]:  # type:ignore
+def get_payload_by_event_name(event_name: EventEnum) -> Type[ClientMessage.Base]:  # type:ignore
     match event_name:
-        case "CHAT":
+        case ExternalC2SEvent.CHAT:
             return ClientMessage.Chat
-        case "SET-WINDOW":
+        case ExternalC2SEvent.SET_WINDOW:
             return ClientMessage.SetWindow
-        case "MOVE":
+        case ExternalC2SEvent.MOVE:
             return ClientMessage.Move
-        case "OPEN-TILES":
+        case ExternalC2SEvent.OPEN_TILES:
             return ClientMessage.OpenTiles
-        case "SET-FLAG":
+        case ExternalC2SEvent.SET_FLAG:
             return ClientMessage.SetFlag
-    assert "wtf"
+    raise
 
 
 class Message(Generic[EVENT_TYPE], DataObj):

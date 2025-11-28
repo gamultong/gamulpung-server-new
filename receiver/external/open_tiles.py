@@ -1,7 +1,7 @@
 from collections import deque
 from loguru import logger
 
-from core.event import Event
+from core.event import Event, ExternalC2SEvent
 from core.broker import EventBroker
 
 from data.payload import IdDataPayload, ClientMessage
@@ -13,7 +13,7 @@ from handler.cursor import CursorHandler
 OPEN_TILES_EVENT = Event[IdDataPayload[str, ClientMessage.OpenTiles]]
 
 
-@EventBroker.add_receiver("OPEN-TILES")
+@EventBroker.add_receiver(ExternalC2SEvent.OPEN_TILES)
 async def open_tiles_receiver(event: OPEN_TILES_EVENT):
     id = event.payload.id
     data = event.payload.data

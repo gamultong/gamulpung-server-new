@@ -1,6 +1,6 @@
 from config import BoardConfig
 from data.board import Point, Tiles, PointRange
-from core.event import Event
+from core.event import Event, ExternalS2CEvent, ExternalC2SEvent
 from data.payload import ServerMessage
 from data.cursor import Cursor
 from data.conn import Message
@@ -12,11 +12,11 @@ from unittest.mock import AsyncMock, call, patch
 from tests.utils import assert_wait_call, TestClientManager, TestCase, set_board
 
 SET_WINDOW_MSG = {
-    "header": {"event": "SET-WINDOW"},
+    "header": {"event": ExternalC2SEvent.SET_WINDOW},
     "payload": {"width": 2, "height": 2},
 }
 MOVE_MSG = {
-    "header": {"event": "MOVE"},
+    "header": {"event": ExternalC2SEvent.MOVE},
     "payload": {
         "position": {
             "x": -1,
@@ -77,7 +77,7 @@ class MoveScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name="CURSORS-STATE",
+                event_name=ExternalS2CEvent.CURSORS_STATE,
                 payload=ServerMessage.CursorsState(
                     [Cursor.create(id=CL_A, width=2, height=2, position=Point(-1, 0), score=1)]
                 )
@@ -96,7 +96,7 @@ class MoveScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name="TILES-STATE",
+                event_name=ExternalS2CEvent.TILES_STATE,
                 payload=ServerMessage.TilesState(
                     [elem]
                 )
@@ -110,7 +110,7 @@ class MoveScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name="SCOREBOARD-STATE",
+                event_name=ExternalS2CEvent.SCOREBOARD_STATE,
                 payload=ServerMessage.ScoreBoardState(
                     scoreboard={
                         1: 1

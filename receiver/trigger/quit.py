@@ -1,4 +1,4 @@
-from core.event import Event
+from core.event import Event, TriggerEvent, ExternalS2CEvent
 from data.payload import IdPayload, ServerMessage, ClientMessage
 
 from core.broker import EventBroker
@@ -7,12 +7,12 @@ from handler.connection import ConnectionHandler
 QUIT = Event[IdPayload[str]]
 
 
-@EventBroker.add_receiver("QUIT")
+@EventBroker.add_receiver(TriggerEvent.QUIT)
 async def quit_receiver(event: QUIT):
     id = event.payload.id
 
     _event = Event(
-        event_name="QUIT-CURSOR",
+        event_name=ExternalS2CEvent.QUIT_CURSOR,
         payload=ServerMessage.QuitCursor(
             id=id
         )

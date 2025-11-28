@@ -1,4 +1,4 @@
-from core.event import Event
+from core.event import Event, ExternalS2CEvent
 from data.payload import ServerMessage
 from data.conn import Message
 from unittest import TestCase
@@ -24,7 +24,7 @@ class JoinScenario(TestCase):
 
         message = Message(
             event=Event(
-                event_name="MY-CURSOR",
+                event_name=ExternalS2CEvent.MY_CURSOR,
                 payload=ServerMessage.MyCursor(
                     id=CL_A,
                 )

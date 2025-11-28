@@ -1,7 +1,7 @@
 """
 create(id)
 """
-from core.event import Event
+from core.event import Event, InternalEvent
 from core.broker import EventBroker
 
 from data.cursor import Cursor, CursorRankRange, RankRange
@@ -18,7 +18,7 @@ class CursorHandler:
         cls.cursor_dict[cursor.id] = cursor.copy()
 
         event = Event(
-            event_name="NOTIFY-CURSORS",
+            event_name=InternalEvent.NOTIFY_CURSORS,
             payload=IdPayload(
                 id=cursor.id
             )
@@ -27,7 +27,7 @@ class CursorHandler:
         await EventBroker.publish(event=event)
 
         event = Event(
-            event_name="SETTED-WINDOW",
+            event_name=InternalEvent.SETTED_WINDOW,
             payload=IdPayload(
                 id=cursor.id
             )
@@ -70,7 +70,7 @@ class CursorHandler:
         await cls.scoreboard_modify(old_cur_rank_range, new_cur_rank_range)
 
         event = Event(
-            event_name="NOTIFY-CURSORS",
+            event_name=InternalEvent.NOTIFY_CURSORS,
             payload=IdDataPayload(
                 id=cursor.id,
                 data=old_cur
@@ -79,7 +79,7 @@ class CursorHandler:
         await EventBroker.publish(event=event)
 
         event = Event(
-            event_name="SETTED-WINDOW",
+            event_name=InternalEvent.SETTED_WINDOW,
             payload=IdDataPayload(
                 id=cursor.id,
                 data=old_cur
@@ -108,7 +108,7 @@ class CursorHandler:
         await cls.scoreboard_modify(old_cur_rank_range, new_cur_rank_range)
 
         event = Event(
-            event_name="NOTIFY-CURSORS",
+            event_name=InternalEvent.NOTIFY_CURSORS,
             payload=IdDataPayload(
                 id=cursor.id,
                 data=old_cur
@@ -132,7 +132,7 @@ class CursorHandler:
         await cls.scoreboard_modify(old_cur_rank_range, new_cur_rank_range)
 
         event = Event(
-            event_name="NOTIFY-CURSORS",
+            event_name=InternalEvent.NOTIFY_CURSORS,
             payload=IdDataPayload(
                 id=cursor.id,
                 data=old_cur
@@ -167,7 +167,7 @@ class CursorHandler:
         new_cursors = new_cur_range.cursors
         if old_cursors != new_cursors:
             event = Event(
-                event_name="NOTIFY-SCOREBOARD",
+                event_name=InternalEvent.NOTIFY_SCOREBOARD,
                 payload=IdDataPayload(
                     id=old_cur_range.range,
                     data=old_cur_range

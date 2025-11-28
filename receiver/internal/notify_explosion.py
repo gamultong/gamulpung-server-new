@@ -1,4 +1,4 @@
-from core.event import Event
+from core.event import Event, InternalEvent, ExternalS2CEvent
 from core.broker import EventBroker
 
 from data.payload import IdDataPayload, ServerMessage, IdPayload
@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 NOTIFY_EXPLOSION_EVENT = Event[IdDataPayload[Point, Tile]]
 
 
-@EventBroker.add_receiver("NOTIFY-EXPLOSION")
+@EventBroker.add_receiver(InternalEvent.NOTIFY_EXPLOSION)
 async def notify_explosion_receiver(event: NOTIFY_EXPLOSION_EVENT):
     point = event.payload.id
     point_range = PointRange.create_by_mid(point, 1, 1)
@@ -23,7 +23,7 @@ async def notify_explosion_receiver(event: NOTIFY_EXPLOSION_EVENT):
         await CursorHandler.death(cursor)
 
     _event = Event(
-        event_name="EXPLOSION",
+        event_name=ExternalS2CEvent.EXPLOSION,
         payload=ServerMessage.Explosion(
             point
         )

@@ -1,4 +1,4 @@
-from core.event import Event
+from core.event import Event, ExternalC2SEvent
 from data.payload import IdDataPayload, ClientMessage
 
 from core.broker import EventBroker
@@ -8,7 +8,7 @@ from handler.cursor import CursorHandler
 SET_FLAG_EVENT = Event[IdDataPayload[str, ClientMessage.SetFlag]]
 
 
-@EventBroker.add_receiver("SET-FLAG")
+@EventBroker.add_receiver(ExternalC2SEvent.SET_FLAG)
 async def set_flag_receiver(event: SET_FLAG_EVENT):
     id = event.payload.id
     data = event.payload.data

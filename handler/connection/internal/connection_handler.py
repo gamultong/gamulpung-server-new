@@ -12,7 +12,7 @@ from data.conn import Message
 from data.payload import IdPayload
 
 from typing import ClassVar
-from core.event import Event
+from core.event import Event, TriggerEvent
 from core.broker import EventBroker
 
 
@@ -25,7 +25,7 @@ class ConnectionHandler:
 
         payload = IdPayload(conn.id)
         event = Event(
-            event_name="JOIN",
+            event_name=TriggerEvent.JOIN,
             payload=payload
         )
 
@@ -37,7 +37,7 @@ class ConnectionHandler:
 
         payload = IdPayload(conn.id)
         event = Event(
-            event_name="QUIT",
+            event_name=TriggerEvent.QUIT,
             payload=payload
         )
 

@@ -1,7 +1,7 @@
 from handler.board import BoardHandler
 from config import BoardConfig
 from data.board import Point, Tile, Tiles, PointRange, Section
-from core.event import Event
+from core.event import Event, ExternalC2SEvent, ExternalS2CEvent
 from data.payload import ServerMessage
 from data.cursor import Cursor
 from data.conn import Message
@@ -13,11 +13,11 @@ from unittest.mock import AsyncMock, call, patch
 from tests.utils import assert_wait_call, TestClientManager, TestCase, set_board
 
 SET_WINDOW_MSG = {
-    "header": {"event": "SET-WINDOW"},
+    "header": {"event": ExternalC2SEvent.SET_WINDOW},
     "payload": {"width": 1, "height": 1},
 }
 OPEN_TILES_MSG = {
-    "header": {"event": "SET-FLAG"},
+    "header": {"event": ExternalC2SEvent.SET_FLAG},
     "payload": {
         "position": {
             "x": 1,
@@ -83,7 +83,7 @@ class SetFlagScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name="TILES-STATE",
+                event_name=ExternalS2CEvent.TILES_STATE,
                 payload=ServerMessage.TilesState(
                     [elem]
                 )
@@ -97,7 +97,7 @@ class SetFlagScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name="CURSORS-STATE",
+                event_name=ExternalS2CEvent.CURSORS_STATE,
                 payload=ServerMessage.CursorsState(
                     [Cursor.create(id=CL_A, width=1, height=1, position=Point(0, 0), score=10)]
                 )
@@ -111,7 +111,7 @@ class SetFlagScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name="SCOREBOARD-STATE",
+                event_name=ExternalS2CEvent.SCOREBOARD_STATE,
                 payload=ServerMessage.ScoreBoardState(
                     scoreboard={
                         1: 10
@@ -159,7 +159,7 @@ class UnsetFlagScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name="TILES-STATE",
+                event_name=ExternalS2CEvent.TILES_STATE,
                 payload=ServerMessage.TilesState(
                     [elem]
                 )
@@ -173,7 +173,7 @@ class UnsetFlagScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name="CURSORS-STATE",
+                event_name=ExternalS2CEvent.CURSORS_STATE,
                 payload=ServerMessage.CursorsState(
                     [Cursor.create(id=CL_A, width=1, height=1, position=Point(0, 0), score=10)]
                 )
@@ -187,7 +187,7 @@ class UnsetFlagScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name="SCOREBOARD-STATE",
+                event_name=ExternalS2CEvent.SCOREBOARD_STATE,
                 payload=ServerMessage.ScoreBoardState(
                     scoreboard={
                         1: 10

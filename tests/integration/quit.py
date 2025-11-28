@@ -1,4 +1,4 @@
-from core.event import Event
+from core.event import Event, ExternalS2CEvent, ExternalC2SEvent
 from data.payload import IdPayload
 from unittest import TestCase
 from server import app
@@ -13,7 +13,7 @@ CL_A = "Example_A"
 CL_B = "Example_B"
 
 SET_WINDOW_MSG = {
-    "header": {"event": "SET-WINDOW"},
+    "header": {"event": ExternalC2SEvent.SET_WINDOW},
     "payload": {"width": 1, "height": 1},
 }
 
@@ -49,7 +49,7 @@ class QuitScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name="QUIT-CURSOR",
+                event_name=ExternalS2CEvent.QUIT_CURSOR,
                 payload=ServerMessage.QuitCursor(
                     id=CL_A
                 )

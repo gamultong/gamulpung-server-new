@@ -1,4 +1,4 @@
-from core.event import Event
+from core.event import Event, ExternalS2CEvent, ExternalC2SEvent
 from data.payload import IdDataPayload, ServerMessage, ClientMessage
 
 from core.broker import EventBroker
@@ -7,7 +7,7 @@ from handler.connection import ConnectionHandler
 CHAT_EVENT = Event[IdDataPayload[str, ClientMessage.Chat]]
 
 
-@EventBroker.add_receiver("CHAT")
+@EventBroker.add_receiver(ExternalC2SEvent.CHAT)
 async def chat_receiver(event: CHAT_EVENT):
     id = event.payload.id
     data = event.payload.data
@@ -19,7 +19,7 @@ async def chat_receiver(event: CHAT_EVENT):
 
     # 이름 중복으로 하면 pylance가 지랄함
     _event = Event(
-        event_name="CHAT",
+        event_name=ExternalS2CEvent.CHAT,
         payload=payload
     )
 

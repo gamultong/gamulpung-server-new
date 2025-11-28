@@ -1,4 +1,4 @@
-from core.event import Event
+from core.event import Event, ExternalC2SEvent
 from core.broker import EventBroker
 
 from data.payload import IdDataPayload, ClientMessage, IdPayload
@@ -10,7 +10,7 @@ from handler.board import BoardHandler
 MOVE_EVENT = Event[IdDataPayload[str, ClientMessage.Move]]
 
 
-@EventBroker.add_receiver("MOVE")
+@EventBroker.add_receiver(ExternalC2SEvent.MOVE)
 async def move_receiver(event: MOVE_EVENT):
     id = event.payload.id
     data = event.payload.data

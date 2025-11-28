@@ -1,7 +1,7 @@
 from handler.board import BoardHandler
 from config import BoardConfig
 from data.board import Point, Tile, Tiles, PointRange, Section
-from core.event import Event
+from core.event import Event, ExternalC2SEvent, ExternalS2CEvent
 from data.payload import ServerMessage
 from data.cursor import Cursor
 from data.conn import Message
@@ -15,11 +15,11 @@ from tests.utils import TestCase
 from datetime import timedelta
 
 SET_WINDOW_MSG = {
-    "header": {"event": "SET-WINDOW"},
+    "header": {"event": ExternalC2SEvent.SET_WINDOW},
     "payload": {"width": 1, "height": 1},
 }
 OPEN_TILES_MSG = {
-    "header": {"event": "OPEN-TILES"},
+    "header": {"event": ExternalC2SEvent.OPEN_TILES},
     "payload": {
         "position": {
             "x": -1,
@@ -62,7 +62,7 @@ class ExplosionScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name="EXPLOSION",
+                event_name=ExternalS2CEvent.EXPLOSION,
                 payload=ServerMessage.Explosion(
                     Point(-1, 0)
                 )
@@ -75,7 +75,7 @@ class ExplosionScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name="CURSORS-STATE",
+                event_name=ExternalS2CEvent.CURSORS_STATE,
                 payload=ServerMessage.CursorsState(
                     [Cursor.create(CL_A, width=1, height=1, active_at=self.now+timedelta(seconds=30))]
                 )
@@ -89,7 +89,7 @@ class ExplosionScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name="SCOREBOARD-STATE",
+                event_name=ExternalS2CEvent.SCOREBOARD_STATE,
                 payload=ServerMessage.ScoreBoardState(
                     scoreboard={
                         1: 0
