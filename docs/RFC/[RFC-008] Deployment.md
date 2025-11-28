@@ -1,14 +1,6 @@
-# 9. Deployment
+프로젝트의 배포 전략 및 환경 구성을 정의합니다.
 
-이 문서는 Gamulpung Server의 배포 전략을 정의합니다.
-
-## 용어 정의
-- **Environment**: 배포 대상 환경. development(개발), production(프로덕션)으로 구분됩니다.
-- **Deployment**: 빌드된 Docker 이미지를 서버에 배포하는 과정입니다.
-- **Release Tag**: 프로덕션 배포를 트리거하는 Git 태그. `v*.*.*` 형식의 Semantic Versioning을 사용합니다.
-
-## Introduce
-
+## 개요
 개발 환경과 프로덕션 환경을 분리하여 안정적인 배포 프로세스를 구축합니다.
 배포는 브랜치와 태그 기반으로 자동화되며, 각 환경은 GitHub Environments로 관리됩니다.
 
