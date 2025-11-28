@@ -36,14 +36,23 @@ class CursorHandler:
         await EventBroker.publish(event=event)
 
     @classmethod
+    async def delete(cls, id: str):
+        if id in cls.cursor_dict:
+            del cls.cursor_dict[id]
+
+    @classmethod
     async def get_by_id(cls, id: str):
         return cls.cursor_dict[id].copy()
 
     @classmethod
     async def get_cursors_by_cursor_window(cls, cursor: Cursor) -> list[Cursor]:
-        # TODO: 현재는 자기 자신만 보내는 중
+        snapshot = list(cls.cursor_dict.items())
 
-        return [cls.cursor_dict[cursor.id].copy()]
+        return [
+            cur.copy()
+            for id, cur in snapshot
+            if cursor.window.is_in(cur.position)
+        ]
 
     @classmethod
     async def move(cls, cursor: Cursor, position: Point):

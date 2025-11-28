@@ -3,7 +3,11 @@ from typing import Generic, TypeVar, Type
 from core.dataobj import DataObj
 from core.event import Event, ExternalC2SEvent, EventEnum
 from data.payload import ClientMessage
-from json import loads
+
+from .exceptions import (
+    InvalidFormat_Exception,
+    InvalidEvent_Exception
+)
 
 EVENT_TYPE = TypeVar("EVENT_TYPE", bound=Event)
 
@@ -17,11 +21,11 @@ class MessageFormat(DataObj):
 
 
 def __exception_by_invalid_format(func):
-    def wrapper(*args, **kwargs):
+    def wrapper(json: dict):
         try:
-            return func(*args, **kwargs)
+            return func(json)
         except KeyError:
-            raise  # TODO : InvalidFormatException
+            raise InvalidFormat_Exception(json)
     return wrapper
 
 
@@ -66,13 +70,8 @@ class Message(Generic[EVENT_TYPE], DataObj):
             "payload": self.event.payload.to_dict()
         }
 
-    def to_string(self):
-        return str(self.to_dict())
-
     @classmethod
-    def from_string(cls, string: str):
-        json = loads(string)
-
+    def from_json(cls, json: dict):
         form = json_to_format(json)
 
         event_name = form.header.event
