@@ -20,7 +20,7 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: "3.13"
-      
+
       - name: setup-env
         uses: ./.github/actions/setup-env
         with:
@@ -30,11 +30,10 @@ jobs:
         uses: astral-sh/setup-uv@v4
         with:
           version: "latest"
-      
+
       - name: Install dependencies
         run: |
-          uv sync --frozen
+          uv sync --frozen --dev
       - name: Test
         run: |
-          python -m tests.run
-          
+          uv run python -m tests.run
