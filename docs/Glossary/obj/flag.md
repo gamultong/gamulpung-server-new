@@ -1,0 +1,1 @@
+tile에 설치되어 cursor의 상호작용을 막는 obj.
