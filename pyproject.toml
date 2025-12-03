@@ -63,10 +63,6 @@ dependencies = [
     "tornado==6.5.2",
     # Build tools
     "setuptools==78.1.1",
-]
-
-[project.optional-dependencies]
-dev = [
     "freezegun==1.5.5",
     "python-dateutil==2.9.0.post0",
     "six==1.17.0",
@@ -74,6 +70,7 @@ dev = [
     "scalene==1.5.55",
     "snakeviz==2.2.2",
 ]
+
 
 [build-system]
 requires = ["setuptools>=61"]
