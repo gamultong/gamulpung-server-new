@@ -1,4 +1,4 @@
-from core.event import Event, ExternalS2CEvent, ExternalC2SEvent
+from core.event import Event
 from data.payload import IdPayload
 from unittest import TestCase
 from server import app
@@ -6,6 +6,8 @@ from unittest.mock import AsyncMock, call, patch
 from tests.utils import assert_wait_call, TestClientManager, TestCase
 from data.payload import ServerMessage
 from data.conn import Message
+from data.event import ClientEvent, ServerEvent
+
 from config import BoardConfig
 from typing import cast
 
@@ -13,7 +15,7 @@ CL_A = "Example_A"
 CL_B = "Example_B"
 
 SET_WINDOW_MSG = {
-    "header": {"event": ExternalC2SEvent.SET_WINDOW},
+    "header": {"event": ClientEvent.SET_WINDOW},
     "payload": {"width": 1, "height": 1},
 }
 
@@ -49,7 +51,7 @@ class QuitScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name=ExternalS2CEvent.QUIT_CURSOR,
+                event_name=ServerEvent.QUIT_CURSOR,
                 payload=ServerMessage.QuitCursor(
                     id=CL_A
                 )

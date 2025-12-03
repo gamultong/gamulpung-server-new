@@ -3,15 +3,16 @@ from unittest.mock import AsyncMock, call
 from typing import cast
 
 from server import app
-from core.event import Event, ExternalC2SEvent, ExternalS2CEvent
+from core.event import Event
 
 from data.payload import ServerMessage
 from data.conn import Message
+from data.event import ClientEvent, ServerEvent
 
 from tests.utils import TestClientManager, assert_wait_call
 
 EXAMPLE_MSG = {
-    "header": {"event": ExternalC2SEvent.CHAT},
+    "header": {"event": ClientEvent.CHAT},
     "payload": {"message": "Hi"},
 }
 
@@ -38,7 +39,7 @@ class ChatScenario(TestCase):
 
         message = Message(
             event=Event(
-                event_name=ExternalS2CEvent.CHAT,
+                event_name=ServerEvent.CHAT,
                 payload=ServerMessage.Chat(
                     id=CL_A,
                     message="Hi"

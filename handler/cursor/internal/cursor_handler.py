@@ -1,12 +1,13 @@
 """
 create(id)
 """
-from core.event import Event, InternalEvent
+from core.event import Event
 from core.broker import EventBroker
 
 from data.cursor import Cursor, CursorRankRange, RankRange
 from data.payload import IdPayload, IdDataPayload
 from data.board import is_overlap, PointRange, Point
+from data.event import InternalEvent
 from datetime import datetime, timedelta
 
 

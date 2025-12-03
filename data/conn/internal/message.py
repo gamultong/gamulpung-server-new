@@ -1,13 +1,17 @@
 from typing import Generic, TypeVar, Type
 
 from core.dataobj import DataObj
-from core.event import Event, ExternalC2SEvent, EventEnum
+from core.event import Event, EventEnum
 from data.payload import ClientMessage
+from data.event import ClientEvent
 
 from .exceptions import (
     InvalidFormat_Exception,
     InvalidEvent_Exception
 )
+
+from data.event import ClientEvent
+from json import loads
 
 EVENT_TYPE = TypeVar("EVENT_TYPE", bound=Event)
 
@@ -46,15 +50,15 @@ def json_to_format(json: dict):
 
 def get_payload_by_event_name(event_name: EventEnum) -> Type[ClientMessage.Base]:  # type:ignore
     match event_name:
-        case ExternalC2SEvent.CHAT:
+        case ClientEvent.CHAT:
             return ClientMessage.Chat
-        case ExternalC2SEvent.SET_WINDOW:
+        case ClientEvent.SET_WINDOW:
             return ClientMessage.SetWindow
-        case ExternalC2SEvent.MOVE:
+        case ClientEvent.MOVE:
             return ClientMessage.Move
-        case ExternalC2SEvent.OPEN_TILES:
+        case ClientEvent.OPEN_TILES:
             return ClientMessage.OpenTiles
-        case ExternalC2SEvent.SET_FLAG:
+        case ClientEvent.SET_FLAG:
             return ClientMessage.SetFlag
     raise
 

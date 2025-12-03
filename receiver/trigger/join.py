@@ -1,5 +1,6 @@
-from core.event import Event, TriggerEvent, ExternalS2CEvent
+from core.event import Event
 from data.payload import IdPayload, ServerMessage, ClientMessage
+from data.event import TriggerEvent, ServerEvent
 
 from core.broker import EventBroker
 from handler.connection import ConnectionHandler
@@ -17,7 +18,7 @@ async def join_receiver(event: JOIN):
 
     # 이름 중복으로 하면 pylance가 지랄함
     _event = Event(
-        event_name=ExternalS2CEvent.MY_CURSOR,
+        event_name=ServerEvent.MY_CURSOR,
         payload=payload
     )
 

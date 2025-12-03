@@ -1,8 +1,9 @@
-from core.event import Event, InternalEvent, ExternalS2CEvent
+from core.event import Event
 from core.broker import EventBroker
 
 from data.payload import IdDataPayload, ServerMessage, IdPayload
 from data.board import PointRange
+from data.event import InternalEvent, ServerEvent
 
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler
@@ -23,7 +24,7 @@ async def notify_tiles_receiver(event: NOTIFY_TILES_EVENT):
     )
 
     _event = Event(
-        event_name=ExternalS2CEvent.TILES_STATE,
+        event_name=ServerEvent.TILES_STATE,
         payload=ServerMessage.TilesState(
             [elem]
         )

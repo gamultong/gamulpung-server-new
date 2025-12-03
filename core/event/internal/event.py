@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from core.dataobj import DataObj
-from typing import Generic, TypeVar, ClassVar, Any
-from enum import StrEnum, auto
+from typing import Generic, TypeVar
+from enum import StrEnum
 
 
 class Payload(DataObj):
@@ -28,14 +28,18 @@ class ScopedBase:
     def __init_subclass__(cls, **kw):
         super().__init_subclass__(**kw)
 
-        parent = cls.__mro__[1]
-        parent_scope = getattr(parent, "__scope__", "")
-
         # "이 클래스 바디에 직접 적은 조각"만 사용
         scope_part = cls.__dict__.get("__scope_part__", "")
 
-        full_scope = f"{parent_scope}.{scope_part}" if parent_scope and scope_part else (scope_part or parent_scope)
-        cls.__scope__ = full_scope
+        parent_scope = ""
+        for b in cls.__mro__[1:]:
+            # b가 직접 __scope__를 가진(스코프 노드인) 클래스만 인정
+            if "__scope__" in getattr(b, "__dict__", {}):
+                parent_scope = b.__scope__
+                break
+
+        parts = [parent_scope, scope_part]
+        cls.__scope__ = ".".join(p for p in parts if p)
 
 
 class EventEnum(ScopedBase, StrEnum):
@@ -51,44 +55,3 @@ class EventEnum(ScopedBase, StrEnum):
 
     def get_scope(self) -> str:
         return self.__class__.__scope__
-
-
-class ExternalEvent(EventEnum):
-    __scope_part__ = "EXTERNAL"
-
-class ExternalC2SEvent(ExternalEvent):
-    __scope_part__ = "C2S"
-    CHAT = auto()
-    MOVE = auto()
-    OPEN_TILES = auto()
-    SET_FLAG = auto()
-    SET_WINDOW = auto()
-
-class ExternalS2CEvent(ExternalEvent):
-    __scope_part__ = "S2C"
-    CHAT = auto()
-    CURSORS_STATE = auto()
-    EXPLOSION = auto()
-    SCOREBOARD_STATE = auto()
-    TILES_STATE = auto()
-    MY_CURSOR = auto()
-    QUIT_CURSOR = auto()
-
-class InternalEvent(EventEnum):
-    __scope_part__ = "INTERNAL"
-    NOTIFY_CURSORS = auto()
-    NOTIFY_EXPLOSION = auto()
-    NOTIFY_SCOREBOARD = auto()
-    NOTIFY_TILES = auto()
-    SETTED_WINDOW = auto()
-
-class TriggerEvent(EventEnum):
-    __scope_part__ = "TRIGGER"
-    JOIN = auto()
-    QUIT = auto()
-
-
-if __name__ == "__main__":
-    print(ExternalS2CEvent.CHAT.get_scope())
-    print(ExternalS2CEvent.CHAT)
-    print(TriggerEvent.JOIN.get_scope())

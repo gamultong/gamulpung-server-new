@@ -1,6 +1,8 @@
 from data.board import PointRange, Tiles, Point, Tile, abs_to_sec, SectionFlag
 from data.payload import IdDataPayload, IdPayload
-from core.event import Event, InternalEvent
+from data.event import InternalEvent
+
+from core.event import Event
 from core.broker import EventBroker
 from handler.board.storage import _get_db, get_section_range, get_section, update_section
 

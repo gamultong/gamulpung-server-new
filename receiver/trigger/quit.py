@@ -1,5 +1,6 @@
-from core.event import Event, TriggerEvent, ExternalS2CEvent
+from core.event import Event
 from data.payload import IdPayload, ServerMessage, ClientMessage
+from data.event import TriggerEvent, ServerEvent
 
 from core.broker import EventBroker
 from handler.connection import ConnectionHandler
@@ -15,7 +16,7 @@ async def quit_receiver(event: QUIT):
     await CursorHandler.delete(id)
 
     _event = Event(
-        event_name=ExternalS2CEvent.QUIT_CURSOR,
+        event_name=ServerEvent.QUIT_CURSOR,
         payload=ServerMessage.QuitCursor(
             id=id
         )

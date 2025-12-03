@@ -10,9 +10,10 @@ from .conn import Conn
 
 from data.conn import Message
 from data.payload import IdPayload
+from data.event import TriggerEvent
 
 from typing import ClassVar
-from core.event import Event, TriggerEvent
+from core.event import Event
 from core.broker import EventBroker
 
 

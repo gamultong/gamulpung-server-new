@@ -1,10 +1,12 @@
 from handler.board import BoardHandler
 from config import BoardConfig
 from data.board import Point, Tile, Tiles, PointRange, Section
-from core.event import Event, ExternalS2CEvent, ExternalC2SEvent
+from core.event import Event
 from data.payload import ServerMessage
 from data.cursor import Cursor
 from data.conn import Message
+from data.event import ClientEvent, ServerEvent
+
 from .map.case2 import CLOSED_TILE, OPENED_TILE
 from .map.open_tiles import case_open_tiles_map
 from server import app
@@ -14,11 +16,11 @@ from tests.utils import assert_wait_call, TestClientManager, TestCase, set_board
 from data.cursor import Cursor
 
 SET_WINDOW_MSG = {
-    "header": {"event": ExternalC2SEvent.SET_WINDOW},
+    "header": {"event": ClientEvent.SET_WINDOW},
     "payload": {"width": 1, "height": 1},
 }
 OPEN_TILES_MSG = {
-    "header": {"event": ExternalC2SEvent.OPEN_TILES},
+    "header": {"event": ClientEvent.OPEN_TILES},
     "payload": {
         "position": {
             "x": 1,
@@ -87,7 +89,7 @@ class OpenTilesScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name=ExternalS2CEvent.TILES_STATE,
+                event_name=ServerEvent.TILES_STATE,
                 payload=ServerMessage.TilesState(
                     [elem]
                 )
@@ -101,7 +103,7 @@ class OpenTilesScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name=ExternalS2CEvent.CURSORS_STATE,
+                event_name=ServerEvent.CURSORS_STATE,
                 payload=ServerMessage.CursorsState(
                     [origin_create(id=CL_A, width=1, height=1, position=Point(0, 1), score=800)]
                 )
@@ -115,7 +117,7 @@ class OpenTilesScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name=ExternalS2CEvent.SCOREBOARD_STATE,
+                event_name=ServerEvent.SCOREBOARD_STATE,
                 payload=ServerMessage.ScoreBoardState(
                     scoreboard={
                         1: 800

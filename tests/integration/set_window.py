@@ -1,9 +1,11 @@
 from config import BoardConfig
 from data.board import Point, Tiles, PointRange
-from core.event import Event, ExternalC2SEvent, ExternalS2CEvent
+from core.event import Event
 from data.payload import ServerMessage
 from data.cursor import Cursor
 from data.conn import Message
+from data.event import ClientEvent, ServerEvent
+
 from .map.case1 import CLOSED_TILE, OPENED_TILE
 from .map.helpers import setup_case_1_map
 from server import app
@@ -12,7 +14,7 @@ from unittest.mock import AsyncMock, call, patch
 from tests.utils import assert_wait_call, TestClientManager, TestCase, set_board
 
 EXAMPLE_MSG = {
-    "header": {"event": ExternalC2SEvent.SET_WINDOW},
+    "header": {"event": ClientEvent.SET_WINDOW},
     "payload": {"width": 2, "height": 2},
 }
 CL_A = "Example_A"
@@ -67,7 +69,7 @@ class SetWindowScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name=ExternalS2CEvent.CURSORS_STATE,
+                event_name=ServerEvent.CURSORS_STATE,
                 payload=ServerMessage.CursorsState(
                     [Cursor.create(id=CL_A, width=2, height=2)]
                 )
@@ -86,7 +88,7 @@ class SetWindowScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name=ExternalS2CEvent.TILES_STATE,
+                event_name=ServerEvent.TILES_STATE,
                 payload=ServerMessage.TilesState(
                     [elem]
                 )

@@ -1,8 +1,9 @@
-from core.event import Event, InternalEvent, ExternalS2CEvent
+from core.event import Event
 from core.broker import EventBroker
 
 from data.payload import IdDataPayload, ServerMessage, IdPayload
 from data.cursor import Cursor
+from data.event import InternalEvent, ServerEvent
 
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler
@@ -18,7 +19,7 @@ async def notify_cursors_receiver(event: NOTIFY_CURSORS_EVENT):
     cursors = await CursorHandler.get_cursors_by_cursor_window(cursor)
 
     _event = Event(
-        event_name=ExternalS2CEvent.CURSORS_STATE,
+        event_name=ServerEvent.CURSORS_STATE,
         payload=ServerMessage.CursorsState(
             cursors
         )
