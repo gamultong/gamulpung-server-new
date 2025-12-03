@@ -5,6 +5,8 @@ from core.event import Event
 from data.payload import ServerMessage
 from data.cursor import Cursor
 from data.conn import Message
+from data.event import ClientEvent, ServerEvent
+
 from .map.case2 import CLOSED_TILE, OPENED_TILE
 from .map.helpers import setup_case_2_map
 from server import app
@@ -15,11 +17,11 @@ from tests.utils import TestCase
 from datetime import timedelta
 
 SET_WINDOW_MSG = {
-    "header": {"event": "SET-WINDOW"},
+    "header": {"event": ClientEvent.SET_WINDOW},
     "payload": {"width": 1, "height": 1},
 }
 OPEN_TILES_MSG = {
-    "header": {"event": "OPEN-TILES"},
+    "header": {"event": ClientEvent.OPEN_TILES},
     "payload": {
         "position": {
             "x": -1,
@@ -62,7 +64,7 @@ class ExplosionScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name="EXPLOSION",
+                event_name=ServerEvent.EXPLOSION,
                 payload=ServerMessage.Explosion(
                     Point(-1, 0)
                 )
@@ -75,7 +77,7 @@ class ExplosionScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name="CURSORS-STATE",
+                event_name=ServerEvent.CURSORS_STATE,
                 payload=ServerMessage.CursorsState(
                     [Cursor.create(CL_A, width=1, height=1, active_at=self.now+timedelta(seconds=30))]
                 )
@@ -89,7 +91,7 @@ class ExplosionScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name="SCOREBOARD-STATE",
+                event_name=ServerEvent.SCOREBOARD_STATE,
                 payload=ServerMessage.ScoreBoardState(
                     scoreboard={
                         1: 0

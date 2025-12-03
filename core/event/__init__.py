@@ -1,1 +1,1 @@
-from .internal.event import Event, Payload
+from .internal.event import Event, Payload, EventEnum
