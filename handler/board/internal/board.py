@@ -2,10 +2,11 @@ from data.board import PointRange, Tiles, Point, Tile, abs_to_sec, SectionFlag
 from data.payload import IdDataPayload, IdPayload
 from core.event import Event
 from core.broker import EventBroker
-from handler.board.storage import _get_db, get_section_range, get_section, update_section
+from handler.board.storage import _get_db, get_list_by_section_range, get_section, update_section
 
 from config import BoardConfig
-from .create_section import upgrade_interaction_sections, make_closed_section, upgrade_numbering_sections
+from .section_handling.upgrade_section import upgrade_interaction_section, upgrade_numbering_section
+from .section_handling.make_section import make_closed_section
 
 
 class BoardHandler:
@@ -25,7 +26,7 @@ class BoardHandler:
         )
 
         async with _get_db() as db:
-            sections = await get_section_range(db, sec_pr)
+            sections = await get_list_by_section_range(db, sec_pr)
 
         section_dict = {
             section.point: section
@@ -70,7 +71,7 @@ class BoardHandler:
 
             # 섹션이 INTERACTION 상태여야만 상호작용 가능
             if section.flag == SectionFlag.NUMBERING:
-                await upgrade_interaction_sections(db, sec_p)
+                await upgrade_interaction_section(db, sec_p)
 
             old_tile = section.at_tile_by_abs_point(point)
             new_tile = old_tile.changed(is_flag=not old_tile.is_flag)
@@ -98,7 +99,7 @@ class BoardHandler:
 
             # 섹션이 INTERACTION 상태여야만 상호작용 가능
             if section.flag == SectionFlag.NUMBERING:
-                await upgrade_interaction_sections(db, sec_p)
+                await upgrade_interaction_section(db, sec_p)
 
             old_tile = section.at_tile_by_abs_point(point)
 
@@ -149,6 +150,6 @@ class BoardHandler:
             assert section
 
             if section.flag == SectionFlag.CLOSED:
-                await upgrade_numbering_sections(db, sec_point)
+                await upgrade_numbering_section(db, sec_point)
 
         return section

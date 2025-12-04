@@ -8,7 +8,7 @@ from typing import Callable, Awaitable
 def set_board(init_func):
     def func_wapper(func: Callable):
 
-        @patch("server.initialize_start_map", new_callable=AsyncMock, side_effect=init_func)
+        @patch("server.initialize_board", new_callable=AsyncMock, side_effect=init_func)
         def wrapper(self: UseTable_TestCase, *args, **kwargs):
             return func(self, *args[1:], **kwargs)
         return wrapper

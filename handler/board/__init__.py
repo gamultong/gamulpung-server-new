@@ -1,2 +1,2 @@
 from .internal.board import BoardHandler
-from .internal.create_section import initialize_start_map
+from .internal.section_handling.init_board import initialize_board

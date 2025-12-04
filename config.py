@@ -10,5 +10,9 @@ class BoardConfig:
     DB_PATH = Env[str]()
 
 
+class CursorConfig:
+    REVIVE_SECONDS = Env[int](func=int)
+
+
 class SentryConfig:
     SENTRY_DSN = Env[str]()
