@@ -21,13 +21,27 @@ async def open_tiles_receiver(event: OPEN_TILES_EVENT):
     point = data.position
 
     cursor = await CursorHandler.get_by_id(id)
+    if not cursor.is_alive:
+        logger.warning(f"커서가 이미 사망함 | cursor:{cursor}")
+        return
     if not cursor.in_interaction_range(point):
+        logger.warning(f"상호작용 범위 밖 타일 열람 시도 | cursor:{cursor}, point:{point}")
+        return
+
+    tile = await BoardHandler.fetch_tile(point)
+    if tile.is_flag:
+        logger.warning(f"깃발이 설치된 타일 열람 시도 | cursor:{cursor}, tile:{tile}")
+        return
+    if tile.is_open:
+        logger.warning(f"열린 타일 열람 시도 | cursor:{cursor}, tile:{tile}")
         return
 
     chaining_points = await chaining(point)
     for p in chaining_points:
         await BoardHandler.open_tiles(p)
         await CursorHandler.increase_score(cursor, 100)
+    # await BoardHandler.open_tiles(point)
+    # await CursorHandler.increase_score(cursor, 100)
 
 
 async def chaining(point: Point):
@@ -38,7 +52,12 @@ async def chaining(point: Point):
     queue = deque([point])
     is_mine = False
 
+    c = 10
+
     while len(queue) > 0:
+        if len(result) > c:
+            logger.warning(f"chainning 결과가 {c}개가 넘어감")
+            c += 10
         p = queue.pop()
 
         sec_p = abs_to_sec(p)

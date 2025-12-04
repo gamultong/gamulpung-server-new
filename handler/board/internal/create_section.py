@@ -1,5 +1,5 @@
 from data.board import PointRange, Tiles, Point, Tile, get_overlap, Section, SectionFlag
-from handler.board.storage import _get_db, get_section_range, create_section, update_section_flag, DB
+from handler.board.storage import _get_db, get_section_range, create_section, update_section_flag, DB, update_section
 
 from config import BoardConfig
 from random import randint
@@ -71,43 +71,43 @@ def make_section(point: Point):
     return Section(point, tiles)
 
 
-def number_section(section: Section):
-    """
-    섹션의 각 타일에 대해 인접한 지뢰의 개수를 계산합니다.
-    """
-    length = BoardConfig.LENGTH
+# def number_section(section: Section):
+#     """
+#     섹션의 각 타일에 대해 인접한 지뢰의 개수를 계산합니다.
+#     """
+#     length = BoardConfig.LENGTH
 
-    # 각 타일에 대해 순회
-    for y in range(length):
-        for x in range(length):
-            # 현재 타일의 좌표
-            tile_point = Point(x, y)
-            tile = section.tiles.at_tile(tile_point)
+#     # 각 타일에 대해 순회
+#     for y in range(length):
+#         for x in range(length):
+#             # 현재 타일의 좌표
+#             tile_point = Point(x, y)
+#             tile = section.tiles.at_tile(tile_point)
 
-            # 지뢰 타일은 숫자를 계산하지 않음
-            if tile.is_mine:
-                continue
+#             # 지뢰 타일은 숫자를 계산하지 않음
+#             if tile.is_mine:
+#                 continue
 
-            # 인접한 8개 위치의 지뢰 개수 계산
-            mine_count = 0
-            for offset in [Point(-1, -1), Point(-1, 0), Point(-1, 1),
-                           Point(0, -1),              Point(0, 1),
-                           Point(1, -1),  Point(1, 0), Point(1, 1)]:
-                # 인접 위치
-                neighbor_point = Point(tile_point.x + offset.x, tile_point.y + offset.y)
+#             # 인접한 8개 위치의 지뢰 개수 계산
+#             mine_count = 0
+#             for offset in [Point(-1, -1), Point(-1, 0), Point(-1, 1),
+#                            Point(0, -1),              Point(0, 1),
+#                            Point(1, -1),  Point(1, 0), Point(1, 1)]:
+#                 # 인접 위치
+#                 neighbor_point = Point(tile_point.x + offset.x, tile_point.y + offset.y)
 
-                # 섹션 범위 내인지 확인
-                if 0 <= neighbor_point.x < length and 0 <= neighbor_point.y < length:
-                    neighbor = section.tiles.at_tile(neighbor_point)
-                    if neighbor.is_mine:
-                        mine_count += 1
+#                 # 섹션 범위 내인지 확인
+#                 if 0 <= neighbor_point.x < length and 0 <= neighbor_point.y < length:
+#                     neighbor = section.tiles.at_tile(neighbor_point)
+#                     if neighbor.is_mine:
+#                         mine_count += 1
 
-            # 계산된 숫자로 타일 업데이트
-            new_tile = tile.changed(number=mine_count)
-            section.tiles.update_at(tile_point, new_tile)
+#             # 계산된 숫자로 타일 업데이트
+#             new_tile = tile.changed(number=mine_count)
+#             section.tiles.update_at(tile_point, new_tile)
 
-    # 섹션 상태를 NUMBERING으로 설정
-    section.flag = SectionFlag.NUMBERING
+#     # 섹션 상태를 NUMBERING으로 설정
+#     section.flag = SectionFlag.NUMBERING
 
 
 def _get_surrounding_section_range(sec_point: Point) -> PointRange:
@@ -124,24 +124,28 @@ async def upgrade_numbering_sections(db: DB, sec_point: Point):
     surrounding_range = _get_surrounding_section_range(sec_point)
     surrounding_sections = await get_section_range(db, surrounding_range)
     surrounding_dict = {sec.point: sec for sec in surrounding_sections}
-
     center = surrounding_dict[sec_point]
     assert center.flag == SectionFlag.CLOSED
-    center.flag = SectionFlag.NUMBERING
-
-    number_section(center)
-    await update_section_flag(db, center)
 
     # 주위 1칙의 8개 섹션 좌표
     for y in range(surrounding_range.bottom, surrounding_range.top + 1):
         for x in range(surrounding_range.left, surrounding_range.right + 1):
             neighbor_point = Point(x, y)
 
+            if neighbor_point == sec_point:
+                continue
+
             if neighbor_point in surrounding_dict:
                 continue
 
             section = make_section(neighbor_point)
+            surrounding_dict[neighbor_point] = section
             await create_section(db, section)
+
+    numbering(sec_point, surrounding_dict)
+
+    await update_section(db, center)
+    await update_section_flag(db, center)
 
 
 async def upgrade_interaction_sections(db: DB, sec_point: Point):
@@ -233,6 +237,7 @@ def numbering(center: Point, sections: dict[Point, Section]):
     tiles = merge_sections(center, sections)
     tiles = numbering_tiles(tiles)
     sections[center].tiles = tiles
+    sections[center].flag = SectionFlag.NUMBERING
 
 
 def set_start_point(section: Section):
@@ -284,9 +289,6 @@ async def initialize_start_map(db: DB):
 
     # Numbering 계산
     numbering(center_p, sections)
-
-    # 상태 설정 및 저장
-    center_sec.flag = SectionFlag.NUMBERING
 
     for _, section in sections.items():
         await create_section(db, section)
