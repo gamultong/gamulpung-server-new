@@ -6,6 +6,7 @@ from core.broker import EventBroker
 
 from data.payload import IdDataPayload, ClientMessage
 from data.board import Point, Section, abs_to_sec, PointRange
+from data.event import ServerEvent, ClientEvent
 
 from handler.board import BoardHandler
 from handler.cursor import CursorHandler
@@ -13,7 +14,7 @@ from handler.cursor import CursorHandler
 OPEN_TILES_EVENT = Event[IdDataPayload[str, ClientMessage.OpenTiles]]
 
 
-@EventBroker.add_receiver("OPEN-TILES")
+@EventBroker.add_receiver(ClientEvent.OPEN_TILES)
 async def open_tiles_receiver(event: OPEN_TILES_EVENT):
     id = event.payload.id
     data = event.payload.data

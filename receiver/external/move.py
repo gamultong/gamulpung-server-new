@@ -3,6 +3,7 @@ from core.broker import EventBroker
 
 from data.payload import IdDataPayload, ClientMessage, IdPayload
 from data.cursor import Cursor
+from data.event import ServerEvent, ClientEvent
 
 from handler.cursor import CursorHandler
 from handler.board import BoardHandler
@@ -11,7 +12,7 @@ from loguru import logger
 MOVE_EVENT = Event[IdDataPayload[str, ClientMessage.Move]]
 
 
-@EventBroker.add_receiver("MOVE")
+@EventBroker.add_receiver(ClientEvent.MOVE)
 async def move_receiver(event: MOVE_EVENT):
     id = event.payload.id
     data = event.payload.data

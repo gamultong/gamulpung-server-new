@@ -3,6 +3,7 @@ from core.broker import EventBroker
 
 from data.payload import IdDataPayload, ServerMessage, IdPayload
 from data.cursor import Cursor
+from data.event import InternalEvent, ServerEvent
 
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler
@@ -11,7 +12,7 @@ from handler.board import BoardHandler
 SET_WINDOW_EVENT = Event[IdDataPayload[str, Cursor] | IdPayload[str]]
 
 
-@EventBroker.add_receiver("SETTED-WINDOW")
+@EventBroker.add_receiver(InternalEvent.SETTED_WINDOW)
 async def set_window_receiver(event: SET_WINDOW_EVENT):
     id = event.payload.id
 
@@ -26,7 +27,7 @@ async def set_window_receiver(event: SET_WINDOW_EVENT):
     )
 
     _event = Event(
-        event_name="TILES-STATE",
+        event_name=ServerEvent.TILES_STATE,
         payload=ServerMessage.TilesState(
             [elem]
         )

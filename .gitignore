@@ -12,3 +12,14 @@ log.log
 
 # secrets directory (act용 로컬 테스트 secrets)
 secrets/
+
+# uv 관련
+.venv/
+__pypackages__/
+.uv/
+
+# Python 빌드 산출물
+*.egg-info/
+dist/
+build/
+*.egg

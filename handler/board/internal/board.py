@@ -1,5 +1,7 @@
 from data.board import PointRange, Tiles, Point, Tile, abs_to_sec, SectionFlag
 from data.payload import IdDataPayload, IdPayload
+from data.event import InternalEvent
+
 from core.event import Event
 from core.broker import EventBroker
 from handler.board.storage import _get_db, get_list_by_section_range, get_section, update_section
@@ -80,7 +82,7 @@ class BoardHandler:
             await update_section(db, section)
 
         event = Event(
-            event_name="NOTIFY-TILES",
+            event_name=InternalEvent.NOTIFY_TILES,
             payload=IdPayload(
                 PointRange(point, point)
             )
@@ -113,7 +115,7 @@ class BoardHandler:
             await update_section(db, section)
 
         event = Event(
-            event_name="NOTIFY-TILES",
+            event_name=InternalEvent.NOTIFY_TILES,
             payload=IdPayload(
                 PointRange(point, point),
             )
@@ -123,7 +125,7 @@ class BoardHandler:
 
         if new_tile.is_mine:
             event = Event(
-                event_name="NOTIFY-EXPLOSION",
+                event_name=InternalEvent.NOTIFY_EXPLOSION,
                 payload=IdDataPayload(
                     point,
                     data=old_tile
