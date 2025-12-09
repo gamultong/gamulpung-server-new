@@ -58,4 +58,15 @@ class Conn():
             return
 
         # comment : https://github.com/gamultong/gamulpung-server-new/pull/1#discussion_r2492845020
-        await self.conn.send_json(row_json)
+        try:
+            await self.conn.send_json(row_json)
+        except RuntimeError as e:
+            # uvicorn이 던지는 그 에러인 경우만 잡아서 로그로 남기고 무시
+            if "websocket.close" in str(e) or "response already completed" in str(e):
+                logger.warning(
+                    "Connection이 끊긴 뒤 send하려함(예외로 감지) : %s; err=%s",
+                    self, e,
+                )
+                return
+            # 다른 RuntimeError면 그대로 올림
+            raise

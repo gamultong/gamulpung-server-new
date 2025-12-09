@@ -10,6 +10,8 @@ from data.board import is_overlap, PointRange, Point
 from data.event import InternalEvent
 from datetime import datetime, timedelta
 
+from config import CursorConfig
+
 
 class CursorHandler:
     cursor_dict: dict[str, Cursor] = {}
@@ -107,7 +109,7 @@ class CursorHandler:
 
         new_cur = old_cur.copy()
         new_cur.score = 0
-        new_cur.active_at = datetime.now() + timedelta(seconds=30)
+        new_cur.active_at = datetime.now() + timedelta(seconds=CursorConfig.REVIVE_SECONDS)
 
         rank_range = RankRange(1, 10)
         old_cur_rank_range = await cls.get_cursor_by_rank_range(rank_range)

@@ -28,6 +28,10 @@ class PointRange(DataObj):
     bottom_right: Point
 
     @property
+    def extent(self):
+        return self.width * self.height
+
+    @property
     def top(self):
         return self.top_left.y
 

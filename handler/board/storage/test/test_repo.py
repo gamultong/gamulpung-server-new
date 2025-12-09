@@ -9,7 +9,7 @@ from handler.board.storage import (
     get_section,
     create_section,
     update_section,
-    get_section_range,
+    get_list_by_section_range,
     update_section_flag,
 
 )
@@ -132,7 +132,7 @@ class SectionRepo_TestCase(Repo_TestCase):
         await create_section(self.db, example_section_3)
         await create_section(self.db, example_section_4)
 
-        tiles_d = await get_section_range(self.db, PointRange(Point(1, 1), Point(2, 0)))
+        tiles_d = await get_list_by_section_range(self.db, PointRange(Point(1, 1), Point(2, 0)))
         self.assertCountEqual(
             tiles_d,
             [
