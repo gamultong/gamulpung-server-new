@@ -1,21 +1,24 @@
 from typing import Generic, TypeVar, Type
 
 from core.dataobj import DataObj
-from core.event import Event
-
+from core.event import Event, EventEnum
 from data.payload import ClientMessage
+from data.event import ClientEvent
 
 from .exceptions import (
     InvalidFormat_Exception,
     InvalidEvent_Exception
 )
 
+from data.event import ClientEvent
+from json import loads
+
 EVENT_TYPE = TypeVar("EVENT_TYPE", bound=Event)
 
 
 class MessageFormat(DataObj):
     class Header(DataObj):
-        event: str
+        event: EventEnum
 
     header: Header
     payload: dict
@@ -45,20 +48,19 @@ def json_to_format(json: dict):
     )
 
 
-def get_payload_by_event_name(event_name: str) -> Type[ClientMessage.Base]:  # type:ignore
+def get_payload_by_event_name(event_name: EventEnum) -> Type[ClientMessage.Base]:  # type:ignore
     match event_name:
-        case "CHAT":
+        case ClientEvent.CHAT:
             return ClientMessage.Chat
-        case "SET-WINDOW":
+        case ClientEvent.SET_WINDOW:
             return ClientMessage.SetWindow
-        case "MOVE":
+        case ClientEvent.MOVE:
             return ClientMessage.Move
-        case "OPEN-TILES":
+        case ClientEvent.OPEN_TILES:
             return ClientMessage.OpenTiles
-        case "SET-FLAG":
+        case ClientEvent.SET_FLAG:
             return ClientMessage.SetFlag
-
-    raise InvalidEvent_Exception(event_name)
+    raise
 
 
 class Message(Generic[EVENT_TYPE], DataObj):

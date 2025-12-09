@@ -1,5 +1,6 @@
 from core.event import Event
 from data.payload import IdDataPayload, ClientMessage
+from data.event import ServerEvent, ClientEvent
 
 from core.broker import EventBroker
 from handler.board import BoardHandler
@@ -8,7 +9,7 @@ from handler.cursor import CursorHandler
 SET_FLAG_EVENT = Event[IdDataPayload[str, ClientMessage.SetFlag]]
 
 
-@EventBroker.add_receiver("SET-FLAG")
+@EventBroker.add_receiver(ClientEvent.SET_FLAG)
 async def set_flag_receiver(event: SET_FLAG_EVENT):
     id = event.payload.id
     data = event.payload.data

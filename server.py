@@ -9,12 +9,14 @@ from handler.board.storage import _get_db, set_table
 import sentry_sdk
 from config import SentryConfig
 
-sentry_sdk.init(
-    dsn=SentryConfig.SENTRY_DSN,
-    # Add data like request headers and IP for users,
-    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
-    send_default_pii=True,
-)
+# SENTRY_DSN이 있을 때만 Sentry 초기화
+if hasattr(SentryConfig, 'SENTRY_DSN') and SentryConfig.SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SentryConfig.SENTRY_DSN,
+        # Add data like request headers and IP for users,
+        # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+        send_default_pii=True,
+    )
 
 
 @asynccontextmanager

@@ -1,6 +1,8 @@
 from core.event import Event
 from data.payload import ServerMessage
 from data.conn import Message
+from data.event import ServerEvent
+
 from unittest import TestCase
 from server import app
 from typing import cast
@@ -24,7 +26,7 @@ class JoinScenario(TestCase):
 
         message = Message(
             event=Event(
-                event_name="MY-CURSOR",
+                event_name=ServerEvent.MY_CURSOR,
                 payload=ServerMessage.MyCursor(
                     id=CL_A,
                 )
