@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, Response, WebSocketDisconnect
 from websockets.exceptions import ConnectionClosed
 from handler.connection import ConnectionHandler, Conn
-from handler.board import initialize_start_map
+from handler.board import initialize_board
 from handler.board.storage import _get_db, set_table
 import sentry_sdk
 from config import SentryConfig
@@ -33,7 +33,7 @@ async def lifespan(app: FastAPI):
         except:
             pass
 
-        await initialize_start_map(db)
+        await initialize_board(db)
     logger.debug("init end")
 
     yield  # app 실행
