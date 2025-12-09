@@ -35,6 +35,9 @@ async def open_tiles_receiver(event: OPEN_TILES_EVENT):
     if tile.is_open:
         logger.warning(f"열린 타일 열람 시도 | cursor:{cursor}, tile:{tile}")
         return
+    if tile.is_mine:
+        await BoardHandler.open_tiles(point)
+        return
 
     chaining_points = await chaining(point)
     for p in chaining_points:
@@ -67,7 +70,7 @@ async def chaining(point: Point):
 
         tile = sections[sec_p].at_tile_by_abs_point(p)
         if tile.is_mine:  # 첫 번째만 가능
-            is_mine = True
+            logger.warning("number를 거치지 않은 mine 접근이 불가능해야함")
             continue
         if tile.is_open:
             is_open.add(p)
@@ -81,9 +84,6 @@ async def chaining(point: Point):
                 continue
             result.add(ard_p)
             queue.append(ard_p)
-
-    if is_mine:
-        assert len(result) == 1
 
     result -= is_open
 
