@@ -1,19 +1,22 @@
-Section 생성 전략 및 numbering 방식을 정의합니다.
+# Section 생성 및 numbering
 
-생성 전략의 채택 이유는 [ADR-002](/docs/ADR/%5BADR-002%5D%20Section%20생성%20전략%20채택.md)를 참조하세요.
+## 목적
+완충지대 전략을 통해 Section을 단계적으로 생성하고 numbering한다. (채택 배경: [ADR-002: Section 생성 전략 채택](/docs/ADR/[ADR-002]%20Section%20생성%20전략%20채택.md))
 
-## section 생성 방법
-1. `numbering section`에 상호작용한다.
-2. `numbering section`을 `interaction section`으로 격상하여 상호작용에 응답한다.
-3. `numbering section` 주변 1칸의 `closed section`을 `numbering section`으로 격상한다.
+## 규칙
+- Section은 3단계 상태를 가진다: closed -> numbering -> interaction
+- numbering section 상호작용 시 주변 1칸을 numbering section으로 격상한다.
 
-### `closed section` -> `numbering section`
-1. 주변 1칸의 `section`이 없다면 그 자리에 `closed section`을 생성한다.
-2. 자신을 `numbering`한다.
+### 생성 플로우
+1. numbering section에 상호작용
+2. 해당 Section을 interaction section으로 격상
+3. 주변 1칸 closed section을 numbering section으로 격상
 
-## 기타
-`Section`은 주변 `Section`의 상태 flag를 가진다.
+![Section 생성 플로우](/docs/RFC/img/5-1.png)
 
-## 참고
-![alt text](img/5-1.png)
-[GitHub Issue #13](https://github.com/gamultong/gamulpung-server-new/issues/13)
+### closed -> numbering 격상
+1. 주변 1칸에 section이 없으면 closed section 생성
+2. numbering 수행
+
+## 적용 범위
+Section 생성 및 관리에 적용된다. (관련: [GitHub Issue #13](https://github.com/gamultong/gamulpung-server-new/issues/13))

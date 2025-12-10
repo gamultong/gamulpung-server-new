@@ -1,0 +1,12 @@
+/* 📌 docs/ 폴더와 그 안의 것만 보이기 */
+
+/* 1) 루트(mod-root)가 아닌 폴더 중에서
+      경로가 docs로 시작하지 않는 폴더는 숨기기 */
+.nav-folder:not(.mod-root):has(> .nav-folder-title:not([data-path^="docs"])) {
+    display: none !important;
+}
+
+/* 2) 경로가 docs/ 로 시작하지 않는 파일은 모두 숨기기 */
+.nav-file:has(> .nav-file-title:not([data-path^="docs/"])) {
+    display: none !important;
+}

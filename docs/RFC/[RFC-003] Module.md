@@ -1,31 +1,32 @@
-프로젝트의 Module 구조 및 규칙을 정의합니다.
+# Module
 
-<!-- TODO: ADR-004 작성 권장 - Module 구조 채택 이유 (Python import 관리, IDE 지원, export 명시 등의 논의 사항) -->
+## 목적
+소스코드를 논리적 단위로 구조화하고 export를 명시적으로 관리한다.
 
-## 개요
-Module은 소스코드 집합입니다.
+## 규칙
+- Module은 정해진 디렉토리 구조를 따른다.
+- `internal/`에 소스코드를 작성한다.
+- `__init__.py`에서 명시적으로 export한다.
+- 중첩 구조는 `<sub-module>/`을 통해 구성한다.
 
-## 구조
+### 디렉토리 구조
 ```
 <module>/
     <sub-module>/
     internal/
-        <source1>
-        <source2>
     test/
-        <test1>
-        <test2>
     docs/
-        <docs1>
-        <docs2>
     __init__.py
     README.md
 ```
 
 ### 디렉토리 설명
-- `<submodule>/` : 하위 모듈입니다. 중첩 구조를 위해 고안되었습니다.
-- `internal/` : 소스코드를 작성하는 곳입니다.
-- `test/` : module에 대한 test를 작성하는 곳입니다.
-- `docs/` : module에 대한 세부정보를 작성하는 곳입니다.
-- `__init__.py` : module의 export를 명시하는 곳입니다.
-- `README.md` : module의 문서 및 소개입니다.
+- `<sub-module>/`: 하위 모듈 (중첩 구조)
+- `internal/`: 소스코드
+- `test/`: 테스트 코드
+- `docs/`: 모듈 세부 문서
+- `__init__.py`: export 명시
+- `README.md`: 모듈 소개
+
+## 적용 범위
+프로젝트 전체 코드 구조에 적용된다.
