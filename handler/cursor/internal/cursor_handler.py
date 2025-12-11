@@ -29,15 +29,6 @@ class CursorHandler:
 
         await EventBroker.publish(event=event)
 
-        event = Event(
-            event_name=InternalEvent.SETTED_WINDOW,
-            payload=IdPayload(
-                id=cursor.id
-            )
-        )
-
-        await EventBroker.publish(event=event)
-
     @classmethod
     async def delete(cls, id: str):
         if id in cls.cursor_dict:
