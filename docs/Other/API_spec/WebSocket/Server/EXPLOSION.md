@@ -5,7 +5,9 @@
 ## Payload
 ```json
 {
-    "width": int,
-    "height": int
+    "position": {
+        "x": int,
+        "y": int
+    }
 }
 ```
