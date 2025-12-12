@@ -24,11 +24,11 @@ act-cd-prod:
 
 
 test-all:
-	python -m tests.run
+	uv run python -m tests.run
 
 profile:
 	@if [ -z "$(pfn)" ]; then \
 		echo "❌ pfn 파라미터가 필요합니다." \
 		exit 1; \
 	fi
-	python -m tests.profile.${pfn}.profiling
+	uv run python -m tests.profile.${pfn}.profiling

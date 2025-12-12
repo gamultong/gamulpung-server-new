@@ -1,4 +1,5 @@
 from .external.chat import chat_receiver
+from .external.create_cursor import create_cursor_receiver
 from .external.set_window import set_window_receiver
 from .external.move import move_receiver
 from .external.open_tiles import open_tiles_receiver

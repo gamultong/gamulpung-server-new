@@ -13,6 +13,10 @@ from typing import cast
 from unittest.mock import AsyncMock, call, patch
 from tests.utils import assert_wait_call, TestClientManager, TestCase, set_board
 
+CREATE_CURSOR_MSG = {
+    "header": {"event": ClientEvent.CREATE_CURSOR},
+    "payload": {"width": 2, "height": 2},
+}
 EXAMPLE_MSG = {
     "header": {"event": ClientEvent.SET_WINDOW},
     "payload": {"width": 2, "height": 2},
@@ -63,6 +67,7 @@ class SetWindowScenario(TestCase.IntegrationTestCase):
     def test_normal(self, tcm: TestClientManager):
 
         cl_a = tcm.get_client(CL_A)
+        cl_a.ws.send_json(CREATE_CURSOR_MSG)
         cl_a.ws.send_json(EXAMPLE_MSG)
 
         conn_a_send_mock = cast(AsyncMock, cl_a.conn.send)

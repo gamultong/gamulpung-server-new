@@ -6,6 +6,11 @@ class Chat(ClientMessage):
     message: str
 
 
+class CreateCursor(ClientMessage):
+    width: int
+    height: int
+
+
 class SetWindow(ClientMessage):
     width: int
     height: int

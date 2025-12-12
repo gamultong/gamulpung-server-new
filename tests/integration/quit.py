@@ -14,6 +14,10 @@ from typing import cast
 CL_A = "Example_A"
 CL_B = "Example_B"
 
+CREATE_CURSOR_MSG = {
+    "header": {"event": ClientEvent.CREATE_CURSOR},
+    "payload": {"width": 1, "height": 1},
+}
 SET_WINDOW_MSG = {
     "header": {"event": ClientEvent.SET_WINDOW},
     "payload": {"width": 1, "height": 1},

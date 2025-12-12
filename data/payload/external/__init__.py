@@ -6,6 +6,7 @@ class ClientMessage:
 
     from .internal.client import (
         Chat,
+        CreateCursor,
         SetWindow,
         Move,
         OpenTiles,

@@ -15,6 +15,10 @@ from unittest.mock import AsyncMock, call, patch
 from tests.utils import assert_wait_call, TestClientManager, TestCase, set_board
 from data.cursor import Cursor
 
+CREATE_CURSOR_MSG = {
+    "header": {"event": ClientEvent.CREATE_CURSOR},
+    "payload": {"width": 1, "height": 1},
+}
 SET_WINDOW_MSG = {
     "header": {"event": ClientEvent.SET_WINDOW},
     "payload": {"width": 1, "height": 1},
@@ -52,7 +56,7 @@ jungdap = Tiles(
 origin_create = Cursor.create
 
 
-def create_cursor_effect(id: str, width: int = 0, height: int = 0):
+def create_cursor_effect(id: str, position: Point, width: int = 0, height: int = 0):
     return origin_create(id, width=width, height=height, position=Point(0, 1))
 
 
@@ -77,6 +81,7 @@ class OpenTilesScenario(TestCase.IntegrationTestCase):
     @clinetmanager
     def test_normal(self, a, tcm: TestClientManager):
         cl_a = tcm.get_client(CL_A)
+        cl_a.ws.send_json(CREATE_CURSOR_MSG)
         cl_a.ws.send_json(SET_WINDOW_MSG)
         cl_a.ws.send_json(OPEN_TILES_MSG)
 
