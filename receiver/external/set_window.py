@@ -1,8 +1,8 @@
 from core.event import Event
 from core.broker import EventBroker
 
-from data.payload import IdDataPayload, ClientMessage, IdPayload
-from data.event import ClientEvent, InternalEvent
+from data.payload import IdDataPayload, ClientMessage
+from data.event import ClientEvent
 from handler.cursor import CursorHandler
 from loguru import logger
 
@@ -21,16 +21,5 @@ async def set_window_receiver(event: SET_WINDOW_EVENT):
         logger.error(f"윈도우 설정 실패: id {id}에 해당하는 커서를 찾을 수 없음")
         return
 
-    # viewport 크기만 업데이트
-    cursor.width = data.width
-    cursor.height = data.height
-
-    await CursorHandler.update(cursor)
-
-    # viewport 업데이트 내부 이벤트 발행
-    await EventBroker.publish(
-        Event(
-            event_name=InternalEvent.SETTED_WINDOW,
-            payload=IdPayload(id=id)
-        )
-    )
+    # CursorHandler.set_window()가 viewport 업데이트 및 SETTED_WINDOW 이벤트 발행
+    await CursorHandler.set_window(cursor, data.width, data.height)

@@ -180,6 +180,24 @@ class CursorHandler:
             await EventBroker.publish(event=event)
 
     @classmethod
+    async def set_window(cls, cursor: Cursor, width: int, height: int):
+        old_cur = await cls.get_by_id(cursor.id)
+
+        new_cur = old_cur.copy()
+        new_cur.width = width
+        new_cur.height = height
+
+        await cls.update(new_cur)
+
+        event = Event(
+            event_name=InternalEvent.SETTED_WINDOW,
+            payload=IdPayload(
+                id=cursor.id
+            )
+        )
+        await EventBroker.publish(event=event)
+
+    @classmethod
     async def update(cls, cursor: Cursor):
         cls.cursor_dict[cursor.id] = cursor.copy()
 
