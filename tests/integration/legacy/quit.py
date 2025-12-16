@@ -3,7 +3,7 @@ from data.payload import IdPayload
 from unittest import TestCase
 from server import app
 from unittest.mock import AsyncMock, call, patch
-from tests.utils import assert_wait_call, TestClientManager, TestCase
+from tests.utils import assert_wait_call, TCM, TestCase
 from data.payload import ServerMessage
 from data.conn import Message
 from data.event import ClientEvent, ServerEvent
@@ -24,7 +24,7 @@ SET_WINDOW_MSG = {
 }
 
 clinetmanager = (
-    TestClientManager(app)
+    TCM(app)
     .append_client(CL_A)
     .append_client(CL_B)
 )
@@ -41,7 +41,7 @@ class QuitScenario(TestCase.IntegrationTestCase):
         super().tearDown()
 
     @clinetmanager
-    def test_normal(self, tcm: TestClientManager):
+    def test_normal(self, tcm: TCM):
         """
         현재 quit시 external 없음
         그래서 broker mock 이후 quit 호출 test

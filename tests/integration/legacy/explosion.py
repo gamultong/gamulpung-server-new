@@ -12,7 +12,7 @@ from .map.helpers import setup_case_2_map
 from server import app
 from typing import cast
 from unittest.mock import AsyncMock, call, patch
-from tests.utils import assert_wait_call, TestClientManager, set_board
+from tests.utils import assert_wait_call, TCM, set_board
 from tests.utils import TestCase
 from datetime import timedelta
 from config import CursorConfig
@@ -37,7 +37,7 @@ OPEN_TILES_MSG = {
 CL_A = "Example_A"
 
 clinetmanager = (
-    TestClientManager(app)
+    TCM(app)
     .append_client(CL_A)
 )
 
@@ -60,7 +60,7 @@ class ExplosionScenario(TestCase.IntegrationTestCase):
 
     @set_board(setup_case_2_map)
     @clinetmanager
-    def test_normal(self, tcm: TestClientManager):
+    def test_normal(self, tcm: TCM):
         cl_a = tcm.get_client(CL_A)
         cl_a.ws.send_json(CREATE_CURSOR_MSG)
         cl_a.ws.send_json(SET_WINDOW_MSG)

@@ -12,7 +12,7 @@ from .map.helpers import setup_case_2_map, setup_case_2_map_f
 from server import app
 from typing import cast
 from unittest.mock import AsyncMock, call, patch
-from tests.utils import assert_wait_call, TestClientManager, TestCase, set_board
+from tests.utils import assert_wait_call, TCM, TestCase, set_board
 
 CREATE_CURSOR_MSG = {
     "header": {"event": ClientEvent.CREATE_CURSOR},
@@ -34,7 +34,7 @@ OPEN_TILES_MSG = {
 CL_A = "Example_A"
 
 clinetmanager = (
-    TestClientManager(app)
+    TCM(app)
     .append_client(CL_A)
 )
 
@@ -74,7 +74,7 @@ class SetFlagScenario(TestCase.IntegrationTestCase):
 
     @set_board(setup_case_2_map)
     @clinetmanager
-    def test_set_flag(self, tcm: TestClientManager):
+    def test_set_flag(self, tcm: TCM):
 
         cl_a = tcm.get_client(CL_A)
         cl_a.ws.send_json(CREATE_CURSOR_MSG)
@@ -151,7 +151,7 @@ class UnsetFlagScenario(TestCase.IntegrationTestCase):
 
     @set_board(setup_case_2_map_f)
     @clinetmanager
-    def test_unset_flag(self, tcm: TestClientManager):
+    def test_unset_flag(self, tcm: TCM):
 
         cl_a = tcm.get_client(CL_A)
         cl_a.ws.send_json(CREATE_CURSOR_MSG)

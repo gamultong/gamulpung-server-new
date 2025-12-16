@@ -12,7 +12,7 @@ from .map.open_tiles import case_open_tiles_map
 from server import app
 from typing import cast
 from unittest.mock import AsyncMock, call, patch
-from tests.utils import assert_wait_call, TestClientManager, TestCase, set_board
+from tests.utils import assert_wait_call, TCM, TestCase, set_board
 from data.cursor import Cursor
 
 CREATE_CURSOR_MSG = {
@@ -35,7 +35,7 @@ OPEN_TILES_MSG = {
 CL_A = "Example_A"
 
 clinetmanager = (
-    TestClientManager(app)
+    TCM(app)
     .append_client(CL_A)
 )
 
@@ -79,7 +79,7 @@ class OpenTilesScenario(TestCase.IntegrationTestCase):
     @set_board(case_open_tiles_map)
     @patch("data.cursor.Cursor.create", side_effect=create_cursor_effect)
     @clinetmanager
-    def test_normal(self, a, tcm: TestClientManager):
+    def test_normal(self, a, tcm: TCM):
         cl_a = tcm.get_client(CL_A)
         cl_a.ws.send_json(CREATE_CURSOR_MSG)
         cl_a.ws.send_json(SET_WINDOW_MSG)

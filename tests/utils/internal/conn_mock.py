@@ -19,7 +19,10 @@ class Client:
 
 
 @dataclass
-class TestClientManager:
+class TCM:
+    """
+    Test Client Manager
+    """
     app: FastAPI
 
     def __post_init__(self):
@@ -81,8 +84,10 @@ class TestClientManager:
         origin_create = Conn.create
         names_iter = iter(self.client_name)
 
-        async def _side_effect(ws: WebSocket):
-            name = next(names_iter)
+        async def _side_effect(ws: WebSocket, name: str = None):
+            # name이 전달되면 사용, 아니면 iter에서 가져옴
+            if name is None:
+                name = next(names_iter)
             conn = await origin_create(ws, name)
             conn.send = AsyncMock()
             self.conn_dict[name] = conn  # type:ignore
@@ -114,8 +119,16 @@ class TestClientManager:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """pytest async fixture용 context manager 종료"""
-        # ExitStack 정리
+        # Handler state 정리 (테스트 간 격리 보장)
+        from handler.cursor import CursorHandler
+        from handler.connection import ConnectionHandler
+
+        # ExitStack 정리 (WebSocket 연결 종료 및 QUIT 이벤트 발행)
         self.exit_stack.__exit__(exc_type, exc_val, exc_tb)
+
+        # Handler state 즉시 정리 (이벤트 루프가 닫히기 전에)
+        CursorHandler.cursor_dict.clear()
+        ConnectionHandler.conn_dict.clear()
 
         # TestClient 정리
         self.test_client.__exit__(exc_type, exc_val, exc_tb)

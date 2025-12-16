@@ -7,19 +7,19 @@ from unittest import TestCase
 from server import app
 from typing import cast
 from unittest.mock import AsyncMock, call
-from tests.utils import assert_wait_call, TestClientManager
+from tests.utils import assert_wait_call, TCM
 
 CL_A = "Example_A"
 
 clinetmanager = (
-    TestClientManager(app)
+    TCM(app)
     .append_client(CL_A)
 )
 
 
 class JoinScenario(TestCase):
     @clinetmanager
-    def test_normal(self, tcm: TestClientManager):
+    def test_normal(self, tcm: TCM):
         cl_a = tcm.get_client(CL_A)
 
         conn_a_send_mock = cast(AsyncMock, cl_a.conn.send)

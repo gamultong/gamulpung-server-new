@@ -9,7 +9,7 @@ from data.payload import ServerMessage
 from data.conn import Message
 from data.event import ClientEvent, ServerEvent
 
-from tests.utils import TestClientManager, assert_wait_call
+from tests.utils import TCM, assert_wait_call
 
 EXAMPLE_MSG = {
     "header": {"event": ClientEvent.CHAT},
@@ -20,7 +20,7 @@ CL_A = "Example_A"
 CL_B = "Example_B"
 
 clinetmanager = (
-    TestClientManager(app)
+    TCM(app)
     .append_client(CL_A)
     .append_client(CL_B)
 )
@@ -28,7 +28,7 @@ clinetmanager = (
 
 class ChatScenario(TestCase):
     @clinetmanager
-    def test_normal(self, tcm: TestClientManager):
+    def test_normal(self, tcm: TCM):
         # TODO : Cursor window를 반영하지 않음
         cl_a = tcm.get_client(CL_A)
         cl_b = tcm.get_client(CL_B)

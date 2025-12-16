@@ -11,7 +11,7 @@ from .map.helpers import setup_case_1_map
 from server import app
 from typing import cast
 from unittest.mock import AsyncMock, call, patch
-from tests.utils import assert_wait_call, TestClientManager, TestCase, set_board
+from tests.utils import assert_wait_call, TCM, TestCase, set_board
 
 CREATE_CURSOR_MSG = {
     "header": {"event": ClientEvent.CREATE_CURSOR},
@@ -24,7 +24,7 @@ EXAMPLE_MSG = {
 CL_A = "Example_A"
 
 clinetmanager = (
-    TestClientManager(app)
+    TCM(app)
     .append_client(CL_A)
 )
 
@@ -64,7 +64,7 @@ class SetWindowScenario(TestCase.IntegrationTestCase):
 
     @set_board(setup_case_1_map)
     @clinetmanager
-    def test_normal(self, tcm: TestClientManager):
+    def test_normal(self, tcm: TCM):
 
         cl_a = tcm.get_client(CL_A)
         cl_a.ws.send_json(CREATE_CURSOR_MSG)

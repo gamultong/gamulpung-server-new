@@ -1,5 +1,5 @@
 from .internal.profile import profile
-from .internal.conn_mock import TestClientManager
+from .internal.conn_mock import TCM
 from .internal.wait_call import (
     assert_wait_call_if,
     assert_wait_message,
