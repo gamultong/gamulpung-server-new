@@ -6,7 +6,7 @@ from data.cursor import Cursor
 from data.conn import Message
 from data.event import ClientEvent, ServerEvent
 
-from .map.case1 import CLOSED_TILE, OPENED_TILE
+from .map.builder import build_tiles
 from .map.helpers import setup_case_1_map
 from server import app
 from typing import cast
@@ -40,16 +40,15 @@ COOOO
 COOOO
 COOOO
 """
-jungdap = Tiles(
-    bytearray([
-        CLOSED_TILE, CLOSED_TILE, CLOSED_TILE, CLOSED_TILE, CLOSED_TILE,
-        CLOSED_TILE, OPENED_TILE, OPENED_TILE, OPENED_TILE, OPENED_TILE,
-        CLOSED_TILE, OPENED_TILE, OPENED_TILE, OPENED_TILE, OPENED_TILE,
-        CLOSED_TILE, OPENED_TILE, OPENED_TILE, OPENED_TILE, OPENED_TILE,
-        CLOSED_TILE, OPENED_TILE, OPENED_TILE, OPENED_TILE, OPENED_TILE,
-    ]), 5, 5
-)
+map_str = """\
+#####
+#....
+#....
+#....
+#....
+"""
 
+jungdap = build_tiles(map_str)
 
 class MoveScenario(TestCase.IntegrationTestCase):
     def setUp(self) -> None:

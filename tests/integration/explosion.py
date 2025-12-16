@@ -7,7 +7,6 @@ from data.cursor import Cursor
 from data.conn import Message
 from data.event import ClientEvent, ServerEvent
 
-from .map.case2 import CLOSED_TILE, OPENED_TILE
 from .map.helpers import setup_case_2_map
 from server import app
 from typing import cast

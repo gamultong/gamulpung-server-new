@@ -7,7 +7,7 @@ from data.cursor import Cursor
 from data.conn import Message
 from data.event import ClientEvent, ServerEvent
 
-from .map.case2 import CLOSED_TILE, OPENED_TILE, FLAGED_TILE
+from .map.builder import build_tiles
 from .map.helpers import setup_case_2_map, setup_case_2_map_f
 from server import app
 from typing import cast
@@ -40,16 +40,16 @@ CCC
 FOO
 CCC
 """
-jungdap = Tiles(
-    bytearray([
-        FLAGED_TILE,
-    ]), 1, 1
-)
-jungdap_2 = Tiles(
-    bytearray([
-        CLOSED_TILE,
-    ]), 1, 1
-)
+map_str1 = """\
+F
+"""
+
+map_str2 = """\
+#
+"""
+
+jungdap = build_tiles(map_str1)
+jungdap_2 = build_tiles(map_str2)
 
 
 class SetFlagScenario(TestCase.IntegrationTestCase):
