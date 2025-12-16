@@ -69,6 +69,10 @@ dependencies = [
     "pyinstrument==5.1.1",
     "scalene==1.5.55",
     "snakeviz==2.2.2",
+    # Testing
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
 ]
 
 
