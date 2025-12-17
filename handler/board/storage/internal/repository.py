@@ -70,7 +70,7 @@ async def get_section(db: DB, point: Point):
     )
 
 
-async def get_section_range(db: DB, point_range: PointRange):
+async def get_iter_by_section_range(db: DB, point_range: PointRange):
     query = get_sql(SECTION_GET_BY_RANGE)
     pr = point_range
 
@@ -86,14 +86,30 @@ async def get_section_range(db: DB, point_range: PointRange):
             length
         )
 
-    return [
-        Section(
+    for row in seq:
+        section = Section(
             point=Point(row["x"], row["y"]),
             tiles=make_tiles(row["data"]),
             flag=row["flag"]
         )
-        for row in seq
+        yield section
+
+    return
+
+
+async def get_list_by_section_range(db: DB, point_range: PointRange):
+    sections = get_iter_by_section_range(db, point_range)
+    return [
+        section async for section in sections
     ]
+
+
+async def get_dict_by_section_range(db: DB, point_range: PointRange):
+    sections = get_iter_by_section_range(db, point_range)
+    return {
+        section.point: section
+        async for section in sections
+    }
 
 
 async def create_section(db: DB, section: Section):

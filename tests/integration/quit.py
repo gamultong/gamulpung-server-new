@@ -6,14 +6,20 @@ from unittest.mock import AsyncMock, call, patch
 from tests.utils import assert_wait_call, TestClientManager, TestCase
 from data.payload import ServerMessage
 from data.conn import Message
+from data.event import ClientEvent, ServerEvent
+
 from config import BoardConfig
 from typing import cast
 
 CL_A = "Example_A"
 CL_B = "Example_B"
 
+CREATE_CURSOR_MSG = {
+    "header": {"event": ClientEvent.CREATE_CURSOR},
+    "payload": {"width": 1, "height": 1},
+}
 SET_WINDOW_MSG = {
-    "header": {"event": "SET-WINDOW"},
+    "header": {"event": ClientEvent.SET_WINDOW},
     "payload": {"width": 1, "height": 1},
 }
 
@@ -49,7 +55,7 @@ class QuitScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name="QUIT-CURSOR",
+                event_name=ServerEvent.QUIT_CURSOR,
                 payload=ServerMessage.QuitCursor(
                     id=CL_A
                 )

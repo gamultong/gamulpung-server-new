@@ -4,6 +4,8 @@ from core.event import Event
 from data.payload import ServerMessage
 from data.cursor import Cursor
 from data.conn import Message
+from data.event import ClientEvent, ServerEvent
+
 from .map.case1 import CLOSED_TILE, OPENED_TILE
 from .map.helpers import setup_case_1_map
 from server import app
@@ -11,8 +13,12 @@ from typing import cast
 from unittest.mock import AsyncMock, call, patch
 from tests.utils import assert_wait_call, TestClientManager, TestCase, set_board
 
+CREATE_CURSOR_MSG = {
+    "header": {"event": ClientEvent.CREATE_CURSOR},
+    "payload": {"width": 2, "height": 2},
+}
 EXAMPLE_MSG = {
-    "header": {"event": "SET-WINDOW"},
+    "header": {"event": ClientEvent.SET_WINDOW},
     "payload": {"width": 2, "height": 2},
 }
 CL_A = "Example_A"
@@ -61,13 +67,14 @@ class SetWindowScenario(TestCase.IntegrationTestCase):
     def test_normal(self, tcm: TestClientManager):
 
         cl_a = tcm.get_client(CL_A)
+        cl_a.ws.send_json(CREATE_CURSOR_MSG)
         cl_a.ws.send_json(EXAMPLE_MSG)
 
         conn_a_send_mock = cast(AsyncMock, cl_a.conn.send)
 
         event = Message(
             Event(
-                event_name="CURSORS-STATE",
+                event_name=ServerEvent.CURSORS_STATE,
                 payload=ServerMessage.CursorsState(
                     [Cursor.create(id=CL_A, width=2, height=2)]
                 )
@@ -86,7 +93,7 @@ class SetWindowScenario(TestCase.IntegrationTestCase):
 
         event = Message(
             Event(
-                event_name="TILES-STATE",
+                event_name=ServerEvent.TILES_STATE,
                 payload=ServerMessage.TilesState(
                     [elem]
                 )

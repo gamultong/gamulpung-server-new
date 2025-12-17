@@ -10,6 +10,7 @@ from .conn import Conn
 
 from data.conn import Message
 from data.payload import IdPayload
+from data.event import TriggerEvent
 
 from typing import ClassVar
 from core.event import Event
@@ -25,19 +26,19 @@ class ConnectionHandler:
 
         payload = IdPayload(conn.id)
         event = Event(
-            event_name="JOIN",
+            event_name=TriggerEvent.JOIN,
             payload=payload
         )
 
         await EventBroker.publish(event)
 
     @classmethod
-    async def quit(cls, conn: Conn):
-        del ConnectionHandler.conn_dict[conn.id]
+    async def quit(cls, id: str):
+        del ConnectionHandler.conn_dict[id]
 
-        payload = IdPayload(conn.id)
+        payload = IdPayload(id)
         event = Event(
-            event_name="QUIT",
+            event_name=TriggerEvent.QUIT,
             payload=payload
         )
 
@@ -49,16 +50,17 @@ class ConnectionHandler:
 
     @classmethod
     async def multicast(cls, target_ids: list[str], event: Event):
-        # TODO: 동기화 문제
-        for id in target_ids:
-            conn = cls.conn_dict[id]
+        snapshot = list(cls.conn_dict.items())
 
+        for id, conn in snapshot:
+            if id not in target_ids:
+                continue
             msg = Message(event=event)
             await conn.send(msg)
 
     @classmethod
     async def broadcast(cls, event: Event):
-        # TODO: 동기화 문제
-        for id, conn in cls.conn_dict.items():
+        snapshot = list(cls.conn_dict.items())
+        for id, conn in snapshot:
             msg = Message(event=event)
             await conn.send(msg)

@@ -12,53 +12,48 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: setup-env
+      - name: Setup env file
         uses: ./.github/actions/setup-env
         with:
           dotenv: ${{ secrets.DOTENV }}
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: ./.github/actions/build-and-push
         with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPONAME }}:dev
+          docker_username: ${{ secrets.DOCKER_USERNAME }}
+          docker_password: ${{ secrets.DOCKER_PASSWORD }}
+          docker_reponame: ${{ secrets.DOCKER_REPONAME }}
+          docker_tags: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_REPONAME }}:dev
 
   deploy:
     needs: build-and-push-image
     runs-on: ubuntu-latest
     environment: development
     steps:
-      - name: Checkout only deploy script
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           sparse-checkout: |
-            tools/deploy.sh
-          sparse-checkout-cone: true
+            scripts/deploy
+            .github/actions
 
-      - name: executing remote ssh commands
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Setup env file
+        uses: ./.github/actions/setup-env
         with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          envs: DOCKER_USERNAME,DOCKER_REPONAME,DOCKER_TAG,ENVIRONMENT,CONTAINER_NAME,CONTAINER_PORT_MAPPING
-          script_path: tools/deploy.sh
+          dotenv: ${{ secrets.DOTENV }}
+
+      - name: Deploy to server
         env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_REPONAME: ${{ secrets.DOCKER_REPONAME }}
-          DOCKER_TAG: dev
-          ENVIRONMENT: dev
-          CONTAINER_NAME: ${{ secrets.CONTAINER_NAME }}
-          CONTAINER_PORT_MAPPING: ${{ secrets.CONTAINER_PORT_MAPPING }}
+          CLOUDFLARE_TUNNEL_HOSTNAME: ${{ secrets.CLOUDFLARE_TUNNEL_HOSTNAME }}
+          CF_ACCESS_CLIENT_ID:        ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET:    ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+          SSH_USERNAME:               ${{ secrets.SSH_USERNAME }}
+          SSH_KEY_B64:                ${{ secrets.SSH_KEY_B64 }}
+          DOCKER_USERNAME:            ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_REPONAME:            ${{ secrets.DOCKER_REPONAME }}
+          DOCKER_TAG:                 dev
+          ENVIRONMENT:                dev
+          CONTAINER_NAME:             ${{ secrets.CONTAINER_NAME }}
+          CONTAINER_PORT_MAPPING:     ${{ secrets.CONTAINER_PORT_MAPPING }}
+          CONTAINER_MEMORY_LIMIT:     ${{ secrets.CONTAINER_MEMORY_LIMIT }}
+        run: bash scripts/deploy/main.sh

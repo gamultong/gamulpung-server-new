@@ -7,7 +7,10 @@ from core.broker import EventBroker
 from data.cursor import Cursor, CursorRankRange, RankRange
 from data.payload import IdPayload, IdDataPayload
 from data.board import is_overlap, PointRange, Point
+from data.event import InternalEvent
 from datetime import datetime, timedelta
+
+from config import CursorConfig
 
 
 class CursorHandler:
@@ -18,7 +21,7 @@ class CursorHandler:
         cls.cursor_dict[cursor.id] = cursor.copy()
 
         event = Event(
-            event_name="NOTIFY-CURSORS",
+            event_name=InternalEvent.NOTIFY_CURSORS,
             payload=IdPayload(
                 id=cursor.id
             )
@@ -26,14 +29,10 @@ class CursorHandler:
 
         await EventBroker.publish(event=event)
 
-        event = Event(
-            event_name="SETTED-WINDOW",
-            payload=IdPayload(
-                id=cursor.id
-            )
-        )
-
-        await EventBroker.publish(event=event)
+    @classmethod
+    async def delete(cls, id: str):
+        if id in cls.cursor_dict:
+            del cls.cursor_dict[id]
 
     @classmethod
     async def get_by_id(cls, id: str):
@@ -41,9 +40,13 @@ class CursorHandler:
 
     @classmethod
     async def get_cursors_by_cursor_window(cls, cursor: Cursor) -> list[Cursor]:
-        # TODO: 현재는 자기 자신만 보내는 중
+        snapshot = list(cls.cursor_dict.items())
 
-        return [cls.cursor_dict[cursor.id].copy()]
+        return [
+            cur.copy()
+            for id, cur in snapshot
+            if cursor.window.is_in(cur.position)
+        ]
 
     @classmethod
     async def move(cls, cursor: Cursor, position: Point):
@@ -70,7 +73,7 @@ class CursorHandler:
         await cls.scoreboard_modify(old_cur_rank_range, new_cur_rank_range)
 
         event = Event(
-            event_name="NOTIFY-CURSORS",
+            event_name=InternalEvent.NOTIFY_CURSORS,
             payload=IdDataPayload(
                 id=cursor.id,
                 data=old_cur
@@ -79,7 +82,7 @@ class CursorHandler:
         await EventBroker.publish(event=event)
 
         event = Event(
-            event_name="SETTED-WINDOW",
+            event_name=InternalEvent.SETTED_WINDOW,
             payload=IdDataPayload(
                 id=cursor.id,
                 data=old_cur
@@ -97,7 +100,7 @@ class CursorHandler:
 
         new_cur = old_cur.copy()
         new_cur.score = 0
-        new_cur.active_at = datetime.now() + timedelta(seconds=30)
+        new_cur.active_at = datetime.now() + timedelta(seconds=CursorConfig.REVIVE_SECONDS)
 
         rank_range = RankRange(1, 10)
         old_cur_rank_range = await cls.get_cursor_by_rank_range(rank_range)
@@ -108,7 +111,7 @@ class CursorHandler:
         await cls.scoreboard_modify(old_cur_rank_range, new_cur_rank_range)
 
         event = Event(
-            event_name="NOTIFY-CURSORS",
+            event_name=InternalEvent.NOTIFY_CURSORS,
             payload=IdDataPayload(
                 id=cursor.id,
                 data=old_cur
@@ -132,7 +135,7 @@ class CursorHandler:
         await cls.scoreboard_modify(old_cur_rank_range, new_cur_rank_range)
 
         event = Event(
-            event_name="NOTIFY-CURSORS",
+            event_name=InternalEvent.NOTIFY_CURSORS,
             payload=IdDataPayload(
                 id=cursor.id,
                 data=old_cur
@@ -167,7 +170,7 @@ class CursorHandler:
         new_cursors = new_cur_range.cursors
         if old_cursors != new_cursors:
             event = Event(
-                event_name="NOTIFY-SCOREBOARD",
+                event_name=InternalEvent.NOTIFY_SCOREBOARD,
                 payload=IdDataPayload(
                     id=old_cur_range.range,
                     data=old_cur_range
@@ -175,6 +178,24 @@ class CursorHandler:
             )
 
             await EventBroker.publish(event=event)
+
+    @classmethod
+    async def set_window(cls, cursor: Cursor, width: int, height: int):
+        old_cur = await cls.get_by_id(cursor.id)
+
+        new_cur = old_cur.copy()
+        new_cur.width = width
+        new_cur.height = height
+
+        await cls.update(new_cur)
+
+        event = Event(
+            event_name=InternalEvent.SETTED_WINDOW,
+            payload=IdPayload(
+                id=cursor.id
+            )
+        )
+        await EventBroker.publish(event=event)
 
     @classmethod
     async def update(cls, cursor: Cursor):

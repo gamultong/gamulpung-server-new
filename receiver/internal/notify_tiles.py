@@ -3,6 +3,7 @@ from core.broker import EventBroker
 
 from data.payload import IdDataPayload, ServerMessage, IdPayload
 from data.board import PointRange
+from data.event import InternalEvent, ServerEvent
 
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler
@@ -11,7 +12,7 @@ from handler.board import BoardHandler
 NOTIFY_TILES_EVENT = Event[IdPayload[PointRange]]
 
 
-@EventBroker.add_receiver("NOTIFY-TILES")
+@EventBroker.add_receiver(InternalEvent.NOTIFY_TILES)
 async def notify_tiles_receiver(event: NOTIFY_TILES_EVENT):
     point_range = event.payload.id
     tiles = await BoardHandler.fetch(point_range)
@@ -23,7 +24,7 @@ async def notify_tiles_receiver(event: NOTIFY_TILES_EVENT):
     )
 
     _event = Event(
-        event_name="TILES-STATE",
+        event_name=ServerEvent.TILES_STATE,
         payload=ServerMessage.TilesState(
             [elem]
         )

@@ -38,24 +38,35 @@ class Conn():
         await self.conn.close()
 
     async def receive(self) -> Message[Event[IdDataPayload]]:
-        row = await self.conn.receive_text()
-        logger.debug(f"[{self.id}]client-message row: \n{row}")
+        row_json = await self.conn.receive_json()
+        logger.debug(f"[{self.id}]client-message row_json: \n{row_json}")
 
-        message = Message[Event].from_string(row)
+        message = Message[Event].from_json(row_json)
         message.event.payload = IdDataPayload(id=self.id, data=message.event.payload)
 
         return message
 
     async def send(self, msg: Message):
         logger.debug(f"[{self.id}]server-message: \n{msg}")
-        if self.conn.application_state == WebSocketState.DISCONNECTED:
+
+        row_json = msg.to_dict()
+        logger.debug(f"[{self.id}]server-message row: \n{row_json}")
+
+        if not (self.conn.application_state == WebSocketState.CONNECTED):
+            # 커넥션이 종료되었는데도 타이밍 문제로 인해 커넥션을 가져왔을 수 있음.
+            logger.warning(f"Connection이 끊김에도 이를 send하려함 : {self}")
             return
 
         # comment : https://github.com/gamultong/gamulpung-server-new/pull/1#discussion_r2492845020
         try:
-            message = msg.to_dict()
-            logger.debug(f"[{self.id}]server-message row: \n{message}")
-            await self.conn.send_json(message)
-        except (ConnectionClosed, WebSocketDisconnect):
-            # 커넥션이 종료되었는데도 타이밍 문제로 인해 커넥션을 가져왔을 수 있음.
-            return
+            await self.conn.send_json(row_json)
+        except RuntimeError as e:
+            # uvicorn이 던지는 그 에러인 경우만 잡아서 로그로 남기고 무시
+            if "websocket.close" in str(e) or "response already completed" in str(e):
+                logger.warning(
+                    "Connection이 끊긴 뒤 send하려함(예외로 감지) : %s; err=%s",
+                    self, e,
+                )
+                return
+            # 다른 RuntimeError면 그대로 올림
+            raise

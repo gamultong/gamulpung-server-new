@@ -1,8 +1,16 @@
 from typing import Generic, TypeVar, Type
 
 from core.dataobj import DataObj
-from core.event import Event
+from core.event import Event, EventEnum
 from data.payload import ClientMessage
+from data.event import ClientEvent
+
+from .exceptions import (
+    InvalidFormat_Exception,
+    InvalidEvent_Exception
+)
+
+from data.event import ClientEvent
 from json import loads
 
 EVENT_TYPE = TypeVar("EVENT_TYPE", bound=Event)
@@ -10,18 +18,18 @@ EVENT_TYPE = TypeVar("EVENT_TYPE", bound=Event)
 
 class MessageFormat(DataObj):
     class Header(DataObj):
-        event: str
+        event: EventEnum
 
     header: Header
     payload: dict
 
 
 def __exception_by_invalid_format(func):
-    def wrapper(*args, **kwargs):
+    def wrapper(json: dict):
         try:
-            return func(*args, **kwargs)
+            return func(json)
         except KeyError:
-            raise  # TODO : InvalidFormatException
+            raise InvalidFormat_Exception(json)
     return wrapper
 
 
@@ -40,19 +48,21 @@ def json_to_format(json: dict):
     )
 
 
-def get_payload_by_event_name(event_name: str) -> Type[ClientMessage.Base]:  # type:ignore
+def get_payload_by_event_name(event_name: EventEnum) -> Type[ClientMessage.Base]:  # type:ignore
     match event_name:
-        case "CHAT":
+        case ClientEvent.CHAT:
             return ClientMessage.Chat
-        case "SET-WINDOW":
+        case ClientEvent.CREATE_CURSOR:
+            return ClientMessage.CreateCursor
+        case ClientEvent.SET_WINDOW:
             return ClientMessage.SetWindow
-        case "MOVE":
+        case ClientEvent.MOVE:
             return ClientMessage.Move
-        case "OPEN-TILES":
+        case ClientEvent.OPEN_TILES:
             return ClientMessage.OpenTiles
-        case "SET-FLAG":
+        case ClientEvent.SET_FLAG:
             return ClientMessage.SetFlag
-    assert "wtf"
+    raise
 
 
 class Message(Generic[EVENT_TYPE], DataObj):
@@ -66,13 +76,8 @@ class Message(Generic[EVENT_TYPE], DataObj):
             "payload": self.event.payload.to_dict()
         }
 
-    def to_string(self):
-        return str(self.to_dict())
-
     @classmethod
-    def from_string(cls, string: str):
-        json = loads(string)
-
+    def from_json(cls, json: dict):
         form = json_to_format(json)
 
         event_name = form.header.event

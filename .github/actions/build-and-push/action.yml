@@ -1,0 +1,36 @@
+name: "build-and-push"
+description: "Build and push Docker image to Docker Hub"
+
+inputs:
+  docker_username:
+    required: true
+    description: "Docker Hub username"
+  docker_password:
+    required: true
+    description: "Docker Hub password"
+  docker_reponame:
+    required: true
+    description: "Docker Hub repository name"
+  docker_tags:
+    required: true
+    description: "Docker image tags (comma-separated)"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ inputs.docker_username }}
+        password: ${{ inputs.docker_password }}
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build and push
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: ${{ inputs.docker_tags }}

@@ -17,4 +17,4 @@ runs:
           echo "❌ ERROR: dotenv is required but not provided."
           exit 1
         fi
-        echo "${{ inputs.dotenv }}" >> .env
+        echo "${{ inputs.dotenv }}" > .env

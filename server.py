@@ -4,17 +4,19 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, Response, WebSocketDisconnect
 from websockets.exceptions import ConnectionClosed
 from handler.connection import ConnectionHandler, Conn
-from handler.board import initialize_start_map
+from handler.board import initialize_board
 from handler.board.storage import _get_db, set_table
 import sentry_sdk
 from config import SentryConfig
 
-sentry_sdk.init(
-    dsn=SentryConfig.SENTRY_DSN,
-    # Add data like request headers and IP for users,
-    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
-    send_default_pii=True,
-)
+# SENTRY_DSN이 있을 때만 Sentry 초기화
+if hasattr(SentryConfig, 'SENTRY_DSN') and SentryConfig.SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SentryConfig.SENTRY_DSN,
+        # Add data like request headers and IP for users,
+        # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+        send_default_pii=True,
+    )
 
 
 @asynccontextmanager
@@ -31,7 +33,7 @@ async def lifespan(app: FastAPI):
         except:
             pass
 
-        await initialize_start_map(db)
+        await initialize_board(db)
     logger.debug("init end")
 
     yield  # app 실행
@@ -59,7 +61,7 @@ async def session(ws: WebSocket):
             break
 
     logger.debug(f"[{conn.id}]client-quit")
-    await ConnectionHandler.quit(conn)
+    await ConnectionHandler.quit(conn.id)
 
 
 @app.get("/")

@@ -1,0 +1,84 @@
+
+===== PROFILE RESULT =====
+name        : before2
+elapsed     : 2681.07 ms
+cpu_user    : 2.540 s
+cpu_system  : 0.020 s
+mem_start   : 56.0 MB
+mem_peak    : 69.6 MB
+mem_end     : 67.9 MB
+HTML saved  : before2.html
+==========================
+
+
+===== CALL STACK (Text) =====
+
+  _     ._   __/__   _ _  _  _ _/_   Recorded: 07:30:04  Samples:  2475
+ /_//_/// /_\ / //_// / //_'/ //     Duration: 2.681     CPU time: 2.564
+/   _/                      v5.1.1
+
+Profile at /workspaces/server/tests/utils/internal/profile.py:34
+
+2.681 _run_profile  tests/utils/internal/profile.py:32
+└─ 2.679 InitializeStartMap_Profile.test_section_layer_constraint  tests/profile/init_board/profiling.py:12
+   └─ 2.679 initialize_start_map  handler/board/internal/create_section.py:261
+      ├─ 2.246 upgrade_interaction_sections  handler/board/internal/create_section.py:151
+      │  ├─ 2.217 upgrade_numbering_sections  handler/board/internal/create_section.py:123
+      │  │  ├─ 1.700 numbering  handler/board/internal/create_section.py:235
+      │  │  │  └─ 1.700 numbering_tiles  handler/board/internal/create_section.py:212
+      │  │  │     ├─ 1.095 count_mine  handler/board/internal/create_section.py:196
+      │  │  │     │  ├─ 0.456 [self]  handler/board/internal/create_section.py
+      │  │  │     │  ├─ 0.335 PointRange.iter  data/board/internal/point.py:67
+      │  │  │     │  │  ├─ 0.271 [self]  data/board/internal/point.py
+      │  │  │     │  │  └─ 0.044 Point.__init__  <string>:2
+      │  │  │     │  ├─ 0.133 Tiles.at_tile  data/board/internal/tiles.py:24
+      │  │  │     │  ├─ 0.119 Point.__eq__  <string>:2
+      │  │  │     │  └─ 0.051 Point.__init__  <string>:2
+      │  │  │     ├─ 0.308 Tiles.at_tiles  data/board/internal/tiles.py:37
+      │  │  │     │  ├─ 0.188 [self]  data/board/internal/tiles.py
+      │  │  │     │  └─ 0.099 PointRange.bottom_left  data/board/internal/point.py:50
+      │  │  │     ├─ 0.108 [self]  handler/board/internal/create_section.py
+      │  │  │     ├─ 0.070 create_by_mid  data/board/internal/point.py:72
+      │  │  │     ├─ 0.034 Tiles.update_at  data/board/internal/tiles.py:60
+      │  │  │     ├─ 0.032 Tile.changed  data/board/internal/tile.py:108
+      │  │  │     └─ 0.029 PointRange.iter  data/board/internal/point.py:67
+      │  │  ├─ 0.337 make_section  handler/board/internal/create_section.py:63
+      │  │  │  └─ 0.337 rand_tiles  handler/board/internal/create_section.py:29
+      │  │  │     ├─ 0.308 f  handler/board/internal/create_section.py:32
+      │  │  │     │  ├─ 0.279 rand_tile  handler/board/internal/create_section.py:21
+      │  │  │     │  │  ├─ 0.202 Random.randint  random.py:332
+      │  │  │     │  │  │     [4 frames hidden]  random
+      │  │  │     │  │  └─ 0.066 [self]  handler/board/internal/create_section.py
+      │  │  │     │  └─ 0.029 [self]  handler/board/internal/create_section.py
+      │  │  │     └─ 0.029 [self]  handler/board/internal/create_section.py
+      │  │  ├─ 0.084 create_section  handler/board/storage/internal/repository.py:99
+      │  │  │  └─ 0.077 Connection.commit  aiosqlite/core.py:153
+      │  │  │     └─ 0.077 Connection._execute  aiosqlite/core.py:112
+      │  │  │        └─ 0.077 [await]  aiosqlite/core.py
+      │  │  ├─ 0.062 update_section  handler/board/storage/internal/repository.py:110
+      │  │  │  └─ 0.047 Connection.commit  aiosqlite/core.py:153
+      │  │  │     └─ 0.047 Connection._execute  aiosqlite/core.py:112
+      │  │  │        └─ 0.047 [await]  aiosqlite/core.py
+      │  │  └─ 0.033 update_section_flag  handler/board/storage/internal/repository.py:120
+      │  │     └─ 0.033 Connection.commit  aiosqlite/core.py:153
+      │  │        └─ 0.033 Connection._execute  aiosqlite/core.py:112
+      │  │           └─ 0.033 [await]  aiosqlite/core.py
+      │  └─ 0.028 update_section_flag  handler/board/storage/internal/repository.py:120
+      ├─ 0.202 numbering  handler/board/internal/create_section.py:235
+      │  └─ 0.201 numbering_tiles  handler/board/internal/create_section.py:212
+      │     ├─ 0.126 count_mine  handler/board/internal/create_section.py:196
+      │     │  ├─ 0.057 [self]  handler/board/internal/create_section.py
+      │     │  └─ 0.043 PointRange.iter  data/board/internal/point.py:67
+      │     └─ 0.042 Tiles.at_tiles  data/board/internal/tiles.py:37
+      ├─ 0.180 make_section  handler/board/internal/create_section.py:63
+      │  └─ 0.180 rand_tiles  handler/board/internal/create_section.py:29
+      │     └─ 0.171 f  handler/board/internal/create_section.py:32
+      │        └─ 0.155 rand_tile  handler/board/internal/create_section.py:21
+      │           ├─ 0.121 Random.randint  random.py:332
+      │           │     [3 frames hidden]  random
+      │           └─ 0.030 [self]  handler/board/internal/create_section.py
+      └─ 0.047 create_section  handler/board/storage/internal/repository.py:99
+         └─ 0.034 Connection.commit  aiosqlite/core.py:153
+            └─ 0.034 Connection._execute  aiosqlite/core.py:112
+               └─ 0.034 [await]  aiosqlite/core.py
+
