@@ -52,6 +52,8 @@ def get_payload_by_event_name(event_name: EventEnum) -> Type[ClientMessage.Base]
     match event_name:
         case ClientEvent.CHAT:
             return ClientMessage.Chat
+        case ClientEvent.CREATE_CURSOR:
+            return ClientMessage.CreateCursor
         case ClientEvent.SET_WINDOW:
             return ClientMessage.SetWindow
         case ClientEvent.MOVE:

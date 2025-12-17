@@ -20,6 +20,10 @@ class Cursor(DataObj):
             Point(self.position.x+self.width, self.position.y-self.height)
         )
 
+    @property
+    def is_alive(self):
+        return self.active_at <= datetime.now()
+
     def in_interaction_range(self, point: Point):
         interaction_range = PointRange(
             Point(self.position.x-INTERACTION_RANGE, self.position.y+INTERACTION_RANGE),

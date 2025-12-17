@@ -5,12 +5,12 @@ import tempfile
 import os
 
 from data.board import SectionFlag
-from handler.board.internal.create_section import initialize_start_map
+from handler.board import initialize_board
 from handler.board.storage import (
     _get_db,
     set_table,
     get_section,
-    get_section_range
+    get_list_by_section_range
 )
 from data.board import Point, PointRange
 
@@ -25,12 +25,12 @@ class InitializeStartMap_TestCase(TestCase.UseTable_TestCase):
 
     async def test_section_layer_constraint(self):
         """Section layer 제약이 지켜지는지 확인"""
-        await initialize_start_map(self.db)
+        await initialize_board(self.db)
 
         point_range = PointRange(Point(-2, 2), Point(2, -2))
         numbering_range = PointRange(Point(-1, 1), Point(1, -1))
 
-        sections = await get_section_range(self.db, point_range)
+        sections = await get_list_by_section_range(self.db, point_range)
         sections = {section.point: section for section in sections}
 
         for x in range(-2, 3):
@@ -49,7 +49,7 @@ class InitializeStartMap_TestCase(TestCase.UseTable_TestCase):
 
     async def test_start_tile_is_open(self):
         """(0,0) 타일이 열려있는지 확인"""
-        await initialize_start_map(self.db)
+        await initialize_board(self.db)
 
         center = await get_section(self.db, Point(0, 0))
         assert center

@@ -11,6 +11,10 @@ class BoardConfig:
     DB_PATH = Env[str]()
 
 
+class CursorConfig:
+    REVIVE_SECONDS = Env[int](func=int)
+
+
 class SentryConfig:
     # SENTRY_DSN은 선택적 (없으면 Sentry 비활성화)
     _sentry_dsn = os.getenv("SENTRY_DSN", "")

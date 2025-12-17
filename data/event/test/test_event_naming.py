@@ -26,7 +26,7 @@ class EventNaming_TestCase(unittest.TestCase):
     def test_client_event_members(self):
         self.assertEnumHasNames(
             ClientEvent,
-            ["CHAT", "MOVE", "OPEN_TILES", "SET_FLAG", "SET_WINDOW"],
+            ["CHAT", "CREATE_CURSOR", "MOVE", "OPEN_TILES", "SET_FLAG", "SET_WINDOW"],
         )
         self.assertEnumValuesUnique(ClientEvent)
 

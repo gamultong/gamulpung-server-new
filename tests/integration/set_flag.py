@@ -14,6 +14,10 @@ from typing import cast
 from unittest.mock import AsyncMock, call, patch
 from tests.utils import assert_wait_call, TestClientManager, TestCase, set_board
 
+CREATE_CURSOR_MSG = {
+    "header": {"event": ClientEvent.CREATE_CURSOR},
+    "payload": {"width": 1, "height": 1},
+}
 SET_WINDOW_MSG = {
     "header": {"event": ClientEvent.SET_WINDOW},
     "payload": {"width": 1, "height": 1},
@@ -73,6 +77,7 @@ class SetFlagScenario(TestCase.IntegrationTestCase):
     def test_set_flag(self, tcm: TestClientManager):
 
         cl_a = tcm.get_client(CL_A)
+        cl_a.ws.send_json(CREATE_CURSOR_MSG)
         cl_a.ws.send_json(SET_WINDOW_MSG)
         cl_a.ws.send_json(OPEN_TILES_MSG)
 
@@ -149,6 +154,7 @@ class UnsetFlagScenario(TestCase.IntegrationTestCase):
     def test_unset_flag(self, tcm: TestClientManager):
 
         cl_a = tcm.get_client(CL_A)
+        cl_a.ws.send_json(CREATE_CURSOR_MSG)
         cl_a.ws.send_json(SET_WINDOW_MSG)
         cl_a.ws.send_json(OPEN_TILES_MSG)
 

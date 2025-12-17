@@ -7,6 +7,7 @@ class ExternalEvent(EventEnum):
 class ClientEvent(ExternalEvent):
     __scope_part__ = "CLIENT"
     CHAT = auto()
+    CREATE_CURSOR = auto()
     MOVE = auto()
     OPEN_TILES = auto()
     SET_FLAG = auto()

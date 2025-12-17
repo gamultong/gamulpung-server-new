@@ -14,7 +14,12 @@ from unittest.mock import AsyncMock, call, patch
 from tests.utils import assert_wait_call, TestClientManager, set_board
 from tests.utils import TestCase
 from datetime import timedelta
+from config import CursorConfig
 
+CREATE_CURSOR_MSG = {
+    "header": {"event": ClientEvent.CREATE_CURSOR},
+    "payload": {"width": 1, "height": 1},
+}
 SET_WINDOW_MSG = {
     "header": {"event": ClientEvent.SET_WINDOW},
     "payload": {"width": 1, "height": 1},
@@ -56,6 +61,7 @@ class ExplosionScenario(TestCase.IntegrationTestCase):
     @clinetmanager
     def test_normal(self, tcm: TestClientManager):
         cl_a = tcm.get_client(CL_A)
+        cl_a.ws.send_json(CREATE_CURSOR_MSG)
         cl_a.ws.send_json(SET_WINDOW_MSG)
         cl_a.ws.send_json(OPEN_TILES_MSG)
 
@@ -78,7 +84,7 @@ class ExplosionScenario(TestCase.IntegrationTestCase):
             Event(
                 event_name=ServerEvent.CURSORS_STATE,
                 payload=ServerMessage.CursorsState(
-                    [Cursor.create(CL_A, width=1, height=1, active_at=self.now+timedelta(seconds=30))]
+                    [Cursor.create(CL_A, width=1, height=1, active_at=self.now+timedelta(seconds=CursorConfig.REVIVE_SECONDS))]
                 )
             )
         )
