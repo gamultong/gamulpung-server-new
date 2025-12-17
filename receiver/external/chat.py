@@ -4,6 +4,7 @@ from data.event import ServerEvent, ClientEvent
 
 from core.broker import EventBroker
 from handler.connection import ConnectionHandler
+from handler.cursor import CursorHandler
 
 CHAT_EVENT = Event[IdDataPayload[str, ClientMessage.Chat]]
 
@@ -24,5 +25,14 @@ async def chat_receiver(event: CHAT_EVENT):
         payload=payload
     )
 
-    # TODO: 현재는 broadcast, 이후 커서 시아에 포함되는 녀석에게만 multicast
-    await ConnectionHandler.broadcast(_event)
+    # 발신자의 cursor 조회
+    sender_cursor = await CursorHandler.get_by_id(id)
+
+    # 발신자의 시야 범위 내 커서들 조회
+    cursors_in_view = await CursorHandler.get_cursors_by_cursor_window(sender_cursor)
+
+    # 시야 범위 내 사용자 ID 추출
+    target_ids = [cursor.id for cursor in cursors_in_view]
+
+    # multicast (시야 범위 내 사용자에게만 전송)
+    await ConnectionHandler.multicast(target_ids, _event)
