@@ -79,37 +79,62 @@ class TCM:
 
         return wrapper
 
-    async def __aenter__(self):
-        """pytest async fixture용 context manager 진입"""
+
+@dataclass
+class PytestTCM:
+    """Test Client Manager (pytest용 context manager)"""
+    app: FastAPI
+
+    def __post_init__(self):
+        self.client_name: list[str] = []
+        self.client_dict: dict[str, Client] = {}
+        self.conn_dict: dict[str, MockConn] = {}
+        self._test_client = None
+        self._patch = None
+        self._exit_stack = None
+
+    def append_client(self, name: str):
+        """클라이언트 추가"""
+        assert name not in self.client_name
+        self.client_name.append(name)
+        return self
+
+    def get_client(self, name: str) -> Client:
+        """클라이언트 조회"""
+        return self.client_dict[name]
+
+    def __enter__(self):
+        """Context manager 진입"""
         origin_create = Conn.create
         names_iter = iter(self.client_name)
 
-        async def _side_effect(ws: WebSocket, name: str = None):
-            # name이 전달되면 사용, 아니면 iter에서 가져옴
-            if name is None:
-                name = next(names_iter)
+        async def _side_effect(ws: WebSocket):
+            name = next(names_iter)
             conn = await origin_create(ws, name)
             conn.send = AsyncMock()
             self.conn_dict[name] = conn  # type:ignore
             return conn
 
-        # Conn.create를 patch
-        self.create_patch = patch("handler.connection.Conn.create", side_effect=_side_effect)
-        self.conn_create_mock = self.create_patch.__enter__()
+        # Conn.create patch 시작
+        self._patch = patch("handler.connection.Conn.create", side_effect=_side_effect)
+        self._patch.__enter__()
 
-        # TestClient 시작
-        self.test_client = TestClient(self.app)
-        self.test_client_ctx = self.test_client.__enter__()
+        # TestClient 생성
+        self._test_client = TestClient(self.app)
+        self._test_client.__enter__()
 
-        # WebSocket 연결
-        self.exit_stack = ExitStack()
-        self.exit_stack.__enter__()
+        # WebSocket 연결 생성
+        self._exit_stack = ExitStack()
+        self._exit_stack.__enter__()
 
         sockets = {
-            name: self.exit_stack.enter_context(self.test_client_ctx.websocket_connect("/session"))
+            name: self._exit_stack.enter_context(
+                self._test_client.websocket_connect("/session")
+            )
             for name in self.client_name
         }
 
+        # Client 객체 생성
         self.client_dict = {
             name: Client(ws=sockets[name], conn=self.conn_dict[name])
             for name in self.client_name
@@ -117,21 +142,12 @@ class TCM:
 
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """pytest async fixture용 context manager 종료"""
-        # Handler state 정리 (테스트 간 격리 보장)
-        from handler.cursor import CursorHandler
-        from handler.connection import ConnectionHandler
-
-        # ExitStack 정리 (WebSocket 연결 종료 및 QUIT 이벤트 발행)
-        self.exit_stack.__exit__(exc_type, exc_val, exc_tb)
-
-        # Handler state 즉시 정리 (이벤트 루프가 닫히기 전에)
-        CursorHandler.cursor_dict.clear()
-        ConnectionHandler.conn_dict.clear()
-
-        # TestClient 정리
-        self.test_client.__exit__(exc_type, exc_val, exc_tb)
-
-        # Patch 정리
-        self.create_patch.__exit__(exc_type, exc_val, exc_tb)
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager 종료"""
+        # 역순으로 정리
+        if self._exit_stack:
+            self._exit_stack.__exit__(exc_type, exc_val, exc_tb)
+        if self._test_client:
+            self._test_client.__exit__(exc_type, exc_val, exc_tb)
+        if self._patch:
+            self._patch.__exit__(exc_type, exc_val, exc_tb)
