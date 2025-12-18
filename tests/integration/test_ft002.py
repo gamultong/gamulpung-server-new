@@ -2,40 +2,36 @@ import pytest
 import asyncio
 from server import app
 from data.event import ServerEvent, ClientEvent
-from data.board import Point, Tile, Tiles, Section, SectionFlag
+from data.board import Point, Section, SectionFlag
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler
 from tests.utils.internal.conn_mock import PytestTCM
 from tests.utils.internal.wait_call import assert_wait_event
+from tests.integration.map.builder import build_tiles
 from unittest.mock import patch
 from config import BoardConfig
 from datetime import datetime, timedelta
 
 CL_A = "TestClient_A"
 
-# 테스트용 타일 정의
-TILE = Tile.create(is_flag=False, is_mine=False, is_open=False, number=0)
-CLSE = TILE.data  # Closed tile
-OPEN = TILE.changed(is_open=True).data  # Opened tile
-
 
 async def opened_board_map(db):
     """
     열린 타일로 구성된 5x5 보드:
-    CLSE CLSE CLSE CLSE CLSE
-    CLSE OPEN OPEN OPEN CLSE
-    CLSE OPEN OPEN OPEN CLSE
-    CLSE OPEN OPEN OPEN CLSE
-    CLSE CLSE CLSE CLSE CLSE
+    y=4: # # # # #
+    y=3: # . . . #
+    y=2: # . . . #
+    y=1: # . . . #
+    y=0: # # # # #
     """
-    data = [
-        CLSE, CLSE, CLSE, CLSE, CLSE,
-        CLSE, OPEN, OPEN, OPEN, CLSE,
-        CLSE, OPEN, OPEN, OPEN, CLSE,
-        CLSE, OPEN, OPEN, OPEN, CLSE,
-        CLSE, CLSE, CLSE, CLSE, CLSE,
-    ]
-    tiles = Tiles(bytearray(data), 5, 5)
+    map_str = """\
+#####
+#...#
+#...#
+#...#
+#####
+"""
+    tiles = build_tiles(map_str)
     sections = [Section(Point(0, 0), tiles.copy(), flag=SectionFlag.INTERACTIONAL)]
     from handler.board.storage import create_section
     for section in sections:
@@ -57,6 +53,7 @@ def create_cursor_at_position(pos: Point):
 def cleanup_db():
     """테스트 전후 DB 파일 및 핸들러 상태 정리"""
     import os
+    import time
     db_path = "board.db"
     # 테스트 전 정리
     if os.path.exists(db_path):
@@ -64,7 +61,8 @@ def cleanup_db():
     CursorHandler.cursor_dict.clear()
     ConnectionHandler.conn_dict.clear()
     yield
-    # 테스트 후 정리
+    # 테스트 후 정리 - aiosqlite 스레드 정리 대기
+    time.sleep(0.1)
     if os.path.exists(db_path):
         os.remove(db_path)
     CursorHandler.cursor_dict.clear()

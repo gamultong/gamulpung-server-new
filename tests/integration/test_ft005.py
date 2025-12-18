@@ -2,38 +2,35 @@ import pytest
 import asyncio
 from server import app
 from data.event import ServerEvent, ClientEvent
-from data.board import Point, Tile, Tiles, Section, SectionFlag, PointRange
+from data.board import Point, Section, SectionFlag, PointRange
 from handler.board import BoardHandler
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler
 from tests.utils.internal.conn_mock import PytestTCM
 from tests.utils.internal.wait_call import assert_wait_event, assert_wait_call_if
+from tests.integration.map.builder import build_tiles
 from unittest.mock import patch
 from config import BoardConfig
 import time
 
 CL_A = "TestClient_A"
 
-# 테스트용 타일 정의
-TILE = Tile.create(is_flag=False, is_mine=False, is_open=False, number=0)
-CLSE = TILE.data  # Closed tile
-
 
 async def simple_board_map(db):
     """
     Simple 4x4 board for basic tests:
-    y=3: CLSE CLSE CLSE CLSE
-    y=2: CLSE CLSE CLSE CLSE
-    y=1: CLSE CLSE CLSE CLSE
-    y=0: CLSE CLSE CLSE CLSE
+    y=3: # # # #
+    y=2: # # # #
+    y=1: # # # #
+    y=0: # # # #
     """
-    data = [
-        CLSE, CLSE, CLSE, CLSE,  # y=3 (맨 위)
-        CLSE, CLSE, CLSE, CLSE,  # y=2
-        CLSE, CLSE, CLSE, CLSE,  # y=1
-        CLSE, CLSE, CLSE, CLSE,  # y=0 (맨 아래)
-    ]
-    tiles = Tiles(bytearray(data), 4, 4)
+    map_str = """\
+####
+####
+####
+####
+"""
+    tiles = build_tiles(map_str)
     sections = [Section(Point(0, 0), tiles.copy(), flag=SectionFlag.INTERACTIONAL)]
     from handler.board.storage import create_section
     for section in sections:
@@ -62,7 +59,8 @@ def cleanup_db():
     CursorHandler.cursor_dict.clear()
     ConnectionHandler.conn_dict.clear()
     yield
-    # 테스트 후 정리
+    # 테스트 후 정리 - aiosqlite 스레드 정리 대기
+    time.sleep(0.1)
     if os.path.exists(db_path):
         os.remove(db_path)
     CursorHandler.cursor_dict.clear()

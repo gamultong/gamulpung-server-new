@@ -30,7 +30,8 @@ def cleanup_db():
     CursorHandler.cursor_dict.clear()
     ConnectionHandler.conn_dict.clear()
     yield
-    # 테스트 후 정리
+    # 테스트 후 정리 - aiosqlite 스레드 정리 대기
+    time.sleep(0.1)
     if os.path.exists(db_path):
         os.remove(db_path)
     CursorHandler.cursor_dict.clear()

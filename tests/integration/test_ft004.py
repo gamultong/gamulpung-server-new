@@ -2,12 +2,13 @@ import pytest
 import asyncio
 from server import app
 from data.event import ServerEvent, ClientEvent
-from data.board import Point, Tile, Tiles, Section, SectionFlag
+from data.board import Point, Section, SectionFlag
 from handler.board import BoardHandler
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler
 from tests.utils.internal.conn_mock import PytestTCM
 from tests.utils.internal.wait_call import assert_wait_event
+from tests.integration.map.builder import build_tiles
 from unittest.mock import patch
 from config import BoardConfig
 from datetime import datetime, timedelta
@@ -15,29 +16,22 @@ import time
 
 CL_A = "TestClient_A"
 
-# 테스트용 타일 정의
-TILE = Tile.create(is_flag=False, is_mine=False, is_open=False, number=0)
-CLSE = TILE.data  # Closed tile
-OPEN = TILE.changed(is_open=True).data  # Opened tile
-NUM1 = TILE.changed(number=1).data  # Numbered tile
-FLAG = TILE.changed(is_flag=True).data  # Flagged tile
-
 
 async def simple_board_map(db):
     """
     Simple 4x4 board for basic tests:
-    y=3: CLSE CLSE CLSE CLSE
-    y=2: CLSE CLSE CLSE CLSE
-    y=1: NUM1 CLSE NUM1 CLSE
-    y=0: CLSE CLSE CLSE CLSE
+    y=3: # # # #
+    y=2: # # # #
+    y=1: 1 # 1 #
+    y=0: # # # #
     """
-    data = [
-        CLSE, CLSE, CLSE, CLSE,  # y=3 (맨 위)
-        CLSE, CLSE, CLSE, CLSE,  # y=2
-        NUM1, CLSE, NUM1, CLSE,  # y=1
-        CLSE, CLSE, CLSE, CLSE,  # y=0 (맨 아래)
-    ]
-    tiles = Tiles(bytearray(data), 4, 4)
+    map_str = """\
+####
+####
+1#1#
+####
+"""
+    tiles = build_tiles(map_str)
     sections = [Section(Point(0, 0), tiles.copy(), flag=SectionFlag.INTERACTIONAL)]
     from handler.board.storage import create_section
     for section in sections:
@@ -47,18 +41,18 @@ async def simple_board_map(db):
 async def flagged_board_map(db):
     """
     Board with flagged tile at (1, 1):
-    y=3: CLSE CLSE CLSE CLSE
-    y=2: CLSE CLSE CLSE CLSE
-    y=1: NUM1 FLAG NUM1 CLSE
-    y=0: CLSE CLSE CLSE CLSE
+    y=3: # # # #
+    y=2: # # # #
+    y=1: 1 F 1 #
+    y=0: # # # #
     """
-    data = [
-        CLSE, CLSE, CLSE, CLSE,  # y=3 (맨 위)
-        CLSE, CLSE, CLSE, CLSE,  # y=2
-        NUM1, FLAG, NUM1, CLSE,  # y=1 (FLAG이 여기)
-        CLSE, CLSE, CLSE, CLSE,  # y=0 (맨 아래)
-    ]
-    tiles = Tiles(bytearray(data), 4, 4)
+    map_str = """\
+####
+####
+1F1#
+####
+"""
+    tiles = build_tiles(map_str)
     sections = [Section(Point(0, 0), tiles.copy(), flag=SectionFlag.INTERACTIONAL)]
     from handler.board.storage import create_section
     for section in sections:
@@ -87,7 +81,8 @@ def cleanup_db():
     CursorHandler.cursor_dict.clear()
     ConnectionHandler.conn_dict.clear()
     yield
-    # 테스트 후 정리
+    # 테스트 후 정리 - aiosqlite 스레드 정리 대기
+    time.sleep(0.1)
     if os.path.exists(db_path):
         os.remove(db_path)
     CursorHandler.cursor_dict.clear()
