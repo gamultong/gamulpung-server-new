@@ -24,7 +24,7 @@ act-cd-prod:
 
 
 test-all:
-	uv run python -m tests.run
+	uv run pytest
 
 profile:
 	@if [ -z "$(pfn)" ]; then \

@@ -36,4 +36,4 @@ jobs:
           uv sync
       - name: Test
         run: |
-          uv run python -m tests.run
+          make test-all
