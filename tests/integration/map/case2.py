@@ -1,59 +1,36 @@
 from data.board import Point, Tile, Tiles, Section, SectionFlag
+from .builder import build_tiles
 
-OPENED_TILE = Tile(
-    is_open=True,
-    is_mine=False,
-    is_flag=False,
-    number=0
-).data
+data1_str = """\
+##
+#X
+"""
 
-CLOSED_TILE = Tile(
-    is_open=False,
-    is_mine=False,
-    is_flag=False,
-    number=0
-).data
+data2_str = """\
+##
+.#
+"""
 
-MINE_TILE = Tile(
-    is_open=False,
-    is_mine=True,
-    is_flag=False,
-    number=0
-).data
+data2_f_str = """\
+##
+.F
+"""
 
-FLAGED_TILE = Tile(
-    is_open=False,
-    is_mine=False,
-    is_flag=True,
-    number=0
-).data
+data3_str = """\
+##
+##
+"""
 
-data1 = bytearray([
-    CLOSED_TILE, CLOSED_TILE,
-    CLOSED_TILE, MINE_TILE,
-])
-data2 = bytearray([
-    CLOSED_TILE, CLOSED_TILE,
-    OPENED_TILE, CLOSED_TILE,
-])
-data2_f = bytearray([
-    CLOSED_TILE, CLOSED_TILE,
-    OPENED_TILE, FLAGED_TILE,
-])
-data3 = bytearray([
-    CLOSED_TILE, CLOSED_TILE,
-    CLOSED_TILE, CLOSED_TILE,
-])
-data4 = bytearray([
-    CLOSED_TILE, CLOSED_TILE,
-    CLOSED_TILE, CLOSED_TILE,
-])
+data4_str = """\
+##
+##
+"""
 
-tiles1 = Tiles(data1, 2, 2)
-tiles2 = Tiles(data2, 2, 2)
-tiles2_f = Tiles(data2_f, 2, 2)
-tiles3 = Tiles(data3, 2, 2)
-tiles4 = Tiles(data4, 2, 2)
+tiles1 = build_tiles(data1_str)
+tiles2 = build_tiles(data2_str)
+tiles2_f = build_tiles(data2_f_str)
+tiles3 = build_tiles(data3_str)
+tiles4 = build_tiles(data4_str)
 
 point1 = Point(-1, 0)
 point2 = Point(0, 0)

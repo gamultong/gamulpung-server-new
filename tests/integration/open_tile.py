@@ -7,7 +7,7 @@ from data.cursor import Cursor
 from data.conn import Message
 from data.event import ClientEvent, ServerEvent
 
-from .map.case2 import CLOSED_TILE, OPENED_TILE
+from .map.builder import build_tiles
 from .map.open_tiles import case_open_tiles_map
 from server import app
 from typing import cast
@@ -47,11 +47,11 @@ CCC
 COO
 CCC
 """
-jungdap = Tiles(
-    bytearray([
-        OPENED_TILE,
-    ]), 1, 1
-)
+
+map_str = """\
+.
+"""
+jungdap = build_tiles(map_str)
 
 origin_create = Cursor.create
 
