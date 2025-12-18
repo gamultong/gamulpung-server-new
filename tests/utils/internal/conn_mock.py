@@ -108,8 +108,11 @@ class PytestTCM:
         origin_create = Conn.create
         names_iter = iter(self.client_name)
 
-        async def _side_effect(ws: WebSocket):
-            name = next(names_iter)
+        async def _side_effect(ws: WebSocket, id: str = None):
+            if id is None:
+                name = next(names_iter)
+            else:
+                name = id
             conn = await origin_create(ws, name)
             conn.send = AsyncMock()
             self.conn_dict[name] = conn  # type:ignore

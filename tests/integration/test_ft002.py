@@ -236,7 +236,7 @@ def test_ft002_state_change_position_and_score():
             "payload": {"position": {"x": 2, "y": 2}}
         })
         assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE, timeout=3.0)
-        time.sleep(0.1)
+        time.sleep(0.5)
 
         # After: 상태 변화 확인
         cursor_after = asyncio.run(CursorHandler.get_by_id(CL_A))
