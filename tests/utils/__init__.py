@@ -1,7 +1,13 @@
 from .internal.profile import profile
-from .internal.conn_mock import TestClientManager
-from .internal.wait_call import assert_wait_call
+from .internal.conn_mock import TCM, PytestTCM
+from .internal.wait_call import (
+    assert_wait_call_if,
+    assert_wait_message,
+    assert_wait_event,
+    assert_wait_call,  # Legacy
+)
 from .internal.set_board import set_board
+from .internal.builder import build_tiles
 
 
 class TestCase:

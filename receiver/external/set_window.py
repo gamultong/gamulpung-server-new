@@ -1,12 +1,12 @@
 from core.event import Event
 from core.broker import EventBroker
 
-from data.payload import IdDataPayload, ClientMessage
+from data.payload import IdDataPayload, ClientMessage, IdPayload
 from data.event import ClientEvent
 from handler.cursor import CursorHandler
 from loguru import logger
 
-SET_WINDOW_EVENT = Event[IdDataPayload[str, ClientMessage.SetWindow]]
+SET_WINDOW_EVENT = Event[IdDataPayload[str, ClientMessage.SetWindow]] | Event[IdPayload[str]]
 
 
 @EventBroker.add_receiver(ClientEvent.SET_WINDOW)
