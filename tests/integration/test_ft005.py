@@ -6,9 +6,7 @@ from data.board import Point, Section, SectionFlag, PointRange
 from handler.board import BoardHandler
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler
-from tests.utils.internal.conn_mock import PytestTCM
-from tests.utils.internal.wait_call import assert_wait_event, assert_wait_call_if
-from tests.integration.map.builder import build_tiles
+from tests.utils import PytestTCM, assert_wait_event, assert_wait_call_if, build_tiles
 from unittest.mock import patch
 from config import BoardConfig
 import time

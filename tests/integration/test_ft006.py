@@ -9,8 +9,7 @@ from data.cursor import Cursor
 from core.event import Event
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler
-from tests.utils.internal.conn_mock import PytestTCM
-from tests.utils.internal.wait_call import assert_wait_event, assert_wait_message, assert_wait_call_if
+from tests.utils import PytestTCM, assert_wait_event, assert_wait_message, assert_wait_call_if
 from unittest.mock import patch
 from datetime import datetime
 from freezegun import freeze_time

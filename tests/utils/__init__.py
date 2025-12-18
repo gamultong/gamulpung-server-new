@@ -1,5 +1,5 @@
 from .internal.profile import profile
-from .internal.conn_mock import TCM
+from .internal.conn_mock import TCM, PytestTCM
 from .internal.wait_call import (
     assert_wait_call_if,
     assert_wait_message,
@@ -7,6 +7,7 @@ from .internal.wait_call import (
     assert_wait_call,  # Legacy
 )
 from .internal.set_board import set_board
+from .internal.builder import build_tiles
 
 
 class TestCase:
