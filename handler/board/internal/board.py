@@ -1,6 +1,7 @@
 from data.board import PointRange, Tiles, Point, Tile, abs_to_sec, SectionFlag
 from data.payload import IdDataPayload, IdPayload
 from data.event import InternalEvent
+from data.event.emitter import get_tile_events
 
 from core.event import Event
 from core.broker import EventBroker
@@ -81,14 +82,9 @@ class BoardHandler:
             section.update_by_abs_point(point, new_tile)
             await update_section(db, section)
 
-        event = Event(
-            event_name=InternalEvent.NOTIFY_TILES,
-            payload=IdPayload(
-                PointRange(point, point)
-            )
-        )
-
-        await EventBroker.publish(event)
+        events = get_tile_events(old_tile, new_tile, point)
+        for event in events:
+            await EventBroker.publish(event)
 
     @classmethod
     async def open_tiles(cls, point: Point):
@@ -114,24 +110,8 @@ class BoardHandler:
             section.update_by_abs_point(point, new_tile)
             await update_section(db, section)
 
-        event = Event(
-            event_name=InternalEvent.NOTIFY_TILES,
-            payload=IdPayload(
-                PointRange(point, point),
-            )
-        )
-
-        await EventBroker.publish(event)
-
-        if new_tile.is_mine:
-            event = Event(
-                event_name=InternalEvent.NOTIFY_EXPLOSION,
-                payload=IdDataPayload(
-                    point,
-                    data=old_tile
-                )
-            )
-
+        events = get_tile_events(old_tile, new_tile, point)
+        for event in events:
             await EventBroker.publish(event)
 
     @classmethod
