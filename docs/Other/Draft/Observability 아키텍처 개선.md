@@ -106,7 +106,7 @@ Event 발행 규칙을 Data Layer에서 중앙 관리.
 2. Lifecycle 적용: HLife, RLife로 실행 추적 및 로깅
 3. Caller 도입: Handler 호출 방식 명시화 및 로깅
 4. Publisher 전환: Event 발행 책임 이동 및 로깅
-5. 관계 추적: Event 인과관계 로깅
+5. Event 관계 정보 추가: Event에 인과관계 메타데이터 추가 및 로깅
 
 각 단계마다 가능한 범위에서 로깅 구현.
 
