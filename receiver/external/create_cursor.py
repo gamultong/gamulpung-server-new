@@ -34,5 +34,14 @@ async def create_cursor_receiver(event: CREATE_CURSOR_EVENT):
         height=data.height
     )
 
+    # MY_CURSOR 이벤트 전송 (클라이언트에게 cursor ID 알림)
+    await ConnectionHandler.multicast(
+        target_ids=[id],
+        event=Event(
+            event_name=ServerEvent.MY_CURSOR,
+            payload=ServerMessage.MyCursor(id=id)
+        )
+    )
+
     # 핸들러에 저장 (CursorHandler.create가 자동으로 NOTIFY_CURSORS를 통해 CURSORS_STATE 발행)
     await CursorHandler.create(cursor)
