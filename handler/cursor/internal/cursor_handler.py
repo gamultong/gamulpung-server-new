@@ -26,7 +26,14 @@ class CursorHandler:
                 id=cursor.id
             )
         )
+        await EventBroker.publish(event=event)
 
+        event = Event(
+            event_name=InternalEvent.SETTED_WINDOW,
+            payload=IdPayload(
+                id=cursor.id
+            )
+        )
         await EventBroker.publish(event=event)
 
     @classmethod
@@ -160,7 +167,7 @@ class CursorHandler:
         end = end if len(li) > end else len(li)
 
         return CursorRankRange(
-            rank_range,
+            RankRange(start, end),
             li[start-1:end]
         )
 
