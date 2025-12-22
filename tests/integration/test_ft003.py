@@ -1,4 +1,6 @@
+from unittest.mock import AsyncMock
 import pytest
+import pytest_asyncio
 import asyncio
 from server import app
 from data.event import ServerEvent, ClientEvent
@@ -11,6 +13,7 @@ from unittest.mock import patch
 from config import BoardConfig
 from datetime import datetime, timedelta
 import time
+from loguru import logger
 
 CL_A = "TestClient_A"
 CL_B = "TestClient_B"
@@ -31,10 +34,12 @@ async def simple_board_map(db):
 111#
 """
     tiles = build_tiles(map_str)
+    logger.debug("afadsfd")
     sections = [Section(Point(0, 0), tiles.copy(), flag=SectionFlag.INTERACTIONAL)]
-    from handler.board.storage import create_section
+    from handler.board.storage import create_section, get_section
     for section in sections:
         await create_section(db, section)
+        logger.debug(await get_section(db, Point(0, 0)))
 
 
 async def mine_board_map(db):
@@ -90,28 +95,10 @@ def create_cursor_at_position(pos: Point):
     return create_cursor_effect
 
 
-@pytest.fixture(autouse=True)
-def cleanup_db():
-    """테스트 전후 DB 파일 및 핸들러 상태 정리"""
-    import os
-    db_path = "board.db"
-    # 테스트 전 정리
-    if os.path.exists(db_path):
-        os.remove(db_path)
-    CursorHandler.cursor_dict.clear()
-    ConnectionHandler.conn_dict.clear()
-    yield
-    # 테스트 후 정리 - aiosqlite 스레드 정리 대기
-    time.sleep(0.1)
-    if os.path.exists(db_path):
-        os.remove(db_path)
-    CursorHandler.cursor_dict.clear()
-    ConnectionHandler.conn_dict.clear()
-
-
 @patch.object(BoardConfig, "LENGTH", new=4)
 @patch("server.initialize_board", new=simple_board_map)
-def test_ft003_open_tile_scenario():
+@pytest.mark.asyncio
+async def test_ft003_open_tile_scenario():
     """
     FT-003 타일 열기 시나리오 검증:
     1. 사용자가 closed-tile을 클릭하여 열기를 요청한다.
@@ -127,34 +114,41 @@ def test_ft003_open_tile_scenario():
                 "payload": {"width": 1, "height": 1}
             })
 
-            cl_a.ws.send_json({
-                "header": {"event": ClientEvent.SET_WINDOW.value},
-                "payload": {"width": 1, "height": 1}
-            })
-
             # Cursor 생성 완료 대기
-            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE, timeout=3.0)
-            time.sleep(0.1)
+            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
+            assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE)
 
+        cl_a.conn.send.await_args_list = []
         # 시나리오 1: 사용자가 closed-tile (1,1) 클릭
         cl_a.ws.send_json({
             "header": {"event": ClientEvent.OPEN_TILES.value},
             "payload": {"position": {"x": 1, "y": 1}}
         })
 
+        # 개 병신 같이 고려 안한것
+        # - event 소모 | event 초기화 -> 이전 event 받은걸로 넘어가서 wait 안함
+        # - 연쇄 열람
+        # 고쳐야 할것
+        # - 연쇄 열람 되는데 왜 5개만됨?
+
+        # time.sleep(3)
         # 시나리오 2: tile이 opened 상태로 변경되고 지뢰 정보 표시
         # TILES_STATE 이벤트 수신 검증
         assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE, timeout=3.0)
-        time.sleep(0.5)
+        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE, timeout=3.0)
+        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE, timeout=3.0)
+        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE, timeout=3.0)
+        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE, timeout=3.0)
 
         # 서버 상태 검증: tile이 opened 상태로 변경됨
-        tile = asyncio.run(BoardHandler.fetch_tile(Point(1, 1)))
+        tile = await BoardHandler.fetch_tile(Point(1, 1))
         assert tile.is_open == True, "타일이 열린 상태여야 함"
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)
 @patch("server.initialize_board", new=flagged_board_map)
-def test_ft003_business_rule_flagged_tile():
+@pytest.mark.asyncio
+async def test_ft003_business_rule_flagged_tile():
     """
     비즈니스 규칙 검증:
     - flag가 설치된 tile은 열 수 없다.
@@ -174,8 +168,7 @@ def test_ft003_business_rule_flagged_tile():
                 "payload": {"width": 1, "height": 1}
             })
 
-            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE, timeout=3.0)
-            time.sleep(0.1)
+            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
         # 깃발이 설치된 타일 (1,1) 열기 시도
         cl_a.ws.send_json({
@@ -184,16 +177,16 @@ def test_ft003_business_rule_flagged_tile():
         })
 
         # 타일이 열리지 않았는지 검증
-        time.sleep(0.5)
 
-        tile = asyncio.run(BoardHandler.fetch_tile(Point(1, 1)))
+        tile = await BoardHandler.fetch_tile(Point(1, 1))
         assert tile.is_open == False, "깃발이 설치된 타일은 열리지 않아야 함"
         assert tile.is_flag == True, "깃발이 여전히 설치되어 있어야 함"
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)
 @patch("server.initialize_board", new=simple_board_map)
-def test_ft003_business_rule_closed_tile_only():
+@pytest.mark.asyncio
+async def test_ft003_business_rule_closed_tile_only():
     """
     비즈니스 규칙 검증:
     - closed-tile만 열기 가능하다.
@@ -213,11 +206,10 @@ def test_ft003_business_rule_closed_tile_only():
                 "payload": {"width": 1, "height": 1}
             })
 
-            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE, timeout=3.0)
-            time.sleep(0.1)
+            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
         # 초기 점수 확인
-        cursor_before = asyncio.run(CursorHandler.get_by_id(CL_A))
+        cursor_before = await CursorHandler.get_by_id(CL_A)
         score_before = cursor_before.score
 
         # 이미 열린 타일 (0,1) 열기 시도
@@ -227,15 +219,15 @@ def test_ft003_business_rule_closed_tile_only():
         })
 
         # 점수가 변경되지 않았는지 검증
-        time.sleep(0.5)
 
-        cursor_after = asyncio.run(CursorHandler.get_by_id(CL_A))
+        cursor_after = await CursorHandler.get_by_id(CL_A)
         assert cursor_after.score == score_before, "이미 열린 타일을 다시 열면 점수가 변하지 않아야 함"
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)
 @patch("server.initialize_board", new=simple_board_map)
-def test_ft003_business_rule_dead_cursor():
+@pytest.mark.asyncio
+async def test_ft003_business_rule_dead_cursor():
     """
     비즈니스 규칙 검증:
     - 죽은 cursor는 타일을 열 수 없다.
@@ -255,10 +247,10 @@ def test_ft003_business_rule_dead_cursor():
                 "payload": {"width": 1, "height": 1}
             })
 
-            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE, timeout=3.0)
+            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
         # Cursor를 죽은 상태로 설정 (active_at을 미래 시간으로)
-        cursor = asyncio.run(CursorHandler.get_by_id(CL_A))
+        cursor = await CursorHandler.get_by_id(CL_A)
         cursor.active_at = datetime.now() + timedelta(seconds=10)
         CursorHandler.cursor_dict[CL_A] = cursor
 
@@ -269,15 +261,15 @@ def test_ft003_business_rule_dead_cursor():
         })
 
         # 타일이 열리지 않았는지 검증
-        time.sleep(0.5)
 
-        tile = asyncio.run(BoardHandler.fetch_tile(Point(1, 1)))
+        tile = await BoardHandler.fetch_tile(Point(1, 1))
         assert tile.is_open == False, "죽은 커서는 타일을 열 수 없어야 함"
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)
 @patch("server.initialize_board", new=mine_board_map)
-def test_ft003_state_change_tile_opened():
+@pytest.mark.asyncio
+async def test_ft003_state_change_tile_opened():
     """
     상태 변화 검증:
     - tile 상태: closed → opened
@@ -292,17 +284,14 @@ def test_ft003_state_change_tile_opened():
                 "payload": {"width": 1, "height": 1}
             })
 
-            cl_a.ws.send_json({
-                "header": {"event": ClientEvent.SET_WINDOW.value},
-                "payload": {"width": 1, "height": 1}
-            })
-
-            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE, timeout=3.0)
-            time.sleep(0.1)
+            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
         # 상태 변화 전: closed 상태 확인
-        tile_before = asyncio.run(BoardHandler.fetch_tile(Point(0, 1)))
+        tile_before = await BoardHandler.fetch_tile(Point(0, 1))
         assert tile_before.is_open == False, "타일이 닫혀있어야 함"
+
+        # 이전 event 소비
+        cl_a.conn.send.await_args_list.clear()
 
         # 타일 열기
         cl_a.ws.send_json({
@@ -311,17 +300,18 @@ def test_ft003_state_change_tile_opened():
         })
 
         # TILES_STATE 이벤트 대기
-        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE, timeout=3.0)
-        time.sleep(0.5)
+        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE)
+        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE)
 
         # 상태 변화 후: opened 상태 확인
-        tile_after = asyncio.run(BoardHandler.fetch_tile(Point(0, 1)))
+        tile_after = await BoardHandler.fetch_tile(Point(0, 1))
         assert tile_after.is_open == True, "타일이 열려있어야 함"
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)
 @patch("server.initialize_board", new=mine_board_map)
-def test_ft003_state_change_explosion():
+@pytest.mark.asyncio
+async def test_ft003_state_change_explosion():
     """
     상태 변화 검증:
     - 지뢰 발견 시 cursor 상태 변경 (explosion)
@@ -342,8 +332,7 @@ def test_ft003_state_change_explosion():
                 "payload": {"width": 5, "height": 5}
             })
 
-            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE, timeout=3.0)
-            time.sleep(0.1)
+            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
         # Cursor B를 (3, 3) 위치에 생성 (지뢰 폭발 범위 밖)
         with patch("data.cursor.Cursor.create", side_effect=create_cursor_at_position(Point(3, 3))):
@@ -357,11 +346,10 @@ def test_ft003_state_change_explosion():
                 "payload": {"width": 5, "height": 5}
             })
 
-            assert_wait_event(cl_b.conn.send, ServerEvent.CURSORS_STATE, timeout=3.0)
-            time.sleep(0.1)
+            assert_wait_event(cl_b.conn.send, ServerEvent.CURSORS_STATE)
 
         # Cursor A 상태 확인 (explosion 전)
-        cursor_a_before = asyncio.run(CursorHandler.get_by_id(CL_A))
+        cursor_a_before = await CursorHandler.get_by_id(CL_A)
         assert cursor_a_before.is_alive == True, "커서가 살아있어야 함"
 
         # 지뢰 타일 (1, 1) 열기
@@ -371,14 +359,13 @@ def test_ft003_state_change_explosion():
         })
 
         # EXPLOSION 이벤트 대기
-        assert_wait_event(cl_a.conn.send, ServerEvent.EXPLOSION, timeout=3.0)
-        time.sleep(0.5)
+        assert_wait_event(cl_a.conn.send, ServerEvent.EXPLOSION)
 
         # Cursor A 상태 확인 (explosion 후)
-        cursor_a_after = asyncio.run(CursorHandler.get_by_id(CL_A))
+        cursor_a_after = await CursorHandler.get_by_id(CL_A)
         assert cursor_a_after.is_alive == False, "폭발 범위 내 커서는 죽어야 함"
         assert cursor_a_after.score == 0, "죽은 커서의 점수는 0이어야 함"
 
         # Cursor B는 폭발 범위 밖이므로 살아있어야 함
-        cursor_b_after = asyncio.run(CursorHandler.get_by_id(CL_B))
+        cursor_b_after = await CursorHandler.get_by_id(CL_B)
         assert cursor_b_after.is_alive == True, "폭발 범위 밖 커서는 살아있어야 함"

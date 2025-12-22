@@ -7,6 +7,7 @@ from handler.board.storage import (
 
 from .make_section import make_section
 from .upgrade_section import _upgrade_interaction_sections, _upgrade_numbering_sections
+from loguru import logger
 
 
 def set_start_point(section: Section):
@@ -28,6 +29,7 @@ async def check_is_init(db: DB):
 
 
 async def initialize_board(db: DB):
+    logger.debug("origin init_board")
     if await check_is_init(db):
         return
 

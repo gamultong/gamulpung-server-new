@@ -14,10 +14,19 @@ NOTIFY_TILES_EVENT = Event[IdPayload[PointRange]]
 
 @EventBroker.add_receiver(InternalEvent.NOTIFY_TILES)
 async def notify_tiles_receiver(event: NOTIFY_TILES_EVENT):
+    from loguru import logger
+
     point_range = event.payload.id
     tiles = await BoardHandler.fetch(point_range)
 
     cursors = await CursorHandler.get_cursor_by_watching_range(point_range)
+
+    logger.debug(
+        f"notify_tiles_receiver: point_range={point_range}, "
+        f"cursors_count={len(cursors)}, "
+        f"cursor_ids={[c.id for c in cursors]}"
+    )
+
     elem = ServerMessage.TilesState.Elem(
         data=tiles.to_str(),
         range=point_range

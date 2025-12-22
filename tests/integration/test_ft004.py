@@ -1,4 +1,5 @@
 import pytest
+import pytest_asyncio
 import asyncio
 from server import app
 from data.event import ServerEvent, ClientEvent
@@ -68,28 +69,10 @@ def create_cursor_at_position(pos: Point):
     return create_cursor_effect
 
 
-@pytest.fixture(autouse=True)
-def cleanup_db():
-    """테스트 전후 DB 파일 및 핸들러 상태 정리"""
-    import os
-    db_path = "board.db"
-    # 테스트 전 정리
-    if os.path.exists(db_path):
-        os.remove(db_path)
-    CursorHandler.cursor_dict.clear()
-    ConnectionHandler.conn_dict.clear()
-    yield
-    # 테스트 후 정리 - aiosqlite 스레드 정리 대기
-    time.sleep(0.1)
-    if os.path.exists(db_path):
-        os.remove(db_path)
-    CursorHandler.cursor_dict.clear()
-    ConnectionHandler.conn_dict.clear()
-
-
 @patch.object(BoardConfig, "LENGTH", new=4)
 @patch("server.initialize_board", new=simple_board_map)
-def test_ft004_set_flag_scenario():
+@pytest.mark.asyncio
+async def test_ft004_set_flag_scenario():
     """
     FT-004 깃발 설치 시나리오 검증:
     1. 사용자가 깃발이 없는 닫힌 타일에 깃발 설치를 요청한다.
@@ -111,8 +94,10 @@ def test_ft004_set_flag_scenario():
                 "payload": {"width": 1, "height": 1}
             })
 
-            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE, timeout=3.0)
-            time.sleep(0.1)
+            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
+
+        # 이전 event 소비
+        cl_a.conn.send.await_args_list.clear()
 
         # 시나리오 1: 닫힌 타일 (1, 1)에 깃발 설치 요청
         cl_a.ws.send_json({
@@ -121,17 +106,17 @@ def test_ft004_set_flag_scenario():
         })
 
         # 시나리오 3: TILES_STATE 이벤트 수신 확인
-        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE, timeout=3.0)
-        time.sleep(0.1)
+        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE)
 
         # 시나리오 2: 서버 상태 검증 - 타일에 깃발이 설치됨
-        tile = asyncio.run(BoardHandler.fetch_tile(Point(1, 1)))
+        tile = await BoardHandler.fetch_tile(Point(1, 1))
         assert tile.is_flag == True, "타일에 깃발이 설치되어야 함"
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)
 @patch("server.initialize_board", new=flagged_board_map)
-def test_ft004_unset_flag_scenario():
+@pytest.mark.asyncio
+async def test_ft004_unset_flag_scenario():
     """
     FT-004 깃발 해제 시나리오 검증:
     1. 사용자가 깃발이 있는 타일에 깃발 해제를 요청한다.
@@ -153,8 +138,10 @@ def test_ft004_unset_flag_scenario():
                 "payload": {"width": 1, "height": 1}
             })
 
-            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE, timeout=3.0)
-            time.sleep(0.1)
+            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
+
+        # 이전 event 소비
+        cl_a.conn.send.await_args_list.clear()
 
         # 시나리오 1: 깃발이 있는 타일 (1, 1)에 깃발 해제 요청
         cl_a.ws.send_json({
@@ -163,17 +150,17 @@ def test_ft004_unset_flag_scenario():
         })
 
         # 시나리오 3: TILES_STATE 이벤트 수신 확인
-        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE, timeout=3.0)
-        time.sleep(0.1)
+        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE)
 
         # 시나리오 2: 서버 상태 검증 - 타일의 깃발이 제거됨
-        tile = asyncio.run(BoardHandler.fetch_tile(Point(1, 1)))
+        tile = await BoardHandler.fetch_tile(Point(1, 1))
         assert tile.is_flag == False, "타일의 깃발이 제거되어야 함"
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)
 @patch("server.initialize_board", new=simple_board_map)
-def test_ft004_business_rule_toggle_behavior():
+@pytest.mark.asyncio
+async def test_ft004_business_rule_toggle_behavior():
     """
     비즈니스 규칙 검증:
     - 깃발이 있으면 해제, 없으면 설치 (토글)
@@ -193,8 +180,10 @@ def test_ft004_business_rule_toggle_behavior():
                 "payload": {"width": 1, "height": 1}
             })
 
-            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE, timeout=3.0)
-            time.sleep(0.1)
+            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
+
+        # 이전 event 소비
+        cl_a.conn.send.await_args_list.clear()
 
         # 첫 번째 SET_FLAG: 깃발 설치
         cl_a.ws.send_json({
@@ -202,11 +191,13 @@ def test_ft004_business_rule_toggle_behavior():
             "payload": {"position": {"x": 1, "y": 1}}
         })
 
-        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE, timeout=3.0)
-        time.sleep(0.1)
+        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE)
 
-        tile_after_set = asyncio.run(BoardHandler.fetch_tile(Point(1, 1)))
+        tile_after_set = await BoardHandler.fetch_tile(Point(1, 1))
         assert tile_after_set.is_flag == True, "깃발이 설치되어야 함"
+
+        # 이전 event 소비
+        cl_a.conn.send.await_args_list.clear()
 
         # 두 번째 SET_FLAG: 깃발 해제
         cl_a.ws.send_json({
@@ -214,16 +205,16 @@ def test_ft004_business_rule_toggle_behavior():
             "payload": {"position": {"x": 1, "y": 1}}
         })
 
-        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE, timeout=3.0)
-        time.sleep(0.1)
+        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE)
 
-        tile_after_unset = asyncio.run(BoardHandler.fetch_tile(Point(1, 1)))
+        tile_after_unset = await BoardHandler.fetch_tile(Point(1, 1))
         assert tile_after_unset.is_flag == False, "깃발이 해제되어야 함"
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)
 @patch("server.initialize_board", new=simple_board_map)
-def test_ft004_business_rule_dead_cursor():
+@pytest.mark.asyncio
+async def test_ft004_business_rule_dead_cursor():
     """
     비즈니스 규칙 검증:
     - 죽은 cursor는 깃발을 설치/해제할 수 없다.
@@ -243,11 +234,10 @@ def test_ft004_business_rule_dead_cursor():
                 "payload": {"width": 1, "height": 1}
             })
 
-            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE, timeout=3.0)
-            time.sleep(0.1)
+            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
         # Cursor를 죽은 상태로 설정
-        cursor = asyncio.run(CursorHandler.get_by_id(CL_A))
+        cursor = await CursorHandler.get_by_id(CL_A)
         cursor.active_at = datetime.now() + timedelta(seconds=10)
         CursorHandler.cursor_dict[CL_A] = cursor
 
@@ -257,16 +247,15 @@ def test_ft004_business_rule_dead_cursor():
             "payload": {"position": {"x": 1, "y": 1}}
         })
 
-        time.sleep(0.5)
-
         # 타일 상태 확인 - 깃발이 설치되지 않아야 함
-        tile = asyncio.run(BoardHandler.fetch_tile(Point(1, 1)))
+        tile = await BoardHandler.fetch_tile(Point(1, 1))
         assert tile.is_flag == False, "죽은 커서는 깃발을 설치할 수 없음"
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)
 @patch("server.initialize_board", new=simple_board_map)
-def test_ft004_state_change_flag_installed():
+@pytest.mark.asyncio
+async def test_ft004_state_change_flag_installed():
     """
     상태 변화 검증:
     - 깃발 설치: is_flag: false → true
@@ -286,12 +275,14 @@ def test_ft004_state_change_flag_installed():
                 "payload": {"width": 1, "height": 1}
             })
 
-            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE, timeout=3.0)
-            time.sleep(0.1)
+            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
         # Before: 깃발이 없는 상태
-        tile_before = asyncio.run(BoardHandler.fetch_tile(Point(1, 1)))
+        tile_before = await BoardHandler.fetch_tile(Point(1, 1))
         assert tile_before.is_flag == False, "초기 상태에서 깃발이 없어야 함"
+
+        # 이전 event 소비
+        cl_a.conn.send.await_args_list.clear()
 
         # 깃발 설치
         cl_a.ws.send_json({
@@ -299,17 +290,17 @@ def test_ft004_state_change_flag_installed():
             "payload": {"position": {"x": 1, "y": 1}}
         })
 
-        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE, timeout=3.0)
-        time.sleep(0.1)
+        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE)
 
         # After: 깃발이 설치된 상태
-        tile_after = asyncio.run(BoardHandler.fetch_tile(Point(1, 1)))
+        tile_after = await BoardHandler.fetch_tile(Point(1, 1))
         assert tile_after.is_flag == True, "깃발이 설치되어야 함"
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)
 @patch("server.initialize_board", new=flagged_board_map)
-def test_ft004_state_change_flag_removed():
+@pytest.mark.asyncio
+async def test_ft004_state_change_flag_removed():
     """
     상태 변화 검증:
     - 깃발 해제: is_flag: true → false
@@ -329,12 +320,14 @@ def test_ft004_state_change_flag_removed():
                 "payload": {"width": 1, "height": 1}
             })
 
-            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE, timeout=3.0)
-            time.sleep(0.1)
+            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
         # Before: 깃발이 있는 상태
-        tile_before = asyncio.run(BoardHandler.fetch_tile(Point(1, 1)))
+        tile_before = await BoardHandler.fetch_tile(Point(1, 1))
         assert tile_before.is_flag == True, "초기 상태에서 깃발이 있어야 함"
+
+        # 이전 event 소비
+        cl_a.conn.send.await_args_list.clear()
 
         # 깃발 해제
         cl_a.ws.send_json({
@@ -342,9 +335,8 @@ def test_ft004_state_change_flag_removed():
             "payload": {"position": {"x": 1, "y": 1}}
         })
 
-        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE, timeout=3.0)
-        time.sleep(0.1)
+        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE)
 
         # After: 깃발이 제거된 상태
-        tile_after = asyncio.run(BoardHandler.fetch_tile(Point(1, 1)))
+        tile_after = await BoardHandler.fetch_tile(Point(1, 1))
         assert tile_after.is_flag == False, "깃발이 제거되어야 함"
