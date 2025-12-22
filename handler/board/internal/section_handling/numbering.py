@@ -7,7 +7,7 @@ def merge_sections(center: Point, sections: dict[Point, Section]):
     length = BoardConfig.LENGTH
 
     result = Tiles(bytearray(), length*3, 0)
-    for y in range(center.y-1, center.y+2):
+    for y in range(center.y+1, center.y-2, -1):
         line = Tiles(bytearray(), 0, length)
         for x in range(center.x-1, center.x+2):
             point = Point(x, y)
