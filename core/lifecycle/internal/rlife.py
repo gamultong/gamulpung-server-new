@@ -2,6 +2,7 @@
 from __future__ import annotations
 from .lifecycle import LifeCycle
 from core.event import Event
+from loguru import logger
 
 
 class RLife(LifeCycle):
@@ -54,13 +55,5 @@ class RLife(LifeCycle):
 
     def close(self):
         """Lifecycle 종료 시 로깅"""
-        from loguru import logger
 
-        logger.debug(
-            f"Receiver: {self.receiver_name}",
-            extra={
-                "lifecycle_id": self.id,
-                "receiver": self.receiver_name,
-                "event": self.event
-            }
-        )
+        logger.debug(self)

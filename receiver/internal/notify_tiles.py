@@ -1,5 +1,6 @@
 from core.event import Event
 from core.broker import EventBroker
+from core.lifecycle import LifeCycle, RLife
 
 from data.payload import IdDataPayload, ServerMessage, IdPayload
 from data.board import PointRange
@@ -13,6 +14,7 @@ NOTIFY_TILES_EVENT = Event[IdPayload[PointRange]]
 
 
 @EventBroker.add_receiver(InternalEvent.NOTIFY_TILES)
+@LifeCycle.with_async_lifecycle(factory=RLife.create_factory)
 async def notify_tiles_receiver(event: NOTIFY_TILES_EVENT):
     from loguru import logger
 

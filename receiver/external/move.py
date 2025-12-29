@@ -1,5 +1,6 @@
 from core.event import Event
 from core.broker import EventBroker
+from core.lifecycle import LifeCycle, RLife
 
 from data.payload import IdDataPayload, ClientMessage, IdPayload
 from data.cursor import Cursor
@@ -13,6 +14,7 @@ MOVE_EVENT = Event[IdDataPayload[str, ClientMessage.Move]]
 
 
 @EventBroker.add_receiver(ClientEvent.MOVE)
+@LifeCycle.with_async_lifecycle(factory=RLife.create_factory)
 async def move_receiver(event: MOVE_EVENT):
     id = event.payload.id
     data = event.payload.data

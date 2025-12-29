@@ -3,6 +3,7 @@ from loguru import logger
 
 from core.event import Event
 from core.broker import EventBroker
+from core.lifecycle import LifeCycle, RLife
 
 from data.payload import IdDataPayload, ClientMessage
 from data.board import Point, Section, abs_to_sec, PointRange
@@ -15,13 +16,13 @@ OPEN_TILES_EVENT = Event[IdDataPayload[str, ClientMessage.OpenTiles]]
 
 
 @EventBroker.add_receiver(ClientEvent.OPEN_TILES)
+@LifeCycle.with_async_lifecycle(factory=RLife.create_factory)
 async def open_tiles_receiver(event: OPEN_TILES_EVENT):
     id = event.payload.id
     data = event.payload.data
 
     point = data.position
 
-    logger.debug("p1")
     cursor = await CursorHandler.get_by_id(id)
     if not cursor.is_alive:
         logger.warning(f"커서가 이미 사망함 | cursor:{cursor}")
@@ -30,7 +31,6 @@ async def open_tiles_receiver(event: OPEN_TILES_EVENT):
         logger.warning(f"상호작용 범위 밖 타일 열람 시도 | cursor:{cursor}, point:{point}")
         return
 
-    logger.debug("p2")
     tile = await BoardHandler.fetch_tile(point)
     if tile.is_flag:
         logger.warning(f"깃발이 설치된 타일 열람 시도 | cursor:{cursor}, tile:{tile}")
@@ -42,12 +42,10 @@ async def open_tiles_receiver(event: OPEN_TILES_EVENT):
         await BoardHandler.open_tiles(point)
         return
 
-    logger.debug("p3")
     chaining_points = await chaining(point)
     for p in chaining_points:
         await BoardHandler.open_tiles(p)
         await CursorHandler.increase_score(cursor, 100)
-    logger.debug("p4")
     # await BoardHandler.open_tiles(point)
     # await CursorHandler.increase_score(cursor, 100)
 

@@ -105,7 +105,6 @@ class BoardHandler:
 
         sec_p = abs_to_sec(point)
 
-        logger.debug("h1")
         async with _get_db() as db:
             section = await get_section(db, sec_p)
             # 섹션이 반드시 존재해야 함
@@ -127,7 +126,6 @@ class BoardHandler:
 
             section.update_by_abs_point(point, new_tile)
             await update_section(db, section)
-        logger.debug("h2")
 
         events = get_tile_events(old_tile, new_tile, point)
         logger.debug(events)

@@ -3,6 +3,7 @@ from data.payload import IdDataPayload, ClientMessage
 from data.event import ServerEvent, ClientEvent
 
 from core.broker import EventBroker
+from core.lifecycle import LifeCycle, RLife
 from handler.board import BoardHandler
 from handler.cursor import CursorHandler
 from loguru import logger
@@ -11,6 +12,7 @@ SET_FLAG_EVENT = Event[IdDataPayload[str, ClientMessage.SetFlag]]
 
 
 @EventBroker.add_receiver(ClientEvent.SET_FLAG)
+@LifeCycle.with_async_lifecycle(factory=RLife.create_factory)
 async def set_flag_receiver(event: SET_FLAG_EVENT):
     id = event.payload.id
     data = event.payload.data
