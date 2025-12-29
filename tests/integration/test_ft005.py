@@ -7,7 +7,7 @@ from data.board import Point, Section, SectionFlag, PointRange
 from handler.board import BoardHandler
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler
-from tests.utils import PytestTCM, assert_wait_event, assert_wait_call_if, build_tiles
+from tests.utils import PytestTCM, assert_wait_event, assert_wait_call_if, assert_wait_message, build_tiles
 from unittest.mock import patch
 from config import BoardConfig
 import time
@@ -77,13 +77,23 @@ async def test_ft005_set_window_scenario():
             "payload": {"width": 3, "height": 3}
         })
 
-        # 시나리오 2: TILES_STATE 이벤트 수신 확인
-        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE)
+        # 시나리오 2: TILES_STATE 이벤트 수신 및 검증 - 변경된 시야 범위 확인
+        # position (0, 0), width=3, height=3 → range: Point(-3, 3) to Point(3, -3)
+        expected_range = PointRange(
+            top_left=Point(-3, 3),
+            bottom_right=Point(3, -3)
+        )
 
-        # 서버 상태 검증 - 시야 크기가 변경됨
-        cursor = await CursorHandler.get_by_id(CL_A)
-        assert cursor.width == 3, "시야 width가 3으로 설정되어야 함"
-        assert cursor.height == 3, "시야 height가 3으로 설정되어야 함"
+        assert_wait_call_if(
+            cl_a.conn.send,
+            lambda msg: (
+                msg.event.event_name == ServerEvent.TILES_STATE and
+                len(msg.event.payload.tiles_li) > 0 and
+                msg.event.payload.tiles_li[0].range == expected_range
+            ),
+            timeout=3.0,
+            error_msg="TILES_STATE의 range가 변경된 window 크기를 반영하지 않음"
+        )
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)
@@ -145,12 +155,23 @@ async def test_ft005_state_change_window_size():
             "payload": {"width": 5, "height": 5}
         })
 
-        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE)
+        # After: TILES_STATE 이벤트의 range로 시야 크기 변경 검증
+        # position (0, 0), width=5, height=5 → range: Point(-5, 5) to Point(5, -5)
+        expected_range = PointRange(
+            top_left=Point(-5, 5),
+            bottom_right=Point(5, -5)
+        )
 
-        # After: 시야 크기 확인
-        cursor_after = await CursorHandler.get_by_id(CL_A)
-        assert cursor_after.width == 5, "변경된 width가 5여야 함"
-        assert cursor_after.height == 5, "변경된 height가 5여야 함"
+        assert_wait_call_if(
+            cl_a.conn.send,
+            lambda msg: (
+                msg.event.event_name == ServerEvent.TILES_STATE and
+                len(msg.event.payload.tiles_li) > 0 and
+                msg.event.payload.tiles_li[0].range == expected_range
+            ),
+            timeout=3.0,
+            error_msg="TILES_STATE의 range가 변경된 window 크기를 반영하지 않음"
+        )
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)

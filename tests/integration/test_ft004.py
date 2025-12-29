@@ -3,11 +3,14 @@ import pytest_asyncio
 import asyncio
 from server import app
 from data.event import ServerEvent, ClientEvent
-from data.board import Point, Section, SectionFlag
+from data.board import Point, Section, SectionFlag, PointRange, Tile, Tiles
+from data.payload import ServerMessage
+from data.conn import Message
+from core.event import Event
 from handler.board import BoardHandler
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler
-from tests.utils import PytestTCM, assert_wait_event, build_tiles
+from tests.utils import PytestTCM, assert_wait_event, assert_wait_message, build_tiles
 from unittest.mock import patch
 from config import BoardConfig
 from datetime import datetime, timedelta
@@ -89,11 +92,6 @@ async def test_ft004_set_flag_scenario():
                 "payload": {"width": 1, "height": 1}
             })
 
-            cl_a.ws.send_json({
-                "header": {"event": ClientEvent.SET_WINDOW.value},
-                "payload": {"width": 1, "height": 1}
-            })
-
             assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
         # 이전 event 소비
@@ -105,12 +103,24 @@ async def test_ft004_set_flag_scenario():
             "payload": {"position": {"x": 1, "y": 1}}
         })
 
-        # 시나리오 3: TILES_STATE 이벤트 수신 확인
-        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE)
+        # 시나리오 3: TILES_STATE 이벤트 수신 및 검증 - 깃발이 설치된 타일 정보 확인
+        flagged_tile = Tile.create(is_open=False, is_mine=False, is_flag=True, number=0)
+        tiles = Tiles(data=bytearray([flagged_tile.data]), width=1, height=1)
 
-        # 시나리오 2: 서버 상태 검증 - 타일에 깃발이 설치됨
-        tile = await BoardHandler.fetch_tile(Point(1, 1))
-        assert tile.is_flag == True, "타일에 깃발이 설치되어야 함"
+        expected_message = Message(
+            event=Event(
+                event_name=ServerEvent.TILES_STATE,
+                payload=ServerMessage.TilesState(
+                    tiles_li=[
+                        ServerMessage.TilesState.Elem(
+                            data=tiles.to_str(),
+                            range=PointRange(Point(1, 1), Point(1, 1))
+                        )
+                    ]
+                )
+            )
+        )
+        assert_wait_message(cl_a.conn.send, expected_message)
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)
@@ -133,11 +143,6 @@ async def test_ft004_unset_flag_scenario():
                 "payload": {"width": 1, "height": 1}
             })
 
-            cl_a.ws.send_json({
-                "header": {"event": ClientEvent.SET_WINDOW.value},
-                "payload": {"width": 1, "height": 1}
-            })
-
             assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
         # 이전 event 소비
@@ -149,12 +154,24 @@ async def test_ft004_unset_flag_scenario():
             "payload": {"position": {"x": 1, "y": 1}}
         })
 
-        # 시나리오 3: TILES_STATE 이벤트 수신 확인
-        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE)
+        # 시나리오 3: TILES_STATE 이벤트 수신 및 검증 - 깃발이 제거된 타일 정보 확인
+        unflagged_tile = Tile.create(is_open=False, is_mine=False, is_flag=False, number=0)
+        tiles = Tiles(data=bytearray([unflagged_tile.data]), width=1, height=1)
 
-        # 시나리오 2: 서버 상태 검증 - 타일의 깃발이 제거됨
-        tile = await BoardHandler.fetch_tile(Point(1, 1))
-        assert tile.is_flag == False, "타일의 깃발이 제거되어야 함"
+        expected_message = Message(
+            event=Event(
+                event_name=ServerEvent.TILES_STATE,
+                payload=ServerMessage.TilesState(
+                    tiles_li=[
+                        ServerMessage.TilesState.Elem(
+                            data=tiles.to_str(),
+                            range=PointRange(Point(1, 1), Point(1, 1))
+                        )
+                    ]
+                )
+            )
+        )
+        assert_wait_message(cl_a.conn.send, expected_message)
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)
@@ -175,11 +192,6 @@ async def test_ft004_business_rule_toggle_behavior():
                 "payload": {"width": 1, "height": 1}
             })
 
-            cl_a.ws.send_json({
-                "header": {"event": ClientEvent.SET_WINDOW.value},
-                "payload": {"width": 1, "height": 1}
-            })
-
             assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
         # 이전 event 소비
@@ -191,13 +203,24 @@ async def test_ft004_business_rule_toggle_behavior():
             "payload": {"position": {"x": 1, "y": 1}}
         })
 
-        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE)
+        # 깃발 설치 검증
+        flagged_tile = Tile.create(is_open=False, is_mine=False, is_flag=True, number=0)
+        tiles_flagged = Tiles(data=bytearray([flagged_tile.data]), width=1, height=1)
 
-        tile_after_set = await BoardHandler.fetch_tile(Point(1, 1))
-        assert tile_after_set.is_flag == True, "깃발이 설치되어야 함"
-
-        # 이전 event 소비
-        cl_a.conn.send.await_args_list.clear()
+        expected_message_set = Message(
+            event=Event(
+                event_name=ServerEvent.TILES_STATE,
+                payload=ServerMessage.TilesState(
+                    tiles_li=[
+                        ServerMessage.TilesState.Elem(
+                            data=tiles_flagged.to_str(),
+                            range=PointRange(Point(1, 1), Point(1, 1))
+                        )
+                    ]
+                )
+            )
+        )
+        assert_wait_message(cl_a.conn.send, expected_message_set)
 
         # 두 번째 SET_FLAG: 깃발 해제
         cl_a.ws.send_json({
@@ -205,10 +228,24 @@ async def test_ft004_business_rule_toggle_behavior():
             "payload": {"position": {"x": 1, "y": 1}}
         })
 
-        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE)
+        # 깃발 해제 검증
+        unflagged_tile = Tile.create(is_open=False, is_mine=False, is_flag=False, number=0)
+        tiles_unflagged = Tiles(data=bytearray([unflagged_tile.data]), width=1, height=1)
 
-        tile_after_unset = await BoardHandler.fetch_tile(Point(1, 1))
-        assert tile_after_unset.is_flag == False, "깃발이 해제되어야 함"
+        expected_message_unset = Message(
+            event=Event(
+                event_name=ServerEvent.TILES_STATE,
+                payload=ServerMessage.TilesState(
+                    tiles_li=[
+                        ServerMessage.TilesState.Elem(
+                            data=tiles_unflagged.to_str(),
+                            range=PointRange(Point(1, 1), Point(1, 1))
+                        )
+                    ]
+                )
+            )
+        )
+        assert_wait_message(cl_a.conn.send, expected_message_unset)
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)
@@ -270,14 +307,9 @@ async def test_ft004_state_change_flag_installed():
                 "payload": {"width": 1, "height": 1}
             })
 
-            cl_a.ws.send_json({
-                "header": {"event": ClientEvent.SET_WINDOW.value},
-                "payload": {"width": 1, "height": 1}
-            })
-
             assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
-        # Before: 깃발이 없는 상태
+        # Before: 깃발이 없는 상태 확인
         tile_before = await BoardHandler.fetch_tile(Point(1, 1))
         assert tile_before.is_flag == False, "초기 상태에서 깃발이 없어야 함"
 
@@ -290,11 +322,24 @@ async def test_ft004_state_change_flag_installed():
             "payload": {"position": {"x": 1, "y": 1}}
         })
 
-        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE)
+        # After: 깃발이 설치된 상태를 이벤트로 검증
+        flagged_tile = Tile.create(is_open=False, is_mine=False, is_flag=True, number=0)
+        tiles = Tiles(data=bytearray([flagged_tile.data]), width=1, height=1)
 
-        # After: 깃발이 설치된 상태
-        tile_after = await BoardHandler.fetch_tile(Point(1, 1))
-        assert tile_after.is_flag == True, "깃발이 설치되어야 함"
+        expected_message = Message(
+            event=Event(
+                event_name=ServerEvent.TILES_STATE,
+                payload=ServerMessage.TilesState(
+                    tiles_li=[
+                        ServerMessage.TilesState.Elem(
+                            data=tiles.to_str(),
+                            range=PointRange(Point(1, 1), Point(1, 1))
+                        )
+                    ]
+                )
+            )
+        )
+        assert_wait_message(cl_a.conn.send, expected_message)
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)
@@ -315,14 +360,9 @@ async def test_ft004_state_change_flag_removed():
                 "payload": {"width": 1, "height": 1}
             })
 
-            cl_a.ws.send_json({
-                "header": {"event": ClientEvent.SET_WINDOW.value},
-                "payload": {"width": 1, "height": 1}
-            })
-
             assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
-        # Before: 깃발이 있는 상태
+        # Before: 깃발이 있는 상태 확인
         tile_before = await BoardHandler.fetch_tile(Point(1, 1))
         assert tile_before.is_flag == True, "초기 상태에서 깃발이 있어야 함"
 
@@ -335,8 +375,21 @@ async def test_ft004_state_change_flag_removed():
             "payload": {"position": {"x": 1, "y": 1}}
         })
 
-        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE)
+        # After: 깃발이 제거된 상태를 이벤트로 검증
+        unflagged_tile = Tile.create(is_open=False, is_mine=False, is_flag=False, number=0)
+        tiles = Tiles(data=bytearray([unflagged_tile.data]), width=1, height=1)
 
-        # After: 깃발이 제거된 상태
-        tile_after = await BoardHandler.fetch_tile(Point(1, 1))
-        assert tile_after.is_flag == False, "깃발이 제거되어야 함"
+        expected_message = Message(
+            event=Event(
+                event_name=ServerEvent.TILES_STATE,
+                payload=ServerMessage.TilesState(
+                    tiles_li=[
+                        ServerMessage.TilesState.Elem(
+                            data=tiles.to_str(),
+                            range=PointRange(Point(1, 1), Point(1, 1))
+                        )
+                    ]
+                )
+            )
+        )
+        assert_wait_message(cl_a.conn.send, expected_message)
