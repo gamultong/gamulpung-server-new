@@ -4,11 +4,14 @@ import pytest_asyncio
 import asyncio
 from server import app
 from data.event import ServerEvent, ClientEvent
-from data.board import Point, Section, SectionFlag
+from data.board import Point, Section, SectionFlag, PointRange, Tile, Tiles
+from data.payload import ServerMessage
+from data.conn import Message
+from core.event import Event
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler
 from handler.board import BoardHandler
-from tests.utils import PytestTCM, assert_wait_event, build_tiles
+from tests.utils import PytestTCM, assert_wait_event, assert_wait_message, build_tiles
 from unittest.mock import patch
 from config import BoardConfig
 from datetime import datetime, timedelta
@@ -118,31 +121,109 @@ async def test_ft003_open_tile_scenario():
             assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
             assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE)
 
-        cl_a.conn.send.await_args_list = []
         # 시나리오 1: 사용자가 closed-tile (1,1) 클릭
         cl_a.ws.send_json({
             "header": {"event": ClientEvent.OPEN_TILES.value},
             "payload": {"position": {"x": 1, "y": 1}}
         })
 
-        # 개 병신 같이 고려 안한것
-        # - event 소모 | event 초기화 -> 이전 event 받은걸로 넘어가서 wait 안함
-        # - 연쇄 열람
-        # 고쳐야 할것
-        # - 연쇄 열람 되는데 왜 5개만됨?
+        # 시나리오 2: chaining으로 주변 타일들이 열림
+        # (1,1)이 number=0이므로 주변 8칸으로 전파
+        # 커서 window: PointRange(top_left=Point(x=-1, y=2), bottom_right=Point(x=1, y=0))
+        # window 내 타일만 TILES-STATE 이벤트 수신
 
-        # time.sleep(3)
-        # 시나리오 2: tile이 opened 상태로 변경되고 지뢰 정보 표시
-        # TILES_STATE 이벤트 수신 검증
-        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE, timeout=3.0)
-        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE, timeout=3.0)
-        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE, timeout=3.0)
-        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE, timeout=3.0)
-        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE, timeout=3.0)
+        # 열린 타일 payload 검증
+        # chaining 순서는 구현에 의존하므로, 각 메시지를 개별 검증
 
-        # 서버 상태 검증: tile이 opened 상태로 변경됨
-        tile = await BoardHandler.fetch_tile(Point(1, 1))
-        assert tile.is_open == True, "타일이 열린 상태여야 함"
+        # 타일 (1,2): number=1, 열림
+        tile_1_2 = Tile.create(is_open=True, is_mine=False, is_flag=False, number=1)
+        tiles_1_2 = Tiles(data=bytearray([tile_1_2.data]), width=1, height=1)
+        msg_1_2 = Message(
+            event=Event(
+                event_name=ServerEvent.TILES_STATE,
+                payload=ServerMessage.TilesState(
+                    tiles_li=[
+                        ServerMessage.TilesState.Elem(
+                            data=tiles_1_2.to_str(),
+                            range=PointRange(Point(1, 2), Point(1, 2))
+                        )
+                    ]
+                )
+            )
+        )
+        assert_wait_message(cl_a.conn.send, msg_1_2)
+
+        # 타일 (0,0): number=1, 열림
+        tile_0_0 = Tile.create(is_open=True, is_mine=False, is_flag=False, number=1)
+        tiles_0_0 = Tiles(data=bytearray([tile_0_0.data]), width=1, height=1)
+        msg_0_0 = Message(
+            event=Event(
+                event_name=ServerEvent.TILES_STATE,
+                payload=ServerMessage.TilesState(
+                    tiles_li=[
+                        ServerMessage.TilesState.Elem(
+                            data=tiles_0_0.to_str(),
+                            range=PointRange(Point(0, 0), Point(0, 0))
+                        )
+                    ]
+                )
+            )
+        )
+        assert_wait_message(cl_a.conn.send, msg_0_0)
+
+        # 타일 (1,1): number=0, 열림
+        tile_1_1 = Tile.create(is_open=True, is_mine=False, is_flag=False, number=0)
+        tiles_1_1 = Tiles(data=bytearray([tile_1_1.data]), width=1, height=1)
+        msg_1_1 = Message(
+            event=Event(
+                event_name=ServerEvent.TILES_STATE,
+                payload=ServerMessage.TilesState(
+                    tiles_li=[
+                        ServerMessage.TilesState.Elem(
+                            data=tiles_1_1.to_str(),
+                            range=PointRange(Point(1, 1), Point(1, 1))
+                        )
+                    ]
+                )
+            )
+        )
+        assert_wait_message(cl_a.conn.send, msg_1_1)
+
+        # 타일 (1,0): number=1, 열림
+        tile_1_0 = Tile.create(is_open=True, is_mine=False, is_flag=False, number=1)
+        tiles_1_0 = Tiles(data=bytearray([tile_1_0.data]), width=1, height=1)
+        msg_1_0 = Message(
+            event=Event(
+                event_name=ServerEvent.TILES_STATE,
+                payload=ServerMessage.TilesState(
+                    tiles_li=[
+                        ServerMessage.TilesState.Elem(
+                            data=tiles_1_0.to_str(),
+                            range=PointRange(Point(1, 0), Point(1, 0))
+                        )
+                    ]
+                )
+            )
+        )
+        assert_wait_message(cl_a.conn.send, msg_1_0)
+
+        # 타일 (0,2): number=1, 열림
+        tile_0_2 = Tile.create(is_open=True, is_mine=False, is_flag=False, number=1)
+        tiles_0_2 = Tiles(data=bytearray([tile_0_2.data]), width=1, height=1)
+        msg_0_2 = Message(
+            event=Event(
+                event_name=ServerEvent.TILES_STATE,
+                payload=ServerMessage.TilesState(
+                    tiles_li=[
+                        ServerMessage.TilesState.Elem(
+                            data=tiles_0_2.to_str(),
+                            range=PointRange(Point(0, 2), Point(0, 2))
+                        )
+                    ]
+                )
+            )
+        )
+        assert_wait_message(cl_a.conn.send, msg_0_2)
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)
@@ -285,6 +366,7 @@ async def test_ft003_state_change_tile_opened():
             })
 
             assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
+            assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE)
 
         # 상태 변화 전: closed 상태 확인
         tile_before = await BoardHandler.fetch_tile(Point(0, 1))
@@ -300,7 +382,7 @@ async def test_ft003_state_change_tile_opened():
         })
 
         # TILES_STATE 이벤트 대기
-        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE)
+        # 시아에 보이는 Tile 들
         assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE)
 
         # 상태 변화 후: opened 상태 확인

@@ -64,7 +64,7 @@ async def chaining(point: Point):
         if len(result) > c:
             logger.warning(f"chainning 결과가 {c}개가 넘어감")
             c += 10
-        p = queue.pop()
+        p = queue.popleft()
 
         sec_p = abs_to_sec(p)
         if sec_p not in sections:
