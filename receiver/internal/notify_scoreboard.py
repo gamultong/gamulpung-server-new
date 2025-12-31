@@ -1,5 +1,6 @@
 from core.event import Event
 from core.broker import EventBroker
+from core.lifecycle import LifeCycle, RLife
 
 from data.payload import IdDataPayload, ServerMessage, IdPayload
 from data.cursor import Cursor, RankRange, CursorRankRange
@@ -12,6 +13,7 @@ NOTIFY_SCOREBOARD_EVENT = Event[IdDataPayload[RankRange, CursorRankRange]]
 
 
 @EventBroker.add_receiver(InternalEvent.NOTIFY_SCOREBOARD)
+@LifeCycle.with_async_lifecycle(factory=RLife.create_factory)
 async def notify_scoreboard_receiver(event: NOTIFY_SCOREBOARD_EVENT):
     range = event.payload.id
 

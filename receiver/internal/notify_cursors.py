@@ -1,5 +1,6 @@
 from core.event import Event
 from core.broker import EventBroker
+from core.lifecycle import LifeCycle, RLife
 
 from data.payload import IdDataPayload, ServerMessage, IdPayload
 from data.cursor import Cursor
@@ -12,6 +13,7 @@ NOTIFY_CURSORS_EVENT = Event[IdPayload[str] | IdDataPayload[str, Cursor]]
 
 
 @EventBroker.add_receiver(InternalEvent.NOTIFY_CURSORS)
+@LifeCycle.with_async_lifecycle(factory=RLife.create_factory)
 async def notify_cursors_receiver(event: NOTIFY_CURSORS_EVENT):
     id = event.payload.id
     cursor = await CursorHandler.get_by_id(id)

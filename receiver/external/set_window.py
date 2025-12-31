@@ -1,5 +1,6 @@
 from core.event import Event
 from core.broker import EventBroker
+from core.lifecycle import LifeCycle, RLife
 
 from data.payload import IdDataPayload, ClientMessage, IdPayload
 from data.event import ClientEvent
@@ -10,6 +11,7 @@ SET_WINDOW_EVENT = Event[IdDataPayload[str, ClientMessage.SetWindow]] | Event[Id
 
 
 @EventBroker.add_receiver(ClientEvent.SET_WINDOW)
+@LifeCycle.with_async_lifecycle(factory=RLife.create_factory)
 async def set_window_receiver(event: SET_WINDOW_EVENT):
     id = event.payload.id
     data = event.payload.data

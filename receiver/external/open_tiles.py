@@ -3,6 +3,7 @@ from loguru import logger
 
 from core.event import Event
 from core.broker import EventBroker
+from core.lifecycle import LifeCycle, RLife
 
 from data.payload import IdDataPayload, ClientMessage
 from data.board import Point, Section, abs_to_sec, PointRange
@@ -15,6 +16,7 @@ OPEN_TILES_EVENT = Event[IdDataPayload[str, ClientMessage.OpenTiles]]
 
 
 @EventBroker.add_receiver(ClientEvent.OPEN_TILES)
+@LifeCycle.with_async_lifecycle(factory=RLife.create_factory)
 async def open_tiles_receiver(event: OPEN_TILES_EVENT):
     id = event.payload.id
     data = event.payload.data
@@ -62,7 +64,7 @@ async def chaining(point: Point):
         if len(result) > c:
             logger.warning(f"chainning 결과가 {c}개가 넘어감")
             c += 10
-        p = queue.pop()
+        p = queue.popleft()
 
         sec_p = abs_to_sec(p)
         if sec_p not in sections:

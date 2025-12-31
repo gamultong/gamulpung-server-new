@@ -3,11 +3,13 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, Response, WebSocketDisconnect
 from websockets.exceptions import ConnectionClosed
+from core.broker import EventBroker
 from handler.connection import ConnectionHandler, Conn
 from handler.board import initialize_board
 from handler.board.storage import _get_db, set_table
 import sentry_sdk
 from config import SentryConfig
+from asyncio import sleep
 
 # SENTRY_DSN이 있을 때만 Sentry 초기화
 if hasattr(SentryConfig, 'SENTRY_DSN') and SentryConfig.SENTRY_DSN:
@@ -39,6 +41,17 @@ async def lifespan(app: FastAPI):
     yield  # app 실행
 
     # teardown
+
+    elapsed = 0
+    step = 0.1
+    timeout = 10
+    while elapsed < timeout:
+        if EventBroker.is_end():
+            break
+        await sleep(step)
+        elapsed += step
+    else:
+        raise "문제 있음"
 
 app = FastAPI(lifespan=lifespan)
 

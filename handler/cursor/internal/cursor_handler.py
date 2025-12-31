@@ -3,11 +3,19 @@ create(id)
 """
 from core.event import Event
 from core.broker import EventBroker
+from core.lifecycle import HLife, LifeCycle
 
 from data.cursor import Cursor, CursorRankRange, RankRange
 from data.payload import IdPayload, IdDataPayload
 from data.board import is_overlap, PointRange, Point
 from data.event import InternalEvent
+from data.event.emitter import (
+    get_cursor_create_events,
+    get_cursor_move_events,
+    get_cursor_death_events,
+    get_cursor_score_events,
+    get_cursor_window_events
+)
 from datetime import datetime, timedelta
 
 from config import CursorConfig
@@ -17,24 +25,21 @@ class CursorHandler:
     cursor_dict: dict[str, Cursor] = {}
 
     @classmethod
+    @LifeCycle.with_async_lifecycle(
+        factory=HLife.create_factory("CursorHandler", "create")
+    )
     async def create(cls, cursor: Cursor):
-        cls.cursor_dict[cursor.id] = cursor.copy()
+        hlife = HLife.get_lifecycle()
 
-        event = Event(
-            event_name=InternalEvent.NOTIFY_CURSORS,
-            payload=IdPayload(
-                id=cursor.id
-            )
-        )
-        await EventBroker.publish(event=event)
+        new_cursor = cursor.copy()
+        cls.cursor_dict[cursor.id] = new_cursor
 
-        event = Event(
-            event_name=InternalEvent.SETTED_WINDOW,
-            payload=IdPayload(
-                id=cursor.id
-            )
-        )
-        await EventBroker.publish(event=event)
+        hlife.set_snapshot(before=None, after=new_cursor)
+
+        events = get_cursor_create_events(cursor)
+        hlife.add_events(events)
+        for event in events:
+            await EventBroker.publish(event=event)
 
     @classmethod
     async def delete(cls, id: str):
@@ -56,7 +61,12 @@ class CursorHandler:
         ]
 
     @classmethod
+    @LifeCycle.with_async_lifecycle(
+        factory=HLife.create_factory("CursorHandler", "move")
+    )
     async def move(cls, cursor: Cursor, position: Point):
+        hlife = HLife.get_lifecycle()
+
         old_cur = await cls.get_by_id(cursor.id)
 
         old_x = old_cur.position.x
@@ -71,6 +81,8 @@ class CursorHandler:
         new_cur.position = position
         new_cur.score += 1
 
+        hlife.set_snapshot(before=old_cur, after=new_cur)
+
         rank_range = RankRange(1, 10)
         old_cur_rank_range = await cls.get_cursor_by_rank_range(rank_range)
 
@@ -79,26 +91,18 @@ class CursorHandler:
         new_cur_rank_range = await cls.get_cursor_by_rank_range(rank_range)
         await cls.scoreboard_modify(old_cur_rank_range, new_cur_rank_range)
 
-        event = Event(
-            event_name=InternalEvent.NOTIFY_CURSORS,
-            payload=IdDataPayload(
-                id=cursor.id,
-                data=old_cur
-            )
-        )
-        await EventBroker.publish(event=event)
-
-        event = Event(
-            event_name=InternalEvent.SETTED_WINDOW,
-            payload=IdDataPayload(
-                id=cursor.id,
-                data=old_cur
-            )
-        )
-        await EventBroker.publish(event=event)
+        events = get_cursor_move_events(old_cur, new_cur)
+        hlife.add_events(events)
+        for event in events:
+            await EventBroker.publish(event=event)
 
     @classmethod
+    @LifeCycle.with_async_lifecycle(
+        factory=HLife.create_factory("CursorHandler", "death")
+    )
     async def death(cls, cursor: Cursor):
+        hlife = HLife.get_lifecycle()
+
         # old_cur get 없이 cursor 그냥 써도됨
         old_cur = await cls.get_by_id(cursor.id)
         if old_cur.active_at > datetime.now():
@@ -109,6 +113,8 @@ class CursorHandler:
         new_cur.score = 0
         new_cur.active_at = datetime.now() + timedelta(seconds=CursorConfig.REVIVE_SECONDS)
 
+        hlife.set_snapshot(before=old_cur, after=new_cur)
+
         rank_range = RankRange(1, 10)
         old_cur_rank_range = await cls.get_cursor_by_rank_range(rank_range)
 
@@ -117,22 +123,25 @@ class CursorHandler:
         new_cur_rank_range = await cls.get_cursor_by_rank_range(rank_range)
         await cls.scoreboard_modify(old_cur_rank_range, new_cur_rank_range)
 
-        event = Event(
-            event_name=InternalEvent.NOTIFY_CURSORS,
-            payload=IdDataPayload(
-                id=cursor.id,
-                data=old_cur
-            )
-        )
-        await EventBroker.publish(event=event)
+        events = get_cursor_death_events(old_cur, new_cur)
+        hlife.add_events(events)
+        for event in events:
+            await EventBroker.publish(event=event)
 
     @classmethod
+    @LifeCycle.with_async_lifecycle(
+        factory=HLife.create_factory("CursorHandler", "increase_score")
+    )
     async def increase_score(cls, cursor: Cursor, score: int):
+        hlife = HLife.get_lifecycle()
+
         old_cur = await cls.get_by_id(cursor.id)
 
         new_cur = old_cur.copy()
         new_cur.score += score
 
+        hlife.set_snapshot(before=old_cur, after=new_cur)
+
         rank_range = RankRange(1, 10)
         old_cur_rank_range = await cls.get_cursor_by_rank_range(rank_range)
 
@@ -141,14 +150,10 @@ class CursorHandler:
         new_cur_rank_range = await cls.get_cursor_by_rank_range(rank_range)
         await cls.scoreboard_modify(old_cur_rank_range, new_cur_rank_range)
 
-        event = Event(
-            event_name=InternalEvent.NOTIFY_CURSORS,
-            payload=IdDataPayload(
-                id=cursor.id,
-                data=old_cur
-            )
-        )
-        await EventBroker.publish(event=event)
+        events = get_cursor_score_events(old_cur, new_cur)
+        hlife.add_events(events)
+        for event in events:
+            await EventBroker.publish(event=event)
 
     @classmethod
     async def get_cursor_by_rank_range(cls, rank_range: RankRange):
@@ -187,22 +192,26 @@ class CursorHandler:
             await EventBroker.publish(event=event)
 
     @classmethod
+    @LifeCycle.with_async_lifecycle(
+        factory=HLife.create_factory("CursorHandler", "set_window")
+    )
     async def set_window(cls, cursor: Cursor, width: int, height: int):
+        hlife = HLife.get_lifecycle()
+
         old_cur = await cls.get_by_id(cursor.id)
 
         new_cur = old_cur.copy()
         new_cur.width = width
         new_cur.height = height
 
+        hlife.set_snapshot(before=old_cur, after=new_cur)
+
         await cls.update(new_cur)
 
-        event = Event(
-            event_name=InternalEvent.SETTED_WINDOW,
-            payload=IdPayload(
-                id=cursor.id
-            )
-        )
-        await EventBroker.publish(event=event)
+        events = get_cursor_window_events(old_cur, new_cur)
+        hlife.add_events(events)
+        for event in events:
+            await EventBroker.publish(event=event)
 
     @classmethod
     async def update(cls, cursor: Cursor):
@@ -210,11 +219,21 @@ class CursorHandler:
 
     @classmethod
     async def get_cursor_by_watching_range(cls, range: PointRange):
-        return [
-            cursor.copy()
-            for key, cursor in cls.cursor_dict.items()
-            if is_overlap(range, cursor.window)
-        ]
+        from loguru import logger
+
+        result = []
+        for key, cursor in cls.cursor_dict.items():
+            overlap = is_overlap(range, cursor.window)
+            logger.debug(
+                f"get_cursor_by_watching_range: cursor_id={cursor.id}, "
+                f"cursor.window={cursor.window}, "
+                f"range={range}, "
+                f"overlap={overlap}"
+            )
+            if overlap:
+                result.append(cursor.copy())
+
+        return result
 
     @classmethod
     async def get_cursor_in_range(cls, range: PointRange):

@@ -3,6 +3,7 @@ from data.payload import IdDataPayload, ServerMessage, ClientMessage
 from data.event import ServerEvent, ClientEvent
 
 from core.broker import EventBroker
+from core.lifecycle import LifeCycle, RLife
 from handler.connection import ConnectionHandler
 from handler.cursor import CursorHandler
 
@@ -10,6 +11,7 @@ CHAT_EVENT = Event[IdDataPayload[str, ClientMessage.Chat]]
 
 
 @EventBroker.add_receiver(ClientEvent.CHAT)
+@LifeCycle.with_async_lifecycle(factory=RLife.create_factory)
 async def chat_receiver(event: CHAT_EVENT):
     id = event.payload.id
     data = event.payload.data

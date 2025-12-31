@@ -1,5 +1,6 @@
 from core.event import Event
 from core.broker import EventBroker
+from core.lifecycle import LifeCycle, RLife
 
 from data.payload import IdDataPayload, ServerMessage, IdPayload
 from data.board import PointRange, Tiles, Tile, Point
@@ -14,6 +15,7 @@ NOTIFY_EXPLOSION_EVENT = Event[IdDataPayload[Point, Tile]]
 
 
 @EventBroker.add_receiver(InternalEvent.NOTIFY_EXPLOSION)
+@LifeCycle.with_async_lifecycle(factory=RLife.create_factory)
 async def notify_explosion_receiver(event: NOTIFY_EXPLOSION_EVENT):
     point = event.payload.id
     point_range = PointRange.create_by_mid(point, 1, 1)
