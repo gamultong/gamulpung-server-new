@@ -16,13 +16,18 @@ SET_FLAG_EVENT = Event[IdDataPayload[str, ClientMessage.SetFlag]]
 async def set_flag_receiver(event: SET_FLAG_EVENT):
     id = event.payload.id
     data = event.payload.data
+    point = data.position
 
     cursor = await CursorHandler.get_by_id(id)
     if not cursor.is_alive:
         logger.warning(f"커서가 이미 사망함 | cursor:{cursor}")
         return
-    assert cursor.in_interaction_range(data.position)
 
-    await BoardHandler.togle_flag(data.position)
+    # 깃발 설치 가능 범위 밖
+    if not cursor.in_interaction_range(point):
+        logger.warning(f"깃발 설치 가능 범위 밖으로 이동하려함 | cursor:{cursor}, point:{point}")
+        return
+
+    await BoardHandler.togle_flag(point)
 
     await CursorHandler.increase_score(cursor, 10)
