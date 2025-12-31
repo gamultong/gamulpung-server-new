@@ -19,12 +19,16 @@ async def notify_cursors_receiver(event: NOTIFY_CURSORS_EVENT):
     cursor = await CursorHandler.get_by_id(id)
 
     cursors = await CursorHandler.get_cursors_by_cursor_window(cursor)
+    target_cursors = [
+        cur.id
+        for cur in cursors
+    ]
 
     _event = Event(
         event_name=ServerEvent.CURSORS_STATE,
         payload=ServerMessage.CursorsState(
-            cursors
+            [cursor]
         )
     )
 
-    await ConnectionHandler.multicast([id], _event)
+    await ConnectionHandler.multicast(target_cursors, _event)
