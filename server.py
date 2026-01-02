@@ -62,19 +62,24 @@ async def session(ws: WebSocket):
 
     await ConnectionHandler.join(conn)
 
-    while True:
-        try:
+    try:
+        while True:
             message = await conn.receive()
             logger.debug(f"[{conn.id}]client-message : \n{message}")
 
             client_event = message.event
             await ConnectionHandler.publish_client_event(client_event)
-        except (WebSocketDisconnect, ConnectionClosed) as e:
-            # 연결 종료됨
-            break
 
-    logger.debug(f"[{conn.id}]client-quit")
-    await ConnectionHandler.quit(conn.id)
+    except (WebSocketDisconnect, ConnectionClosed) as e:
+        # 연결 종료됨
+        pass
+
+    except Exception as ex:
+        logger.warning(f"예상하지 못한 오류! | error:{ex}")
+
+    finally:
+        logger.debug(f"[{conn.id}]client-quit")
+        await ConnectionHandler.quit(conn.id)
 
 
 @app.get("/")
