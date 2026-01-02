@@ -73,10 +73,7 @@ async def test_ft002_move_scenario():
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
                 "payload": {"width": 1, "height": 1}
             })
-            cl_a.ws.send_json({
-                "header": {"event": ClientEvent.SET_WINDOW.value},
-                "payload": {"width": 1, "height": 1}
-            })
+            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
         # Before: 초기 상태 확인
         cursor_before = await CursorHandler.get_by_id(CL_A)
@@ -199,10 +196,7 @@ async def test_ft002_state_change_position_and_score():
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
                 "payload": {"width": 1, "height": 1}
             })
-            cl_a.ws.send_json({
-                "header": {"event": ClientEvent.SET_WINDOW.value},
-                "payload": {"width": 1, "height": 1}
-            })
+            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
         # Before: 초기 상태
         cursor_before = await CursorHandler.get_by_id(CL_A)
