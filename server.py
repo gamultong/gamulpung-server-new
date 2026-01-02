@@ -74,9 +74,6 @@ async def session(ws: WebSocket):
         # 연결 종료됨
         pass
 
-    except Exception as ex:
-        logger.warning(f"예상하지 못한 오류! | error:{ex}")
-
     finally:
         logger.debug(f"[{conn.id}]client-quit")
         await ConnectionHandler.quit(conn.id)
