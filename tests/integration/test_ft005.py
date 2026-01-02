@@ -217,3 +217,39 @@ async def test_ft005_state_change_tiles_state_updated():
             timeout=3.0,
             error_msg="TILES_STATE의 range가 변경된 window 크기를 반영하지 않음"
         )
+
+
+@patch.object(BoardConfig, "LENGTH", new=4)
+@patch("server.initialize_board", new=simple_board_map)
+@pytest.mark.asyncio
+async def test_ft005_cursor_state_on_window_change():
+    """
+    상태 변화 검증:
+    - 시야 변경 시 새로운 시야 범위의 커서 정보가 전달된다 (CURSORS_STATE)
+    """
+    with PytestTCM(app).append_client(CL_A) as tcm:
+        cl_a = tcm.get_client(CL_A)
+
+        # Cursor를 (0, 0) 위치에 생성 (초기 window 1x1)
+        with patch("data.cursor.Cursor.create", side_effect=create_cursor_at_position(Point(0, 0))):
+            cl_a.ws.send_json({
+                "header": {"event": ClientEvent.CREATE_CURSOR.value},
+                "payload": {"width": 1, "height": 1}
+            })
+
+            assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE)
+
+        # 이전 event 소비
+        cl_a.conn.send.await_args_list.clear()
+
+        # 시야 크기를 3x3으로 설정
+        cl_a.ws.send_json({
+            "header": {"event": ClientEvent.SET_WINDOW.value},
+            "payload": {"width": 3, "height": 3}
+        })
+
+        # TILES_STATE 이벤트 수신 확인
+        assert_wait_event(cl_a.conn.send, ServerEvent.TILES_STATE, timeout=3.0)
+
+        # CURSORS_STATE 이벤트 수신 확인
+        assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE, timeout=3.0)
