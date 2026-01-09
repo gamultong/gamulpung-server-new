@@ -50,12 +50,21 @@ class ConnectionHandler:
 
     @classmethod
     async def multicast(cls, target_ids: list[str], event: Event):
+        from loguru import logger
+
         snapshot = list(cls.conn_dict.items())
+
+        logger.debug(
+            f"multicast: target_ids={target_ids}, "
+            f"event={event.event_name}, "
+            f"conn_dict_keys={list(cls.conn_dict.keys())}"
+        )
 
         for id, conn in snapshot:
             if id not in target_ids:
                 continue
             msg = Message(event=event)
+            logger.debug(f"multicast sending to {id}: {event.event_name}")
             await conn.send(msg)
 
     @classmethod

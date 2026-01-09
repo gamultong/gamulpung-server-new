@@ -3,11 +3,13 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, Response, WebSocketDisconnect
 from websockets.exceptions import ConnectionClosed
+from core.broker import EventBroker
 from handler.connection import ConnectionHandler, Conn
 from handler.board import initialize_board
 from handler.board.storage import _get_db, set_table
 import sentry_sdk
 from config import SentryConfig
+from asyncio import sleep
 
 # SENTRY_DSN이 있을 때만 Sentry 초기화
 if hasattr(SentryConfig, 'SENTRY_DSN') and SentryConfig.SENTRY_DSN:
@@ -40,6 +42,17 @@ async def lifespan(app: FastAPI):
 
     # teardown
 
+    elapsed = 0
+    step = 0.1
+    timeout = 10
+    while elapsed < timeout:
+        if EventBroker.is_end():
+            break
+        await sleep(step)
+        elapsed += step
+    else:
+        raise "문제 있음"
+
 app = FastAPI(lifespan=lifespan)
 
 
@@ -49,19 +62,21 @@ async def session(ws: WebSocket):
 
     await ConnectionHandler.join(conn)
 
-    while True:
-        try:
+    try:
+        while True:
             message = await conn.receive()
             logger.debug(f"[{conn.id}]client-message : \n{message}")
 
             client_event = message.event
             await ConnectionHandler.publish_client_event(client_event)
-        except (WebSocketDisconnect, ConnectionClosed) as e:
-            # 연결 종료됨
-            break
 
-    logger.debug(f"[{conn.id}]client-quit")
-    await ConnectionHandler.quit(conn.id)
+    except (WebSocketDisconnect, ConnectionClosed) as e:
+        # 연결 종료됨
+        pass
+
+    finally:
+        logger.debug(f"[{conn.id}]client-quit")
+        await ConnectionHandler.quit(conn.id)
 
 
 @app.get("/")

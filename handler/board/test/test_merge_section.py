@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from config import BoardConfig
 from data.board import Point, PointRange, Section, SectionFlag
-from tests.integration.map.builder import build_tiles
+from tests.utils.internal.builder import build_tiles
 
 from handler.board.internal.section_handling.numbering import numbering, merge_sections
 

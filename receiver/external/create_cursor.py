@@ -1,5 +1,6 @@
 from core.event import Event
 from core.broker import EventBroker
+from core.lifecycle import LifeCycle, RLife
 
 from data.payload import IdDataPayload, ClientMessage, ServerMessage
 from data.cursor import Cursor
@@ -14,6 +15,7 @@ CREATE_CURSOR_EVENT = Event[IdDataPayload[str, ClientMessage.CreateCursor]]
 
 
 @EventBroker.add_receiver(ClientEvent.CREATE_CURSOR)
+@LifeCycle.with_async_lifecycle(factory=RLife.create_factory)
 async def create_cursor_receiver(event: CREATE_CURSOR_EVENT):
     id = event.payload.id
     data = event.payload.data

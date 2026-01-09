@@ -4,6 +4,7 @@ from data.event import TriggerEvent, ServerEvent
 from data.cursor import RankRange
 
 from core.broker import EventBroker
+from core.lifecycle import LifeCycle, RLife
 from handler.connection import ConnectionHandler
 from handler.cursor import CursorHandler
 
@@ -11,6 +12,7 @@ JOIN = Event[IdPayload[str]]
 
 
 @EventBroker.add_receiver(TriggerEvent.JOIN)
+@LifeCycle.with_async_lifecycle(factory=RLife.create_factory)
 async def join_receiver(event: JOIN):
     id = event.payload.id
 

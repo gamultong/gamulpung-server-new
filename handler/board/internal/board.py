@@ -1,14 +1,17 @@
 from data.board import PointRange, Tiles, Point, Tile, abs_to_sec, SectionFlag
 from data.payload import IdDataPayload, IdPayload
 from data.event import InternalEvent
+from data.event.emitter import get_tile_events
 
 from core.event import Event
 from core.broker import EventBroker
+from core.lifecycle import HLife, LifeCycle
 from handler.board.storage import _get_db, get_list_by_section_range, get_section, update_section
 
 from config import BoardConfig
 from .section_handling.upgrade_section import upgrade_interaction_section, upgrade_numbering_section
 from .section_handling.make_section import make_closed_section
+from loguru import logger
 
 
 class BoardHandler:
@@ -63,7 +66,12 @@ class BoardHandler:
         return result
 
     @classmethod
+    @LifeCycle.with_async_lifecycle(
+        factory=HLife.create_factory("BoardHandler", "togle_flag")
+    )
     async def togle_flag(cls, point: Point):
+        hlife = HLife.get_lifecycle()
+
         sec_p = abs_to_sec(point)
 
         async with _get_db() as db:
@@ -78,20 +86,23 @@ class BoardHandler:
             old_tile = section.at_tile_by_abs_point(point)
             new_tile = old_tile.changed(is_flag=not old_tile.is_flag)
 
+            hlife.set_snapshot(before=old_tile, after=new_tile)
+
             section.update_by_abs_point(point, new_tile)
             await update_section(db, section)
 
-        event = Event(
-            event_name=InternalEvent.NOTIFY_TILES,
-            payload=IdPayload(
-                PointRange(point, point)
-            )
-        )
-
-        await EventBroker.publish(event)
+        events = get_tile_events(old_tile, new_tile, point)
+        hlife.add_events(events)
+        for event in events:
+            await EventBroker.publish(event)
 
     @classmethod
+    @LifeCycle.with_async_lifecycle(
+        factory=HLife.create_factory("BoardHandler", "open_tiles")
+    )
     async def open_tiles(cls, point: Point):
+        hlife = HLife.get_lifecycle()
+
         sec_p = abs_to_sec(point)
 
         async with _get_db() as db:
@@ -111,27 +122,16 @@ class BoardHandler:
 
             new_tile = old_tile.changed(is_open=True)
 
+            hlife.set_snapshot(before=old_tile, after=new_tile)
+
             section.update_by_abs_point(point, new_tile)
             await update_section(db, section)
 
-        event = Event(
-            event_name=InternalEvent.NOTIFY_TILES,
-            payload=IdPayload(
-                PointRange(point, point),
-            )
-        )
+        events = get_tile_events(old_tile, new_tile, point)
+        logger.debug(events)
 
-        await EventBroker.publish(event)
-
-        if new_tile.is_mine:
-            event = Event(
-                event_name=InternalEvent.NOTIFY_EXPLOSION,
-                payload=IdDataPayload(
-                    point,
-                    data=old_tile
-                )
-            )
-
+        hlife.add_events(events)
+        for event in events:
             await EventBroker.publish(event)
 
     @classmethod

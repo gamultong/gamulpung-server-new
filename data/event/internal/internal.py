@@ -9,4 +9,3 @@ class InternalEvent(EventEnum):
     NOTIFY_SCOREBOARD = auto()
     NOTIFY_TILES = auto()
     SETTED_WINDOW = auto()
-    CREATED = auto()

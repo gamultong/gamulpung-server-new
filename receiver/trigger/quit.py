@@ -3,6 +3,7 @@ from data.payload import IdPayload, ServerMessage, ClientMessage
 from data.event import TriggerEvent, ServerEvent
 
 from core.broker import EventBroker
+from core.lifecycle import LifeCycle, RLife
 from handler.connection import ConnectionHandler
 from handler.cursor import CursorHandler
 
@@ -10,6 +11,7 @@ QUIT = Event[IdPayload[str]]
 
 
 @EventBroker.add_receiver(TriggerEvent.QUIT)
+@LifeCycle.with_async_lifecycle(factory=RLife.create_factory)
 async def quit_receiver(event: QUIT):
     id = event.payload.id
 

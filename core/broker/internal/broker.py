@@ -4,6 +4,8 @@ from typing import Callable, Coroutine
 from core.event import Event
 from loguru import logger
 
+EVENT_COUNT = 0
+
 
 class Receiver:
     def __init__(self, func: Callable[[Event], Coroutine], event_name: str):
@@ -26,6 +28,7 @@ class EventBroker:
             EventBroker.event_dict[event_name] = []
 
         def wrapper(func: Callable[[Event], Coroutine] | Receiver):
+            logger.debug(f"add_receiver {event_name}")
             if isinstance(func, Receiver):
                 func = func.func
 
@@ -42,7 +45,23 @@ class EventBroker:
         coroutines = []
 
         receivers = EventBroker.event_dict[event.event_name]
+
+        async def counter(receiver, event):
+            global EVENT_COUNT
+            EVENT_COUNT += 1
+            try:
+                await receiver(event)
+            finally:
+                EVENT_COUNT -= 1
+
         for receiver in receivers:
-            coroutines.append(receiver(event))
+            coroutines.append(counter(receiver, event))
 
         await asyncio.gather(*coroutines)
+
+    @staticmethod
+    def is_end():
+        if EVENT_COUNT == 0:
+            return True
+        else:
+            return False

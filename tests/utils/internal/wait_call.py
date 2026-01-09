@@ -34,8 +34,9 @@ def assert_wait_call_if(
     """
     elapsed = 0
     while elapsed < timeout:
-        for call_args in mock.await_args_list:
+        for idx, call_args in enumerate(mock.await_args_list):
             if call_args[0] and predicate(call_args[0][0]):
+                mock.await_args_list.pop(idx)
                 return
         time.sleep(step)
         elapsed += step
