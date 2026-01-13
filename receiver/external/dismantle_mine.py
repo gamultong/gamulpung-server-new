@@ -12,12 +12,12 @@ from handler.cursor import CursorHandler
 
 from receiver.utils import chaining
 
-OPEN_TILES_EVENT = Event[IdDataPayload[str, ClientMessage.OpenTiles]]
+DISMANTLE_MINE_EVENT = Event[IdDataPayload[str, ClientMessage.DismantleMine]]
 
 
-@EventBroker.add_receiver(ClientEvent.OPEN_TILES)
+@EventBroker.add_receiver(ClientEvent.DISMANTLE_MINE)
 @LifeCycle.with_async_lifecycle(factory=RLife.create_factory)
-async def open_tiles_receiver(event: OPEN_TILES_EVENT):
+async def dismantle_mine_receiver(event: DISMANTLE_MINE_EVENT):
     id = event.payload.id
     data = event.payload.data
 
@@ -28,23 +28,25 @@ async def open_tiles_receiver(event: OPEN_TILES_EVENT):
         logger.warning(f"커서가 이미 사망함 | cursor:{cursor}")
         return
     if not cursor.in_interaction_range(point):
-        logger.warning(f"상호작용 범위 밖 타일 열람 시도 | cursor:{cursor}, point:{point}")
+        logger.warning(f"상호작용 범위 밖 타일 지뢰 해체 시도 | cursor:{cursor}, point:{point}")
         return
 
     tile = await BoardHandler.fetch_tile(point)
-    if tile.is_flag:
-        logger.warning(f"깃발이 설치된 타일 열람 시도 | cursor:{cursor}, tile:{tile}")
+    if not tile.is_flag:
+        logger.warning(f"깃발이 설치되지 않은 타일 지뢰 해체 시도 | cursor:{cursor}, tile:{tile}")
         return
     if tile.is_open:
-        logger.warning(f"열린 타일 열람 시도 | cursor:{cursor}, tile:{tile}")
+        logger.warning(f"열린 타일 지뢰 해체 시도 | cursor:{cursor}, tile:{tile}")
         return
+
+    await BoardHandler.togle_flag(point)
+
     if tile.is_mine:
-        await BoardHandler.open_tiles(point)
+        await BoardHandler.dismantle_mine(point)
+        # 지뢰 획득 로직
+        # await CursorHandler.
         return
 
     chaining_points = await chaining(point)
     for p in chaining_points:
         await BoardHandler.open_tiles(p)
-        await CursorHandler.increase_score(cursor, 100)
-    # await BoardHandler.open_tiles(point)
-    # await CursorHandler.increase_score(cursor, 100)
