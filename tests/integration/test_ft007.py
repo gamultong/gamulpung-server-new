@@ -219,8 +219,6 @@ async def test_ft007_grant_bomb_on_dismantle_mine():
             error_msg="지뢰 해체 후 (1,1) 타일 opened/mine/flag 상태가 반영된 TILES_STATE를 받지 못함"
         )
 
-        assert False
-
         cursor_after = await CursorHandler.get_by_id(CL_A)
         assert cursor_after.items.bomb == 1
 

@@ -161,7 +161,7 @@ class BoardHandler:
             section.update_by_abs_point(point, new_tile)
             await update_section(db, section)
 
-        events = Tile.emitter.get_events(old_tile, new_tile, point)
+        events = Tile.emitter.get_events(old=old_tile, new=new_tile, point=point)
         logger.debug(events)
 
         hlife.add_events(events)
