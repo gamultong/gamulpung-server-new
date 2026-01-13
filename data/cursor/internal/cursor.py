@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from core.dataobj import DataObj
 from data.board import Point, PointRange
 from .items import Items
@@ -66,3 +68,8 @@ class Cursor(DataObj):
             score=score,
             items=items.copy()
         )
+
+
+# CursorEmitter를 클래스 속성으로 할당 (dataclass fields에 포함되지 않도록)
+from .event_emitter import CursorEmitter
+Cursor.emitter = CursorEmitter
