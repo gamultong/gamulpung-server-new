@@ -47,6 +47,27 @@ class TileEmitter:
 
         return events
 
+    @classmethod
+    def get_dismantle_events(cls, point: Point) -> list[Event]:
+        """지뢰 해체 시 발행할 Event 목록 반환
+
+        지뢰 해체는 폭발 이벤트 없이 NOTIFY_TILES만 발행
+
+        Args:
+            point: 해체된 지뢰의 좌표
+
+        Returns:
+            NOTIFY_TILES 이벤트 목록
+        """
+        from data.event import InternalEvent
+        from data.payload import IdPayload
+        from data.board import PointRange
+
+        return [Event(
+            event_name=InternalEvent.NOTIFY_TILES,
+            payload=IdPayload(id=PointRange(point, point))
+        )]
+
 
 @TileEmitter.add()
 def notify_tiles_event(old: Tile, new: Tile, point: Point) -> Generator[Event, None, None]:
