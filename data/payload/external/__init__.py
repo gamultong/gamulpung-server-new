@@ -10,7 +10,8 @@ class ClientMessage:
         SetWindow,
         Move,
         OpenTiles,
-        SetFlag
+        SetFlag,
+        DismantleMine
     )
 
 
