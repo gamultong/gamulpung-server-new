@@ -26,3 +26,7 @@ class OpenTiles(ClientMessage):
 
 class SetFlag(ClientMessage):
     position: Point
+
+
+class DismantleMine(ClientMessage):
+    position: Point

@@ -62,6 +62,8 @@ def get_payload_by_event_name(event_name: EventEnum) -> Type[ClientMessage.Base]
             return ClientMessage.OpenTiles
         case ClientEvent.SET_FLAG:
             return ClientMessage.SetFlag
+        case ClientEvent.DISMANTLE_MINE:
+            return ClientMessage.DismantleMine
     raise
 
 

@@ -1,8 +1,10 @@
 from enum import auto
 from core.event import EventEnum
 
+
 class ExternalEvent(EventEnum):
     __scope_part__ = "EXTERNAL"
+
 
 class ClientEvent(ExternalEvent):
     __scope_part__ = "CLIENT"
@@ -12,6 +14,8 @@ class ClientEvent(ExternalEvent):
     OPEN_TILES = auto()
     SET_FLAG = auto()
     SET_WINDOW = auto()
+    DISMANTLE_MINE = auto()
+
 
 class ServerEvent(ExternalEvent):
     __scope_part__ = "SERVER"

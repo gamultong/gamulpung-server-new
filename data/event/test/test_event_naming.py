@@ -4,16 +4,17 @@ from data.event.internal.external import ClientEvent, ServerEvent
 from data.event.internal.trigger import TriggerEvent
 from core.event.internal.event import EventEnum
 
+
 class EventNaming_TestCase(unittest.TestCase):
     def assertEnumHasNames(self, enum_cls: type[EventEnum], expected_names):
         """EventEnum에 지정된 name만이 들어갔는지 검사"""
         self.assertCountEqual(enum_cls.__members__.keys(), expected_names)
-    
+
     def assertEnumValuesUnique(self, enum_cls: type[EventEnum]):
         """alias 포함 value 전체를 검사하여 중복 검사"""
         values = [m.value for m in enum_cls.__members__.values()]
         self.assertEqual(
-            len(values), len(set(values)), 
+            len(values), len(set(values)),
             f"{enum_cls.__name__} has duplicated values (including aliases)"
         )
 
@@ -26,7 +27,7 @@ class EventNaming_TestCase(unittest.TestCase):
     def test_client_event_members(self):
         self.assertEnumHasNames(
             ClientEvent,
-            ["CHAT", "CREATE_CURSOR", "MOVE", "OPEN_TILES", "SET_FLAG", "SET_WINDOW"],
+            ["CHAT", "CREATE_CURSOR", "MOVE", "OPEN_TILES", "SET_FLAG", "SET_WINDOW", "DISMANTLE_MINE"],
         )
         self.assertEnumValuesUnique(ClientEvent)
 

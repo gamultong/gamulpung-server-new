@@ -22,3 +22,16 @@ def get_tile_events(old: Tile, new: Tile, point: Point) -> list[Event]:
         ))
 
     return events
+
+
+def get_mine_dismantle_events(point: Point) -> list[Event]:
+    """지뢰 해체에 따른 Events 목록 반환"""
+    events: list[Event] = []
+
+    # 지뢰 해체 시 NOTIFY_TILES 발행
+    events.append(Event(
+        event_name=InternalEvent.NOTIFY_TILES,
+        payload=IdPayload(PointRange(point, point))
+    ))
+
+    return events
