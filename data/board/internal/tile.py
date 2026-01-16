@@ -125,3 +125,8 @@ class Tile(DataObj):
 
 def hide_info(t: Tile):
     return t.changed(is_mine=False, number=0)
+
+
+# TileEmitter를 클래스 속성으로 할당 (dataclass fields에 포함되지 않도록)
+from .tile_emitter import TileEmitter
+Tile.emitter = TileEmitter
