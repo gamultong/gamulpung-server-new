@@ -79,3 +79,16 @@ def get_cursor_window_events(old: Cursor, new: Cursor) -> list[Event]:
     ))
 
     return events
+
+
+def get_mine_grant_events(old: Cursor, new: Cursor) -> list[Event]:
+    """Cursor 점수 증가 시 Event 목록 반환"""
+    events: list[Event] = []
+
+    # Cursor 점수 증가 시 NOTIFY_CURSORS 발행
+    events.append(Event(
+        event_name=InternalEvent.NOTIFY_CURSORS,
+        payload=IdDataPayload(id=new.id, data=old)
+    ))
+
+    return events
