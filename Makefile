@@ -32,3 +32,7 @@ profile:
 		exit 1; \
 	fi
 	uv run python -m tests.profile.${pfn}.profiling
+
+branch-clear:
+	git fetch --all --prune
+	git branch --merged develop   | egrep -v 'develop'   | xargs -n 1 git branch -d
