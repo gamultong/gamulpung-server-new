@@ -220,6 +220,7 @@ async def test_ft007_grant_bomb_on_dismantle_mine():
         )
 
         # grant_item 후 CURSORS_STATE 대기
+        cl_a.conn.send.await_args_list.clear()
         assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
         cursor_after = await CursorHandler.get_by_id(CL_A)
