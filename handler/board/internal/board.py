@@ -161,13 +161,7 @@ class BoardHandler:
             section.update_by_abs_point(point, new_tile)
             await update_section(db, section)
 
-        # 지뢰 해체는 폭발이 아니므로 NOTIFY_TILES만 발행
-        events = [
-            Event(
-                event_name=InternalEvent.NOTIFY_TILES,
-                payload=IdPayload(id=PointRange(point, point))
-            )
-        ]
+        events = Tile.emitter.get_dismantle_events(point)
         logger.debug(events)
 
         hlife.add_events(events)
