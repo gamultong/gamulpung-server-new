@@ -219,12 +219,22 @@ async def test_ft007_grant_bomb_on_dismantle_mine():
             error_msg="지뢰 해체 후 (1,1) 타일 opened/mine/flag 상태가 반영된 TILES_STATE를 받지 못함"
         )
 
-        # grant_item 후 CURSORS_STATE 대기
-        cl_a.conn.send.await_args_list.clear()
-        assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
+        # grant_item 후 bomb=1인 CURSORS_STATE 대기
+        # SET_FLAG에서도 CURSORS_STATE가 발생하므로 bomb 값으로 구분
+        def cursors_state_with_bomb(msg):
+            if msg.event.event_name != ServerEvent.CURSORS_STATE:
+                return False
+            for cursor in msg.event.payload.cursors:
+                if cursor.id == CL_A and cursor.items.bomb == 1:
+                    return True
+            return False
 
-        cursor_after = await CursorHandler.get_by_id(CL_A)
-        assert cursor_after.items.bomb == 1
+        assert_wait_call_if(
+            cl_a.conn.send,
+            cursors_state_with_bomb,
+            timeout=3.0,
+            error_msg="bomb=1인 CURSORS_STATE를 받지 못함"
+        )
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)
