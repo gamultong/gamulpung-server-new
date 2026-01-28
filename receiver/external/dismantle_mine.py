@@ -6,6 +6,7 @@ from core.lifecycle import LifeCycle, RLife
 
 from data.payload import IdDataPayload, ClientMessage
 from data.event import ClientEvent
+from data.cursor import ItemType
 
 from handler.board import BoardHandler
 from handler.cursor import CursorHandler
@@ -44,7 +45,7 @@ async def dismantle_mine_receiver(event: DISMANTLE_MINE_EVENT):
     if tile.is_mine:
         await BoardHandler.dismantle_mine(point)
         # 지뢰 획득 로직
-        # await CursorHandler.
+        await CursorHandler.grant_item(cursor, ItemType.BOMB, 1)
         return
 
     chaining_points = await chaining(point)

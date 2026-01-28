@@ -5,7 +5,7 @@ from core.event import Event
 from core.broker import EventBroker
 from core.lifecycle import HLife, LifeCycle
 
-from data.cursor import Cursor, CursorRankRange, RankRange
+from data.cursor import Cursor, CursorRankRange, RankRange, ItemType, Items
 from data.payload import IdPayload, IdDataPayload
 from data.board import is_overlap, PointRange, Point
 from data.event import InternalEvent
@@ -197,6 +197,27 @@ class CursorHandler:
         new_cur = old_cur.copy()
         new_cur.width = width
         new_cur.height = height
+
+        hlife.set_snapshot(before=old_cur, after=new_cur)
+
+        await cls.update(new_cur)
+
+        events = Cursor.emitter.get_events(old=old_cur, new=new_cur)
+        hlife.add_events(events)
+        for event in events:
+            await EventBroker.publish(event=event)
+
+    @classmethod
+    @LifeCycle.with_async_lifecycle(
+        factory=HLife.create_factory("CursorHandler", "grant_item")
+    )
+    async def grant_item(cls, cursor: Cursor, item_type: ItemType, amount: int):
+        hlife = HLife.get_lifecycle()
+
+        old_cur = await cls.get_by_id(cursor.id)
+
+        new_cur = old_cur.copy()
+        new_cur.items.grant_item(item_type, amount)
 
         hlife.set_snapshot(before=old_cur, after=new_cur)
 
