@@ -1,5 +1,6 @@
 from __future__ import annotations
 from .lifecycle import LifeCycle, _lifecycle_var
+from .caller import Caller
 from .parameter import Parameter
 from functools import wraps
 from typing import Any
@@ -9,6 +10,8 @@ class HLife(LifeCycle):
     """Handler Lifecycle
 
     Handler 메서드 실행을 추적하고 로깅하기 위한 Lifecycle
+
+    RLife 컨텍스트 내에서 호출되면 Caller에 자동 등록된다.
     """
     handler_name: str
     method_name: str
@@ -16,6 +19,7 @@ class HLife(LifeCycle):
     before_snapshot: Any | None
     after_snapshot: Any | None
     events: list[Any]  # list[Event]
+    caller_id: str | None
 
     @classmethod
     def create(
@@ -33,6 +37,7 @@ class HLife(LifeCycle):
             before_snapshot=None,
             after_snapshot=None,
             events=[],
+            caller_id=None,
             **kwargs
         )
 
@@ -62,9 +67,15 @@ class HLife(LifeCycle):
         return factory
 
     def on_enter(self, func, args, kwargs):
-        """진입 시점 hook - args 캡처"""
+        """진입 시점 hook - args 캡처 및 Caller 등록"""
         # cls 제외한 args, kwargs를 Parameter로 저장
         self.params = Parameter(args=args[1:], kwargs=kwargs)
+
+        # 현재 Caller가 있으면 등록
+        caller = Caller.get_current()
+        if caller:
+            caller.register_hlife(self)
+            self.caller_id = caller.id
 
     def on_exit(self):
         """종료 시 로깅 - Hook 오버라이드"""
