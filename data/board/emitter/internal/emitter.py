@@ -5,7 +5,7 @@ from core.event import Event
 from data.board import Point
 
 if TYPE_CHECKING:
-    from .tile import Tile
+    from data.board import Tile
 
 
 class TileEmitter:
@@ -67,29 +67,3 @@ class TileEmitter:
             event_name=InternalEvent.NOTIFY_TILES,
             payload=IdPayload(id=PointRange(point, point))
         )]
-
-
-@TileEmitter.add()
-def notify_tiles_event(old: Tile, new: Tile, point: Point) -> Generator[Event, None, None]:
-    """Tile 변경 시 NOTIFY_TILES 이벤트 발행"""
-    from data.event import InternalEvent
-    from data.payload import IdPayload
-    from data.board import PointRange
-
-    yield Event(
-        event_name=InternalEvent.NOTIFY_TILES,
-        payload=IdPayload(id=PointRange(point, point))
-    )
-
-
-@TileEmitter.add()
-def explosion_event(old: Tile, new: Tile, point: Point) -> Generator[Event, None, None]:
-    """지뢰를 열었을 때 NOTIFY_EXPLOSION 이벤트 발행"""
-    from data.event import InternalEvent
-    from data.payload import IdDataPayload
-
-    if new.is_open and new.is_mine:
-        yield Event(
-            event_name=InternalEvent.NOTIFY_EXPLOSION,
-            payload=IdDataPayload(id=point, data=old)
-        )

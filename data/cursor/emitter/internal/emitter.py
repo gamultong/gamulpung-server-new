@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Generator, ClassVar, Type, TYPE_CHECKING, Callable
+from typing import Generator, ClassVar, TYPE_CHECKING, Callable
 from core.event import Event
 
 if TYPE_CHECKING:
-    from .cursor import Cursor
+    from data.cursor import Cursor
 
 
 class CursorEmitter:
@@ -65,63 +65,3 @@ class CursorEmitter:
                     events.extend(list(generator))
 
         return events
-
-
-# 생성시에만
-@CursorEmitter.add_by_created()
-def create_event(new: Cursor) -> Generator[Event, None, None]:
-    from data.event import InternalEvent
-    from data.payload import IdPayload
-
-    yield Event(
-        event_name=InternalEvent.NOTIFY_CURSORS,
-        payload=IdPayload(id=new.id)
-    )
-
-    yield Event(
-        event_name=InternalEvent.SETTED_WINDOW,
-        payload=IdPayload(id=new.id)
-    )
-
-
-@CursorEmitter.add()
-def notify_event(old: Cursor, new: Cursor) -> Generator[Event, None, None]:
-    from data.event import InternalEvent
-    from data.payload import IdPayload
-
-    if old == new:
-        return
-
-    yield Event(
-        event_name=InternalEvent.NOTIFY_CURSORS,
-        payload=IdPayload(id=old.id)
-    )
-
-
-@CursorEmitter.add()
-def set_window_event(old: Cursor, new: Cursor) -> Generator[Event, None, None]:
-    from data.event import InternalEvent
-    from data.payload import IdDataPayload
-
-    valid = True
-
-    # 위치 변경 없음
-    valid &= old.position == new.position
-    # window 크기 변경 없음
-    valid &= old.width == new.width
-    valid &= old.height == new.height
-
-    # 변경 없으면 이벤트 발행 안함
-    if valid:
-        return
-
-    yield Event(
-        event_name=InternalEvent.SETTED_WINDOW,
-        payload=IdDataPayload(id=new.id, data=old)
-    )
-
-
-# 사용코드 예시
-# old:Cursor
-# new:Cursor
-# new.get_event(old)
