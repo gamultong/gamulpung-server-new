@@ -1,7 +1,7 @@
 from data.board import PointRange, Tiles, Point, Tile, abs_to_sec, SectionFlag
+from data.board.emitter import TileEmitter
 from data.payload import IdDataPayload, IdPayload
 from data.event import InternalEvent
-import data.board.internal.tile_emitter  # emitter 핸들러 등록 보장
 
 from core.event import Event
 from core.broker import EventBroker
@@ -91,7 +91,7 @@ class BoardHandler:
             section.update_by_abs_point(point, new_tile)
             await update_section(db, section)
 
-        events = Tile.emitter.get_events(old=old_tile, new=new_tile, point=point)
+        events = TileEmitter.get_events(old=old_tile, new=new_tile, point=point)
         hlife.add_events(events)
         for event in events:
             await EventBroker.publish(event)
@@ -127,7 +127,7 @@ class BoardHandler:
             section.update_by_abs_point(point, new_tile)
             await update_section(db, section)
 
-        events = Tile.emitter.get_events(old=old_tile, new=new_tile, point=point)
+        events = TileEmitter.get_events(old=old_tile, new=new_tile, point=point)
         logger.debug(events)
 
         hlife.add_events(events)
@@ -161,7 +161,7 @@ class BoardHandler:
             section.update_by_abs_point(point, new_tile)
             await update_section(db, section)
 
-        events = Tile.emitter.get_dismantle_events(point)
+        events = TileEmitter.get_dismantle_events(point)
         logger.debug(events)
 
         hlife.add_events(events)

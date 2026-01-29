@@ -6,11 +6,11 @@ from core.broker import EventBroker
 from core.lifecycle import HLife, LifeCycle
 
 from data.cursor import Cursor, CursorRankRange, RankRange, ItemType, Items
+from data.cursor.emitter import CursorEmitter
 from data.payload import IdPayload, IdDataPayload
 from data.board import is_overlap, PointRange, Point
 from data.event import InternalEvent
 from datetime import datetime, timedelta
-import data.cursor.internal.event_emitter  # emitter 핸들러 등록 보장
 
 from config import CursorConfig
 
@@ -30,7 +30,7 @@ class CursorHandler:
 
         hlife.set_snapshot(before=None, after=new_cursor)
 
-        events = Cursor.emitter.get_events(old=None, new=new_cursor)
+        events = CursorEmitter.get_events(old=None, new=new_cursor)
         hlife.add_events(events)
         for event in events:
             await EventBroker.publish(event=event)
@@ -85,7 +85,7 @@ class CursorHandler:
         new_cur_rank_range = await cls.get_cursor_by_rank_range(rank_range)
         await cls.scoreboard_modify(old_cur_rank_range, new_cur_rank_range)
 
-        events = Cursor.emitter.get_events(old=old_cur, new=new_cur)
+        events = CursorEmitter.get_events(old=old_cur, new=new_cur)
         hlife.add_events(events)
         for event in events:
             await EventBroker.publish(event=event)
@@ -117,7 +117,7 @@ class CursorHandler:
         new_cur_rank_range = await cls.get_cursor_by_rank_range(rank_range)
         await cls.scoreboard_modify(old_cur_rank_range, new_cur_rank_range)
 
-        events = Cursor.emitter.get_events(old=old_cur, new=new_cur)
+        events = CursorEmitter.get_events(old=old_cur, new=new_cur)
         hlife.add_events(events)
         for event in events:
             await EventBroker.publish(event=event)
@@ -144,7 +144,7 @@ class CursorHandler:
         new_cur_rank_range = await cls.get_cursor_by_rank_range(rank_range)
         await cls.scoreboard_modify(old_cur_rank_range, new_cur_rank_range)
 
-        events = Cursor.emitter.get_events(old=old_cur, new=new_cur)
+        events = CursorEmitter.get_events(old=old_cur, new=new_cur)
         hlife.add_events(events)
         for event in events:
             await EventBroker.publish(event=event)
@@ -202,7 +202,7 @@ class CursorHandler:
 
         await cls.update(new_cur)
 
-        events = Cursor.emitter.get_events(old=old_cur, new=new_cur)
+        events = CursorEmitter.get_events(old=old_cur, new=new_cur)
         hlife.add_events(events)
         for event in events:
             await EventBroker.publish(event=event)
@@ -223,7 +223,7 @@ class CursorHandler:
 
         await cls.update(new_cur)
 
-        events = Cursor.emitter.get_events(old=old_cur, new=new_cur)
+        events = CursorEmitter.get_events(old=old_cur, new=new_cur)
         hlife.add_events(events)
         for event in events:
             await EventBroker.publish(event=event)
