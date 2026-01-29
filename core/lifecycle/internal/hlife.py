@@ -2,6 +2,7 @@ from __future__ import annotations
 from .lifecycle import LifeCycle, _lifecycle_var
 from .caller import Caller
 from .parameter import Parameter
+from .profiler import LifecycleProfiler
 from functools import wraps
 from typing import Any
 
@@ -77,8 +78,27 @@ class HLife(LifeCycle):
             caller.register_hlife(self)
             self.caller_id = caller.id
 
+        # Profiler 기록
+        profiler = LifecycleProfiler.get_current()
+        if profiler:
+            profiler.record_begin(
+                name=f"{self.handler_name}.{self.method_name}",
+                category="HLife",
+                args={"caller_id": self.caller_id}
+            )
+
     def on_exit(self):
         """종료 시 로깅 - Hook 오버라이드"""
+        # Profiler 기록
+        profiler = LifecycleProfiler.get_current()
+        if profiler:
+            event_names = [str(e.event_name) for e in self.events if hasattr(e, 'event_name')]
+            profiler.record_end(
+                name=f"{self.handler_name}.{self.method_name}",
+                category="HLife",
+                args={"events": event_names} if event_names else None
+            )
+
         self.close()
 
     def close(self):

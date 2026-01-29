@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextvars import Token
 from .lifecycle import LifeCycle
 from .caller import Caller, _caller_var
+from .profiler import LifecycleProfiler
 from core.event import Event
 from loguru import logger
 
@@ -61,8 +62,26 @@ class RLife(LifeCycle):
         self.caller = Caller.create(rlife=self)
         self._caller_token = _caller_var.set(self.caller)
 
+        # Profiler 기록
+        profiler = LifecycleProfiler.get_current()
+        if profiler:
+            event_name = str(self.event.event_name) if self.event and hasattr(self.event, 'event_name') else None
+            profiler.record_begin(
+                name=self.receiver_name,
+                category="RLife",
+                args={"event": event_name} if event_name else None
+            )
+
     def on_exit(self):
         """종료 시 Caller 정리 및 로깅"""
+        # Profiler 기록
+        profiler = LifecycleProfiler.get_current()
+        if profiler:
+            profiler.record_end(
+                name=self.receiver_name,
+                category="RLife"
+            )
+
         # Caller 정리
         if self.caller:
             self.caller.close()
