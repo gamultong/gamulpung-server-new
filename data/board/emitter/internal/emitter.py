@@ -67,3 +67,25 @@ class TileEmitter:
             event_name=InternalEvent.NOTIFY_TILES,
             payload=IdPayload(id=PointRange(point, point))
         )]
+
+    @classmethod
+    def get_install_bomb_events(cls, point: Point, tile: "Tile") -> list[Event]:
+        """폭탄 설치 시 발행할 Event 목록 반환
+
+        Install bomb emits only NOTIFY_EXPLOSION (color handling skipped).
+
+        Args:
+            point: bomb position
+            tile: previous tile state at the position
+
+        Returns:
+            NOTIFY_EXPLOSION events
+        """
+        from data.event import InternalEvent
+        from data.payload import IdDataPayload
+
+        return [
+            Event(
+                event_name=InternalEvent.NOTIFY_EXPLOSION,
+                payload=IdDataPayload(id=point, data=tile))
+        ]

@@ -64,6 +64,8 @@ def get_payload_by_event_name(event_name: EventEnum) -> Type[ClientMessage.Base]
             return ClientMessage.SetFlag
         case ClientEvent.DISMANTLE_MINE:
             return ClientMessage.DismantleMine
+        case ClientEvent.INSTALL_BOMB:
+            return ClientMessage.InstallBomb
     raise
 
 

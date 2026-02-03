@@ -30,3 +30,7 @@ class SetFlag(ClientMessage):
 
 class DismantleMine(ClientMessage):
     position: Point
+
+
+class InstallBomb(ClientMessage):
+    position: Point
