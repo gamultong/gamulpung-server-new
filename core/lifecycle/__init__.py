@@ -10,3 +10,4 @@ from .internal.rlife import RLife
 from .internal.parameter import Parameter
 from .internal.caller import Caller
 from .internal.profiler import LifecycleProfiler
+from .metrics import LifecycleMetrics

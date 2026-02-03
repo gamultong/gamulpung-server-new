@@ -19,6 +19,7 @@ dependencies = [
     # Logging and monitoring
     "loguru==0.7.3",
     "sentry-sdk==2.44.0",
+    "prometheus-client>=0.20.0",
     # Data validation
     "pydantic==2.12.3",
     "pydantic_core==2.41.4",

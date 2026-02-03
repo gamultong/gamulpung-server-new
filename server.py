@@ -10,6 +10,7 @@ from handler.board.storage import _get_db, set_table
 import sentry_sdk
 from config import SentryConfig
 from asyncio import sleep
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 
 # SENTRY_DSN이 있을 때만 Sentry 초기화
 if hasattr(SentryConfig, 'SENTRY_DSN') and SentryConfig.SENTRY_DSN:
@@ -87,6 +88,15 @@ def health_check():
 @app.get("/sentry-debug")
 def div_zero():
     error = 1 / 0
+
+
+@app.get("/metrics")
+def metrics():
+    """Prometheus 메트릭 엔드포인트"""
+    return Response(
+        content=generate_latest(),
+        media_type=CONTENT_TYPE_LATEST
+    )
 
 
 if __name__ == "__main__":
