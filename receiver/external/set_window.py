@@ -7,7 +7,7 @@ from data.event import ClientEvent
 from handler.cursor import CursorHandler
 from loguru import logger
 
-SET_WINDOW_EVENT = Event[IdDataPayload[str, ClientMessage.SetWindow]] | Event[IdPayload[str]]
+SET_WINDOW_EVENT = Event[IdDataPayload[str, ClientMessage.SetWindow]]
 
 
 @EventBroker.add_receiver(ClientEvent.SET_WINDOW)
