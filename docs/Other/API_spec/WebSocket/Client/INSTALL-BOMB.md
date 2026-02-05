@@ -1,0 +1,23 @@
+# INSTALL-BOMB
+
+이는 사용자가 지뢰를 설치할 때 사용됩니다.
+## Payload
+
+```json
+{
+    "position": {
+        "x": int,
+        "y": int
+    }
+}
+```
+
+## SCENARIO
+1. `INSTALL-BOMB` 발행
+2. `CURSORS-STATE` 발행
+    -> 지뢰 설치로 인한 커서의 지뢰 개수 변경
+3. `EXPLOSION` 발행
+    -> 특정 시간 이후에 지뢰의 폭발
+<!-- 색 관련은 만들어지지 않음 -->
+4. `?` 발행
+    -> 타일의 색 변경
