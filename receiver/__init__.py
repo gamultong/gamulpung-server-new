@@ -5,6 +5,7 @@ from .external.move import move_receiver
 from .external.open_tiles import open_tiles_receiver
 from .external.set_flag import set_flag_receiver
 from .external.dismantle_mine import dismantle_mine_receiver
+from .external.install_bomb import install_bomb_receiver
 
 from .trigger.join import join_receiver
 from .trigger.quit import quit_receiver

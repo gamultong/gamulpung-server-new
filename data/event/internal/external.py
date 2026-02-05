@@ -15,6 +15,7 @@ class ClientEvent(ExternalEvent):
     SET_FLAG = auto()
     SET_WINDOW = auto()
     DISMANTLE_MINE = auto()
+    INSTALL_BOMB = auto()
 
 
 class ServerEvent(ExternalEvent):

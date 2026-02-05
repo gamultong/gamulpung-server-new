@@ -11,7 +11,8 @@ class ClientMessage:
         Move,
         OpenTiles,
         SetFlag,
-        DismantleMine
+        DismantleMine,
+        InstallBomb,
     )
 
 
