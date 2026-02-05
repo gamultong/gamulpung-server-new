@@ -4,37 +4,83 @@ Prometheus 메트릭으로 LifeCycle 실행 정보를 수집한다.
 """
 from __future__ import annotations
 import time
-from prometheus_client import Counter, Histogram, Gauge
+from prometheus_client import Counter, Histogram, Gauge, REGISTRY
+
+
+# 메트릭 캐시 (중복 생성 방지)
+_metrics_cache: dict[str, Counter | Histogram | Gauge] = {}
+
+
+def _get_or_create_metric(metric_class, name: str, description: str, labelnames: list[str]):
+    """메트릭을 가져오거나 새로 생성
+
+    이미 생성된 메트릭이 있으면 재사용하고, 없으면 새로 생성한다.
+    테스트 환경에서 중복 등록을 방지한다.
+    """
+    # 캐시에서 먼저 확인
+    if name in _metrics_cache:
+        return _metrics_cache[name]
+
+    # 레지스트리에 이미 등록된 메트릭 찾기
+    # Counter는 _total suffix를 자동으로 제거하므로, 이를 고려해야 함
+    search_names = [name]
+    if metric_class == Counter and name.endswith('_total'):
+        # Counter의 실제 이름은 _total이 제거된 형태
+        search_names.append(name[:-6])  # '_total' 제거
+
+    for collector in list(REGISTRY._collector_to_names.keys()):
+        if hasattr(collector, '_name') and collector._name in search_names:
+            _metrics_cache[name] = collector
+            return collector
+
+    # 없으면 새로 생성
+    try:
+        metric = metric_class(name, description, labelnames)
+        _metrics_cache[name] = metric
+        return metric
+    except ValueError as e:
+        # 중복 등록 오류 발생 시 레지스트리에서 다시 찾기
+        if "Duplicated timeseries" in str(e):
+            for collector in list(REGISTRY._collector_to_names.keys()):
+                if hasattr(collector, '_name') and collector._name in search_names:
+                    _metrics_cache[name] = collector
+                    return collector
+        raise
 
 
 # RLife 메트릭
-rlife_duration = Histogram(
+rlife_duration = _get_or_create_metric(
+    Histogram,
     "lifecycle_rlife_duration_seconds",
     "RLife 실행 시간",
     ["event", "receiver"]
 )
 
-rlife_total = Counter(
+rlife_total = _get_or_create_metric(
+    Counter,
     "lifecycle_rlife_total",
     "RLife 호출 횟수",
     ["event", "receiver"]
 )
 
 # HLife 메트릭
-hlife_duration = Histogram(
+hlife_duration = _get_or_create_metric(
+    Histogram,
     "lifecycle_hlife_duration_seconds",
     "HLife 실행 시간",
     ["handler", "method"]
 )
 
-hlife_total = Counter(
+hlife_total = _get_or_create_metric(
+    Counter,
     "lifecycle_hlife_total",
     "HLife 호출 횟수",
     ["handler", "method"]
 )
 
 # Active gauge
-lifecycle_active = Gauge(
+lifecycle_active = _get_or_create_metric(
+    Gauge,
     "lifecycle_active",
     "현재 실행 중인 LifeCycle 수",
     ["type"]
