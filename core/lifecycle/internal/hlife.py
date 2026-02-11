@@ -2,6 +2,8 @@ from __future__ import annotations
 from .lifecycle import LifeCycle, _lifecycle_var
 from .caller import Caller
 from .parameter import Parameter
+from .profiler import LifecycleProfiler
+from core.lifecycle.metrics import LifecycleMetrics
 from functools import wraps
 from typing import Any
 
@@ -20,6 +22,7 @@ class HLife(LifeCycle):
     after_snapshot: Any | None
     events: list[Any]  # list[Event]
     caller_id: str | None
+    _metrics_start_time: float
 
     @classmethod
     def create(
@@ -38,6 +41,7 @@ class HLife(LifeCycle):
             after_snapshot=None,
             events=[],
             caller_id=None,
+            _metrics_start_time=0.0,
             **kwargs
         )
 
@@ -68,8 +72,17 @@ class HLife(LifeCycle):
 
     def on_enter(self, func, args, kwargs):
         """진입 시점 hook - args 캡처 및 Caller 등록"""
+        # 메트릭 타이머 시작
+        self._metrics_start_time = LifecycleMetrics.start_timer()
+
         # cls 제외한 args, kwargs를 Parameter로 저장
         self.params = Parameter(args=args[1:], kwargs=kwargs)
+
+        # 메트릭 수집
+        LifecycleMetrics.hlife_started(
+            handler=self.handler_name,
+            method=self.method_name
+        )
 
         # 현재 Caller가 있으면 등록
         caller = Caller.get_current()
@@ -77,8 +90,35 @@ class HLife(LifeCycle):
             caller.register_hlife(self)
             self.caller_id = caller.id
 
+        # Profiler 기록
+        profiler = LifecycleProfiler.get_current()
+        if profiler:
+            profiler.record_begin(
+                name=f"{self.handler_name}.{self.method_name}",
+                category="HLife",
+                args={"caller_id": self.caller_id}
+            )
+
     def on_exit(self):
         """종료 시 로깅 - Hook 오버라이드"""
+        # 메트릭 수집
+        duration = LifecycleMetrics.get_duration(self._metrics_start_time)
+        LifecycleMetrics.hlife_finished(
+            handler=self.handler_name,
+            method=self.method_name,
+            duration=duration
+        )
+
+        # Profiler 기록
+        profiler = LifecycleProfiler.get_current()
+        if profiler:
+            event_names = [str(e.event_name) for e in self.events if hasattr(e, 'event_name')]
+            profiler.record_end(
+                name=f"{self.handler_name}.{self.method_name}",
+                category="HLife",
+                args={"events": event_names} if event_names else None
+            )
+
         self.close()
 
     def close(self):

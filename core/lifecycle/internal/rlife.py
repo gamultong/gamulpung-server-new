@@ -3,6 +3,8 @@ from __future__ import annotations
 from contextvars import Token
 from .lifecycle import LifeCycle
 from .caller import Caller, _caller_var
+from .profiler import LifecycleProfiler
+from core.lifecycle.metrics import LifecycleMetrics
 from core.event import Event
 from loguru import logger
 
@@ -23,6 +25,7 @@ class RLife(LifeCycle):
     event: Event | None
     caller: Caller | None
     _caller_token: Token | None
+    _metrics_start_time: float
 
     @classmethod
     def create(
@@ -37,6 +40,7 @@ class RLife(LifeCycle):
             event=event,
             caller=None,
             _caller_token=None,
+            _metrics_start_time=0.0,
             **kwargs
         )
 
@@ -50,6 +54,9 @@ class RLife(LifeCycle):
 
     def on_enter(self, func, args, kwargs):
         """진입 시점 hook - 메타데이터 자동 추출 및 Caller 생성"""
+        # 메트릭 타이머 시작
+        self._metrics_start_time = LifecycleMetrics.start_timer()
+
         # 함수명 자동 캡처
         self.receiver_name = func.__name__
 
@@ -57,12 +64,41 @@ class RLife(LifeCycle):
         if args:
             self.event = args[0]
 
+        # 메트릭 수집
+        LifecycleMetrics.rlife_started(receiver=self.receiver_name)
+
         # Caller 생성 및 ContextVar 설정
         self.caller = Caller.create(rlife=self)
         self._caller_token = _caller_var.set(self.caller)
 
+        # Profiler 기록
+        profiler = LifecycleProfiler.get_current()
+        if profiler:
+            event_name = str(self.event.event_name) if self.event and hasattr(self.event, 'event_name') else None
+            profiler.record_begin(
+                name=self.receiver_name,
+                category="RLife",
+                args={"event": event_name} if event_name else None
+            )
+
     def on_exit(self):
         """종료 시 Caller 정리 및 로깅"""
+        # 메트릭 수집
+        duration = LifecycleMetrics.get_duration(self._metrics_start_time)
+        LifecycleMetrics.rlife_finished(
+            event=self.event,
+            receiver=self.receiver_name,
+            duration=duration
+        )
+
+        # Profiler 기록
+        profiler = LifecycleProfiler.get_current()
+        if profiler:
+            profiler.record_end(
+                name=self.receiver_name,
+                category="RLife"
+            )
+
         # Caller 정리
         if self.caller:
             self.caller.close()
