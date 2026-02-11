@@ -343,3 +343,66 @@ async def test_ft008_state_change_cursor_death():
             step=0.05,
             error_msg="폭탄 폭발 후 cursor가 사망하지 않음"
         )
+
+
+@patch.object(BoardConfig, "LENGTH", new=4)
+@patch("server.initialize_board", new=empty_board_map)
+@pytest.mark.asyncio
+async def test_ft008_background_allows_move_before_explosion():
+    """
+    백그라운드 처리
+    - install_bomb 직후 move 요청이 빠르게 처리되어 폭발 범위를 벗어나 생존한다.
+    """
+    from handler.cursor import CursorHandler
+
+    with PytestTCM(app).append_client(CL_A) as tcm:
+        cl_a = tcm.get_client(CL_A)
+
+        items_a = Items()
+        items_a.grant_item(ItemType.BOMB, 1)
+        fixed_active_at = datetime(2025, 1, 1, 0, 0, 0)
+
+        with patch(
+            "data.cursor.Cursor.create",
+            side_effect=create_cursor_by_id(
+                {CL_A: Point(2, 2)},
+                items_map={CL_A: items_a},
+                active_at_map={CL_A: fixed_active_at}
+            )
+        ):
+            cl_a.ws.send_json({
+                "header": {"event": ClientEvent.CREATE_CURSOR.value},
+                "payload": {"width": 1, "height": 1}
+            })
+            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
+
+        cl_a.conn.send.await_args_list.clear()
+
+        start = asyncio.get_event_loop().time()
+
+        # 지뢰 설치 후 바로 이동 요청
+        cl_a.ws.send_json({
+            "header": {"event": ClientEvent.INSTALL_BOMB.value},
+            "payload": {"position": {"x": 1, "y": 1}}
+        })
+        cl_a.ws.send_json({
+            "header": {"event": ClientEvent.MOVE.value},
+            "payload": {"position": {"x": 3, "y": 3}}
+        })
+
+        # move가 2초 대기 없이 빠르게 처리되는지 확인
+        await wait_for_cursor(
+            lambda cursor: cursor.position == Point(3, 3),
+            timeout=1.5,
+            step=0.05,
+            error_msg="install_bomb 이후 move가 지연되어 처리되지 않음"
+        )
+
+        # 폭발(약 2초 후) 시점이 지난 뒤에도 생존해야 함
+        elapsed = asyncio.get_event_loop().time() - start
+        remaining = 2.5 - elapsed
+        if remaining > 0:
+            await asyncio.sleep(remaining)
+
+        cursor = await CursorHandler.get_by_id(CL_A)
+        assert cursor.is_alive, "폭발 이후에도 커서가 생존해야 함"
