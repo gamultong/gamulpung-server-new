@@ -1,4 +1,3 @@
-import asyncio
 from loguru import logger
 
 from core.event import Event
@@ -12,6 +11,7 @@ from data.cursor import ItemType
 from handler.board import BoardHandler
 from handler.cursor import CursorHandler
 
+from utils.background import run_after_delay
 
 
 INSTALL_BOMB_EVENT = Event[IdDataPayload[str, ClientMessage.InstallBomb]]
@@ -38,5 +38,7 @@ async def install_bomb_receiver(event: INSTALL_BOMB_EVENT):
 
     await CursorHandler.grant_item(cursor, ItemType.BOMB, -1)
 
-    await asyncio.sleep(2)
-    await BoardHandler.install_bomb(point)
+    async def delayed():
+        await BoardHandler.install_bomb(point)
+
+    run_after_delay(2, delayed, name="install_bomb")
