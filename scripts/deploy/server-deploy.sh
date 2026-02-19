@@ -85,6 +85,7 @@ sudo docker run -d \
   "${MEMORY_ARGS[@]}" \
   "${ENV_ARGS[@]}" \
   --name "$CONTAINER_NAME" \
+  --restart unless-stopped
   "$IMAGE_NAME"
 
 echo "✅ Deployment completed successfully!"
