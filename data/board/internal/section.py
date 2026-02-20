@@ -1,6 +1,7 @@
 from .point import Point, PointRange, get_overlap
 from .tile import Tile
 from .tiles import Tiles
+from .cursor_tile import CursorTile
 
 from core.dataobj import DataObj
 
@@ -54,6 +55,14 @@ class Section(DataObj):
         rel_point = self.get_point_rel_by_abs(point)
 
         return self.tiles.at_tile(rel_point)
+
+    def at_map_tile_by_abs_point(self, point: Point) -> Tile:
+        rel_point = self.get_point_rel_by_abs(point)
+        return self.tiles.map_tile_at(rel_point)
+
+    def at_cursor_tile_by_abs_point(self, point: Point) -> CursorTile:
+        rel_point = self.get_point_rel_by_abs(point)
+        return self.tiles.cursor_tile_at(rel_point)
 
     def update_by_abs_point(self, point: Point, tile: Tile):
         rel_point = self.get_point_rel_by_abs(point)

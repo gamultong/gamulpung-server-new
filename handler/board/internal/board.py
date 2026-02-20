@@ -83,7 +83,7 @@ class BoardHandler:
             if section.flag == SectionFlag.NUMBERING:
                 await upgrade_interaction_section(db, sec_p)
 
-            old_tile = section.at_tile_by_abs_point(point)
+            old_tile = section.at_map_tile_by_abs_point(point)
             new_tile = old_tile.changed(is_flag=not old_tile.is_flag)
 
             hlife.set_snapshot(before=old_tile, after=new_tile)
@@ -114,7 +114,7 @@ class BoardHandler:
             if section.flag == SectionFlag.NUMBERING:
                 await upgrade_interaction_section(db, sec_p)
 
-            old_tile = section.at_tile_by_abs_point(point)
+            old_tile = section.at_map_tile_by_abs_point(point)
 
             # 깃발 설치 시 타일 오픈 불가
             if old_tile.is_flag:
@@ -152,7 +152,7 @@ class BoardHandler:
             if section.flag == SectionFlag.NUMBERING:
                 await upgrade_interaction_section(db, sec_p)
 
-            old_tile = section.at_tile_by_abs_point(point)
+            old_tile = section.at_map_tile_by_abs_point(point)
 
             new_tile = old_tile.changed(is_open=True)
 
@@ -186,7 +186,7 @@ class BoardHandler:
             if section.flag == SectionFlag.NUMBERING:
                 await upgrade_interaction_section(db, sec_p)
 
-            old_tile = section.at_tile_by_abs_point(point)
+            old_tile = section.at_map_tile_by_abs_point(point)
 
         # Do not change tile state; emit install-bomb events only.
         events = TileEmitter.get_install_bomb_events(point, old_tile)
@@ -204,7 +204,7 @@ class BoardHandler:
             section = await get_section(db, sec_p)
         assert section
 
-        tile = section.at_tile_by_abs_point(point)
+        tile = section.at_map_tile_by_abs_point(point)
         return tile
 
     @classmethod

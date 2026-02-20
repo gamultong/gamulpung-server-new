@@ -66,8 +66,8 @@ class Test_Numbering_CompareWithBuilderTiles(unittest.TestCase):
         center_sec = sections[center]
         for x in range(L):
             for y in range(L):
-                got = center_sec.tiles.at_tile(Point(x, y))
-                exp = big_tiles.at_tile(Point(x + L, y + L))  # big_tiles 중앙 영역
+                got = center_sec.tiles.map_tile_at(Point(x, y))
+                exp = big_tiles.map_tile_at(Point(x + L, y + L))  # big_tiles 중앙 영역
 
                 # 지뢰 칸은 둘 다 number=0이어야 함(정상)
                 # non-mine은 builder number == numbering number여야 함

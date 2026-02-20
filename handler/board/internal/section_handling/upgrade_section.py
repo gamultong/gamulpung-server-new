@@ -4,10 +4,14 @@ from handler.board.storage import (
     update_section_flag,
     DB,
     update_section,
-    get_dict_by_section_range
+    get_dict_by_section_range,
+    create_cursor_section,
+    update_cursor_section_flag,
+    get_cursor_section
 )
 
 from .make_section import make_section
+from .make_cursor_section import make_cursor_section
 from .numbering import numbering
 
 
@@ -25,6 +29,25 @@ async def make_surround_sections(db: DB, surround_sections: dict[Point, Section]
         section = make_section(p)
         surround_sections[p] = section
         await create_section(db, section)
+        await _sync_cursor_section(db, section)
+
+async def _sync_cursor_section(db: DB, section: Section):
+    cursor_section = await get_cursor_section(db, section.point)
+    if cursor_section is None:
+        cursor_section = make_cursor_section(section.point, flag=section.flag)
+        await create_cursor_section(db, cursor_section)
+        return
+
+    if cursor_section.flag == section.flag:
+        return
+
+    cursor_section.flag = section.flag
+    await update_cursor_section_flag(db, cursor_section)
+
+
+async def _sync_cursor_sections(db: DB, sections: dict[Point, Section]):
+    for section in sections.values():
+        await _sync_cursor_section(db, section)
 
 
 async def _upgrade_numbering_sections(db: DB, sec_point: Point, surround_sections: dict[Point, Section]):
@@ -35,6 +58,7 @@ async def _upgrade_numbering_sections(db: DB, sec_point: Point, surround_section
 
     await update_section(db, center)
     await update_section_flag(db, center)
+    await _sync_cursor_section(db, center)
 
 
 async def upgrade_numbering_section(db: DB, sec_point: Point):
@@ -52,6 +76,7 @@ async def _upgrade_interaction_sections(db: DB, sec_point: Point, surround_secti
 
     center.flag = SectionFlag.INTERACTIONAL
     await update_section_flag(db, center)
+    await _sync_cursor_section(db, center)
 
 
 async def _numbering_surround_section(db: DB, sec_point: Point, surround_sections: dict[Point, Section]):

@@ -1,8 +1,10 @@
 from __future__ import annotations
 from core.dataobj import DataObj
 from dataclasses import dataclass
+from enum import Enum
 from .point import Point, PointRange, get_overlap
 from .tile import Tile
+from .cursor_tile import CursorTile, CURSOR_TILE_BYTES
 
 
 """
@@ -13,6 +15,11 @@ from .tile import Tile
 """
 
 
+class TileKind(str, Enum):
+    MAP = "map"
+    CURSOR = "cursor"
+
+
 class Tiles(DataObj):
     # range 추가
     # data에서 Tile접근 가능하게 해야함
@@ -20,8 +27,14 @@ class Tiles(DataObj):
     data: bytearray
     width: int
     height: int
+    tile_kind: TileKind = TileKind.MAP
 
-    def at_tile(self, point: Point) -> Tile:
+    def _tile_bytes(self) -> int:
+        if self.tile_kind == TileKind.CURSOR:
+            return CURSOR_TILE_BYTES
+        return 1
+
+    def at_tile(self, point: Point) -> Tile | CursorTile:
         assert 0 <= point.x < self.width
         assert 0 <= point.y < self.height
 
@@ -29,38 +42,60 @@ class Tiles(DataObj):
         idx *= self.width
         idx += point.x
 
-        law = self.data[idx]
-        tile = Tile.from_int(law)
+        tile_bytes = self._tile_bytes()
+        start = idx * tile_bytes
+        end = start + tile_bytes
+        raw = bytes(self.data[start:end])
+        tile = self._tile_from_bytes(raw)
 
+        return tile
+
+    def map_tile_at(self, point: Point) -> Tile:
+        assert self.tile_kind == TileKind.MAP
+        tile = self.at_tile(point)
+        assert isinstance(tile, Tile)
+        return tile
+
+    def cursor_tile_at(self, point: Point) -> CursorTile:
+        assert self.tile_kind == TileKind.CURSOR
+        tile = self.at_tile(point)
+        assert isinstance(tile, CursorTile)
         return tile
 
     def at_tiles(self, point_range: PointRange):
         assert 0 <= point_range.top_left.x <= point_range.bottom_right.x < self.width
-        assert 0 <= point_range.bottom_right.y <= point_range.top_left.y < self.width
+        assert 0 <= point_range.bottom_right.y <= point_range.top_left.y < self.height
 
         data = bytearray()
         width = point_range.width
         height = point_range.height
+        tile_bytes = self._tile_bytes()
 
         for y in range(height):
             y = self.height - (point_range.top_left.y - y) - 1
-            y *= self.width
-            x_start = y+point_range.bottom_left.x
-            x_end = y+point_range.bottom_right.x
-            law = self.data[x_start:x_end+1]
+            row_start = y * self.width
+            x_start = row_start + point_range.bottom_left.x
+            x_end = row_start + point_range.bottom_right.x + 1
+            start = x_start * tile_bytes
+            end = x_end * tile_bytes
+            law = self.data[start:end]
 
             data += law
 
         return Tiles(
             data=data,
             width=width,
-            height=height
+            height=height,
+            tile_kind=self.tile_kind
         )
 
-    def update_at(self, point: Point, tile: Tile):
+    def update_at(self, point: Point, tile: Tile | CursorTile):
         x, y = point.x, self.height - point.y - 1
         idx = x + (y * self.width)
-        self.data[idx] = tile.data
+        tile_bytes = self._tile_bytes()
+        start = idx * tile_bytes
+        end = start + tile_bytes
+        self.data[start:end] = self._tile_to_bytes(tile)
 
     def to_str(self):
         return self.data.hex()
@@ -73,6 +108,8 @@ class Tiles(DataObj):
 
         주의: Tiles 데이터가 변형된다.
         """
+        if self.tile_kind == TileKind.CURSOR:
+            return
         opened = 0b10000000
         mask = 0b10111000
         for idx in range(len(self.data)):
@@ -87,13 +124,15 @@ class Tiles(DataObj):
         """가로 병합"""
         for value in values:
             assert self.height == value.height
+            assert self.tile_kind == value.tile_kind
 
         data = bytearray()
         for i in range(self.height):
             line = bytearray()
             for tiles in (self, *values):
-                start = tiles.width * i
-                end = start + tiles.width
+                tile_bytes = tiles._tile_bytes()
+                start = tiles.width * i * tile_bytes
+                end = start + tiles.width * tile_bytes
                 line += tiles.data[start:end]
 
             data += line
@@ -105,13 +144,15 @@ class Tiles(DataObj):
         return Tiles(
             data=data,
             width=total_width,
-            height=self.height
+            height=self.height,
+            tile_kind=self.tile_kind
         )
 
     def v_append(self, *values: Tiles):
         """세로 병합"""
         for value in values:
             assert self.width == value.width, f"self: {self}\n value:{value}"
+            assert self.tile_kind == value.tile_kind
 
         data = bytearray()
         total_height = 0
@@ -123,8 +164,21 @@ class Tiles(DataObj):
         return Tiles(
             data=data,
             width=self.width,
-            height=total_height
+            height=total_height,
+            tile_kind=self.tile_kind
         )
+
+    def _tile_from_bytes(self, b: bytes) -> Tile | CursorTile:
+        if self.tile_kind == TileKind.CURSOR:
+            return CursorTile.from_bytes(b)
+        return Tile.from_int(b[0])
+
+    def _tile_to_bytes(self, tile: Tile | CursorTile) -> bytes:
+        if self.tile_kind == TileKind.CURSOR:
+            assert isinstance(tile, CursorTile)
+            return tile.data
+        assert isinstance(tile, Tile)
+        return bytes([tile.data])
 
     def to_dict(self):
         self.hide_info()

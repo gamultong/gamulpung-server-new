@@ -3,6 +3,7 @@ labs/
 *.pyc
 
 .claude/
+AGENTS.md
 *.db
 .ssh/
 .env

@@ -6,6 +6,7 @@ import os
 from handler.board.storage import (
     _get_db,
     set_table,
+    set_cursor_table,
 )
 from datetime import datetime
 
@@ -35,6 +36,7 @@ class UseTable_TestCase(UseDB_TestCase):
         self.db_context = _get_db()
         self.db = await self.db_context.__aenter__()
         await set_table(self.db)
+        await set_cursor_table(self.db)
 
     async def asyncTearDown(self) -> None:
         """Clean up database after tests"""

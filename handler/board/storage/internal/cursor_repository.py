@@ -1,18 +1,17 @@
 from functools import cache
 import aiosqlite
-from contextlib import asynccontextmanager
-from data.board import Point, PointRange, Tiles, Section
+from data.board import Point, PointRange, Tiles, Section, TileKind
 from config import BoardConfig
 import os
 
-SQL_PATH = os.path.join(os.path.dirname(__file__), "sql", "map") + os.sep
+SQL_PATH = os.path.join(os.path.dirname(__file__), "sql", "cursor") + os.sep
 
-TABLE_SET = "table.sql"
-SECTION_GET = "get_section.sql"
-SECTION_GET_BY_RANGE = "get_section_range.sql"
-SECTION_UPDATE = "update_section.sql"
-SECTION_FLAG_UPDATE = "update_section_flag.sql"
-SECTION_CREATE = "create_section.sql"
+TABLE_SET = "cursor_table.sql"
+SECTION_GET = "cursor_get_section.sql"
+SECTION_GET_BY_RANGE = "cursor_get_section_range.sql"
+SECTION_UPDATE = "cursor_update_section.sql"
+SECTION_FLAG_UPDATE = "cursor_update_section_flag.sql"
+SECTION_CREATE = "cursor_create_section.sql"
 
 DB = aiosqlite.Connection
 
@@ -23,23 +22,6 @@ def get_sql(path: str):
         query = f.read()
     return query
 
-
-@asynccontextmanager
-async def _get_db():
-    db = await aiosqlite.connect(BoardConfig.DB_PATH)
-    db.row_factory = aiosqlite.Row
-    try:
-        yield db
-    finally:
-        await db.close()
-
-
-# async def get_db(func):
-#     @wraps(func)
-#     async def wrapper(*args, **kwargs):
-#         async with _get_db() as db:
-#             return await func(db, *args, **kwargs)
-#     return wrapper
 
 async def set_table(db: DB):
     query = get_sql(TABLE_SET)
@@ -60,7 +42,8 @@ async def get_section(db: DB, point: Point):
     tiles = Tiles(
         bytearray(row[0]),
         length,
-        length
+        length,
+        tile_kind=TileKind.CURSOR
     )
 
     return Section(
@@ -83,7 +66,8 @@ async def get_iter_by_section_range(db: DB, point_range: PointRange):
         return Tiles(
             bytearray(data),
             length,
-            length
+            length,
+            tile_kind=TileKind.CURSOR
         )
 
     for row in seq:
