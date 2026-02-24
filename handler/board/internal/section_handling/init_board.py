@@ -6,13 +6,17 @@ from handler.board.storage import (
 )
 
 from .make_section import make_section
-from .upgrade_section import _upgrade_interaction_sections, _upgrade_numbering_sections
+from .upgrade_section import (
+    _upgrade_interaction_sections,
+    _upgrade_numbering_sections,
+    _sync_cursor_sections
+)
 from loguru import logger
 
 
 def set_start_point(section: Section):
     """start point 설정"""
-    tile = section.tiles.at_tile(Point(0, 0))
+    tile = section.tiles.map_tile_at(Point(0, 0))
 
     new_tile = tile.changed(is_mine=False, is_open=True)
     section.tiles.update_at(Point(0, 0), new_tile)
@@ -45,6 +49,8 @@ async def initialize_board(db: DB):
 
     for _, sec in sections.items():
         await create_section(db, sec)
+
+    await _sync_cursor_sections(db, sections)
 
     for p in PointRange.create_by_mid(center_p, 1, 1).iter():
         await _upgrade_numbering_sections(db, p, sections)

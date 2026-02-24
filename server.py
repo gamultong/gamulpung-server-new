@@ -6,7 +6,7 @@ from websockets.exceptions import ConnectionClosed
 from core.broker import EventBroker
 from handler.connection import ConnectionHandler, Conn
 from handler.board import initialize_board
-from handler.board.storage import _get_db, set_table
+from handler.board.storage import _get_db, set_table, set_cursor_table
 import sentry_sdk
 from config import SentryConfig
 from asyncio import sleep
@@ -33,6 +33,10 @@ async def lifespan(app: FastAPI):
     async with _get_db() as db:
         try:
             await set_table(db)
+        except:
+            pass
+        try:
+            await set_cursor_table(db)
         except:
             pass
 
