@@ -82,6 +82,7 @@ echo "🚀 Starting container: $CONTAINER_NAME"
 sudo docker run -d \
   -p "$CONTAINER_PORT_MAPPING" \
   -v "$PWD:$VOLUME_MOUNT_PATH" \
+  --restart unless-stopped \
   "${MEMORY_ARGS[@]}" \
   "${ENV_ARGS[@]}" \
   --name "$CONTAINER_NAME" \
