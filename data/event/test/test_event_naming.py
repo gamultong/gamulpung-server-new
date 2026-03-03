@@ -46,7 +46,7 @@ class EventNaming_TestCase(unittest.TestCase):
         self.assertEnumValuesUnique(InternalEvent)
 
     def test_trigger_event_members(self):
-        self.assertEnumHasNames(TriggerEvent, ["JOIN", "QUIT"])
+        self.assertEnumHasNames(TriggerEvent, ["JOIN", "QUIT", "DRAW_BOARD"])
         self.assertEnumValuesUnique(TriggerEvent)
 
     def test_value_format_is_kebab_case(self):

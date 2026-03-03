@@ -17,5 +17,4 @@ from .internal.cursor_repository import (
     set_table as set_cursor_table,
     get_list_by_section_range as get_cursor_list_by_section_range,
     get_dict_by_section_range as get_cursor_dict_by_section_range,
-    update_section_flag as update_cursor_section_flag,
 )

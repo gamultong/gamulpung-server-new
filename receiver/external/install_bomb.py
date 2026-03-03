@@ -7,11 +7,8 @@ from core.lifecycle import LifeCycle, RLife
 from data.payload import IdDataPayload, ClientMessage
 from data.event import ClientEvent
 from data.cursor import ItemType
-
-from handler.board import BoardHandler
+from handler.bomb import BombHandler
 from handler.cursor import CursorHandler
-
-from utils.background import run_after_delay
 
 
 INSTALL_BOMB_EVENT = Event[IdDataPayload[str, ClientMessage.InstallBomb]]
@@ -38,7 +35,4 @@ async def install_bomb_receiver(event: INSTALL_BOMB_EVENT):
 
     await CursorHandler.grant_item(cursor, ItemType.BOMB, -1)
 
-    async def delayed():
-        await BoardHandler.install_bomb(point)
-
-    run_after_delay(2, delayed, name="install_bomb")
+    await BombHandler.install_bomb(cursor.id, point)

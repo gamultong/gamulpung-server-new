@@ -8,6 +8,7 @@ from core.event import Event
 from data.event import InternalEvent
 from data.payload import IdPayload, IdDataPayload
 from data.board import Point, PointRange, Tile
+from data.bomb import ExplosionInfo
 from .emitter import TileEmitter
 
 
@@ -26,5 +27,8 @@ def explosion_event(old: Tile, new: Tile, point: Point) -> Generator[Event, None
     if new.is_open and new.is_mine:
         yield Event(
             event_name=InternalEvent.NOTIFY_EXPLOSION,
-            payload=IdDataPayload(id=point, data=old)
+            payload=IdDataPayload(
+                id=point,
+                data=ExplosionInfo(tile=old, explosion_range=1),
+            )
         )

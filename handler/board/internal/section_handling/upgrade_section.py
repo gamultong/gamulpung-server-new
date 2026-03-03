@@ -6,7 +6,6 @@ from handler.board.storage import (
     update_section,
     get_dict_by_section_range,
     create_cursor_section,
-    update_cursor_section_flag,
     get_cursor_section
 )
 
@@ -31,18 +30,12 @@ async def make_surround_sections(db: DB, surround_sections: dict[Point, Section]
         await create_section(db, section)
         await _sync_cursor_section(db, section)
 
+
 async def _sync_cursor_section(db: DB, section: Section):
     cursor_section = await get_cursor_section(db, section.point)
     if cursor_section is None:
-        cursor_section = make_cursor_section(section.point, flag=section.flag)
+        cursor_section = make_cursor_section(section.point)
         await create_cursor_section(db, cursor_section)
-        return
-
-    if cursor_section.flag == section.flag:
-        return
-
-    cursor_section.flag = section.flag
-    await update_cursor_section_flag(db, cursor_section)
 
 
 async def _sync_cursor_sections(db: DB, sections: dict[Point, Section]):

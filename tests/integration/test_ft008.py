@@ -4,10 +4,10 @@ from unittest.mock import patch
 from datetime import datetime, timedelta
 
 from server import app
-from config import BoardConfig
+from config import BoardConfig, BombConfig
 
 from data.event import ServerEvent, ClientEvent
-from data.board import Point, Section, SectionFlag
+from data.board import Point, Section, SectionFlag, PointRange
 from data.cursor import ItemType, Items, Cursor
 from data.payload import ServerMessage
 from data.conn import Message
@@ -15,8 +15,8 @@ from core.event import Event
 
 from tests.utils import PytestTCM, assert_wait_event, assert_wait_call_if, assert_wait_message, build_tiles
 
-CL_A = "TestClient_A"
-CL_B = "TestClient_B"
+CL_A = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+CL_B = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 
 
 # -------------------------
@@ -180,6 +180,7 @@ async def test_ft008_scenario_install_bomb():
             timeout=3.5,
             error_msg="폭탄 설치 후 B 클라이언트가 EXPLOSION을 받지 못함"
         )
+
 
 # -------------------------
 # FT-008: 비즈니스 규칙
@@ -406,3 +407,96 @@ async def test_ft008_background_allows_move_before_explosion():
 
         cursor = await CursorHandler.get_by_id(CL_A)
         assert cursor.is_alive, "폭발 이후에도 커서가 생존해야 함"
+
+
+@patch.object(BombConfig, "DEFAULT_DELAY_SECONDS", new=0.1)
+@patch.object(BombConfig, "EXPLOSION_RANGE", new=0)
+@patch.object(BoardConfig, "LENGTH", new=4)
+@patch("server.initialize_board", new=empty_board_map)
+@pytest.mark.asyncio
+async def test_ft008_cursor_board_draw_single_point():
+    """
+    사용자 INSTALL_BOMB 요청 후 폭발 시 단일 좌표 draw 결과가 반영된다.
+    """
+    from handler.cursor_board.internal.cursor_board import CursorBoardHandler
+
+    with PytestTCM(app).append_client(CL_A) as tcm:
+        cl_a = tcm.get_client(CL_A)
+
+        items_a = Items()
+        items_a.grant_item(ItemType.BOMB, 1)
+
+        with patch(
+            "data.cursor.Cursor.create",
+            side_effect=create_cursor_by_id({CL_A: Point(0, 0)}, items_map={CL_A: items_a})
+        ):
+            cl_a.ws.send_json({
+                "header": {"event": ClientEvent.CREATE_CURSOR.value},
+                "payload": {"width": 1, "height": 1}
+            })
+            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
+
+        target = Point(1, 1)
+        cl_a.ws.send_json({
+            "header": {"event": ClientEvent.INSTALL_BOMB.value},
+            "payload": {"position": {"x": target.x, "y": target.y}}
+        })
+
+        assert_wait_call_if(
+            cl_a.conn.send,
+            lambda msg: msg.event.event_name == ServerEvent.EXPLOSION,
+            timeout=1.5,
+            error_msg="폭탄 설치 후 EXPLOSION을 받지 못함"
+        )
+
+        tiles = await CursorBoardHandler.fetch(PointRange(target, target))
+        tile = tiles.cursor_tile_at(Point(0, 0))
+        assert tile.user_id == CL_A
+
+
+@patch.object(BombConfig, "DEFAULT_DELAY_SECONDS", new=0.1)
+@patch.object(BombConfig, "EXPLOSION_RANGE", new=1)
+@patch.object(BoardConfig, "LENGTH", new=4)
+@patch("server.initialize_board", new=empty_board_map)
+@pytest.mark.asyncio
+async def test_ft008_cursor_board_draw_range():
+    """
+    사용자 INSTALL_BOMB 요청 후 폭발 시 범위 좌표 draw 결과가 반영된다.
+    """
+    from handler.cursor_board.internal.cursor_board import CursorBoardHandler
+
+    with PytestTCM(app).append_client(CL_A) as tcm:
+        cl_a = tcm.get_client(CL_A)
+
+        items_a = Items()
+        items_a.grant_item(ItemType.BOMB, 1)
+
+        with patch(
+            "data.cursor.Cursor.create",
+            side_effect=create_cursor_by_id({CL_A: Point(0, 0)}, items_map={CL_A: items_a})
+        ):
+            cl_a.ws.send_json({
+                "header": {"event": ClientEvent.CREATE_CURSOR.value},
+                "payload": {"width": 1, "height": 1}
+            })
+            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
+
+        center = Point(1, 1)
+        draw_range = 1
+        draw_points = PointRange.create_by_mid(center, draw_range, draw_range)
+        cl_a.ws.send_json({
+            "header": {"event": ClientEvent.INSTALL_BOMB.value},
+            "payload": {"position": {"x": center.x, "y": center.y}}
+        })
+
+        assert_wait_call_if(
+            cl_a.conn.send,
+            lambda msg: msg.event.event_name == ServerEvent.EXPLOSION,
+            timeout=1.5,
+            error_msg="폭탄 설치 후 EXPLOSION을 받지 못함"
+        )
+
+        for p in draw_points.iter():
+            tiles = await CursorBoardHandler.fetch(PointRange(p, p))
+            tile = tiles.cursor_tile_at(Point(0, 0))
+            assert tile.user_id == CL_A

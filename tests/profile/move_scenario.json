@@ -3,7 +3,7 @@
     "name": "join_receiver",
     "cat": "RLife",
     "ph": "B",
-    "ts": 70894.2319979542,
+    "ts": 72086.57099909033,
     "pid": 1,
     "tid": 1,
     "args": {
@@ -14,7 +14,7 @@
     "name": "join_receiver",
     "cat": "RLife",
     "ph": "E",
-    "ts": 77841.3689986337,
+    "ts": 78957.21000022604,
     "pid": 1,
     "tid": 1
   },
@@ -22,7 +22,7 @@
     "name": "create_cursor_receiver",
     "cat": "RLife",
     "ph": "B",
-    "ts": 101473.93700026441,
+    "ts": 98665.45299883,
     "pid": 1,
     "tid": 1,
     "args": {
@@ -33,18 +33,18 @@
     "name": "CursorHandler.create",
     "cat": "HLife",
     "ph": "B",
-    "ts": 106988.45099977916,
+    "ts": 103891.99500059476,
     "pid": 1,
     "tid": 1,
     "args": {
-      "caller_id": "ee99a834-1f7d-49c3-b1fb-32c50b8ff156"
+      "caller_id": "fa30986e-a85c-46f0-a9e0-593dd9f6c11a"
     }
   },
   {
     "name": "notify_cursors_receiver",
     "cat": "RLife",
     "ph": "B",
-    "ts": 110603.4339973121,
+    "ts": 107032.30599938252,
     "pid": 1,
     "tid": 1,
     "args": {
@@ -55,7 +55,7 @@
     "name": "notify_cursors_receiver",
     "cat": "RLife",
     "ph": "E",
-    "ts": 120448.49900121335,
+    "ts": 115651.34999909787,
     "pid": 1,
     "tid": 1
   },
@@ -63,7 +63,7 @@
     "name": "set_window_receiver",
     "cat": "RLife",
     "ph": "B",
-    "ts": 132213.3540015784,
+    "ts": 124884.19900000736,
     "pid": 1,
     "tid": 1,
     "args": {
@@ -74,7 +74,7 @@
     "name": "set_window_receiver",
     "cat": "RLife",
     "ph": "E",
-    "ts": 147530.37299669813,
+    "ts": 141445.65199967474,
     "pid": 1,
     "tid": 1
   },
@@ -82,7 +82,7 @@
     "name": "CursorHandler.create",
     "cat": "HLife",
     "ph": "E",
-    "ts": 155791.27499950118,
+    "ts": 149123.75299900305,
     "pid": 1,
     "tid": 1,
     "args": {
@@ -96,7 +96,7 @@
     "name": "create_cursor_receiver",
     "cat": "RLife",
     "ph": "E",
-    "ts": 160036.0529992031,
+    "ts": 153934.99200035876,
     "pid": 1,
     "tid": 1
   },
@@ -104,7 +104,7 @@
     "name": "move_receiver",
     "cat": "RLife",
     "ph": "B",
-    "ts": 180541.80099716177,
+    "ts": 175321.6839988454,
     "pid": 1,
     "tid": 1,
     "args": {
@@ -115,18 +115,18 @@
     "name": "CursorHandler.move",
     "cat": "HLife",
     "ph": "B",
-    "ts": 183282.19599789008,
+    "ts": 178137.94299945584,
     "pid": 1,
     "tid": 1,
     "args": {
-      "caller_id": "590f8344-c418-4bb7-808f-c02c88ba613d"
+      "caller_id": "38ba84ef-add2-406d-b344-0f2acd5accc2"
     }
   },
   {
     "name": "notify_scoreboard_receiver",
     "cat": "RLife",
     "ph": "B",
-    "ts": 188528.74000003794,
+    "ts": 182294.4909999933,
     "pid": 1,
     "tid": 1,
     "args": {
@@ -137,7 +137,7 @@
     "name": "notify_scoreboard_receiver",
     "cat": "RLife",
     "ph": "E",
-    "ts": 188734.12199900486,
+    "ts": 182448.1959993136,
     "pid": 1,
     "tid": 1
   },
@@ -145,7 +145,7 @@
     "name": "notify_cursors_receiver",
     "cat": "RLife",
     "ph": "B",
-    "ts": 200928.16800024593,
+    "ts": 195346.99199903116,
     "pid": 1,
     "tid": 1,
     "args": {
@@ -156,7 +156,7 @@
     "name": "notify_cursors_receiver",
     "cat": "RLife",
     "ph": "E",
-    "ts": 211261.2509954488,
+    "ts": 204171.24800042075,
     "pid": 1,
     "tid": 1
   },
@@ -164,7 +164,7 @@
     "name": "set_window_receiver",
     "cat": "RLife",
     "ph": "B",
-    "ts": 222117.77499614982,
+    "ts": 217640.99599931797,
     "pid": 1,
     "tid": 1,
     "args": {
@@ -175,7 +175,7 @@
     "name": "set_window_receiver",
     "cat": "RLife",
     "ph": "E",
-    "ts": 238483.63399883965,
+    "ts": 230165.0890003657,
     "pid": 1,
     "tid": 1
   },
@@ -183,7 +183,7 @@
     "name": "CursorHandler.move",
     "cat": "HLife",
     "ph": "E",
-    "ts": 247975.97799624782,
+    "ts": 236835.22300052573,
     "pid": 1,
     "tid": 1,
     "args": {
@@ -197,7 +197,7 @@
     "name": "move_receiver",
     "cat": "RLife",
     "ph": "E",
-    "ts": 252961.89799701096,
+    "ts": 240347.94799990777,
     "pid": 1,
     "tid": 1
   },
@@ -205,7 +205,7 @@
     "name": "quit_receiver",
     "cat": "RLife",
     "ph": "B",
-    "ts": 270450.92199841747,
+    "ts": 258980.6630003295,
     "pid": 1,
     "tid": 1,
     "args": {
@@ -216,7 +216,7 @@
     "name": "quit_receiver",
     "cat": "RLife",
     "ph": "E",
-    "ts": 270535.1900003734,
+    "ts": 259066.8859993457,
     "pid": 1,
     "tid": 1
   }

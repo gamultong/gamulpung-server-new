@@ -1,1 +1,1 @@
-INSERT INTO cursor_section (x, y, data, flag) VALUES (?, ?, ?, ?);
+INSERT INTO cursor_section (x, y, data) VALUES (?, ?, ?);

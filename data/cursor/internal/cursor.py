@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from core.dataobj import DataObj
 from data.board import Point, PointRange
+from data.board.cursorboard import Color
 from .items import Items
 from datetime import datetime
 
@@ -16,6 +17,7 @@ class Cursor(DataObj):
     active_at: datetime
     score: int
     items: Items
+    color: Color
 
     @property
     def window(self):
