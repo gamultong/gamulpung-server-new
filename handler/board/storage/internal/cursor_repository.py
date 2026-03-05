@@ -10,7 +10,6 @@ TABLE_SET = "cursor_table.sql"
 SECTION_GET = "cursor_get_section.sql"
 SECTION_GET_BY_RANGE = "cursor_get_section_range.sql"
 SECTION_UPDATE = "cursor_update_section.sql"
-SECTION_FLAG_UPDATE = "cursor_update_section_flag.sql"
 SECTION_CREATE = "cursor_create_section.sql"
 
 DB = aiosqlite.Connection
@@ -49,7 +48,6 @@ async def get_section(db: DB, point: Point):
     return Section(
         point=point,
         tiles=tiles,
-        flag=row[1]
     )
 
 
@@ -74,7 +72,6 @@ async def get_iter_by_section_range(db: DB, point_range: PointRange):
         section = Section(
             point=Point(row["x"], row["y"]),
             tiles=make_tiles(row["data"]),
-            flag=row["flag"]
         )
         yield section
 
@@ -99,11 +96,10 @@ async def get_dict_by_section_range(db: DB, point_range: PointRange):
 async def create_section(db: DB, section: Section):
     point = section.point
     tiles = section.tiles
-    flag = section.flag
 
     query = get_sql(SECTION_CREATE)
 
-    await db.execute(query, (point.x, point.y, tiles.data, flag))
+    await db.execute(query, (point.x, point.y, tiles.data))
     await db.commit()
 
 
@@ -114,14 +110,4 @@ async def update_section(db: DB, section: Section):
     query = get_sql(SECTION_UPDATE)
 
     await db.execute(query, (tiles.data, point.x, point.y))
-    await db.commit()
-
-
-async def update_section_flag(db: DB, section: Section):
-    point = section.point
-    flag = section.flag
-
-    query = get_sql(SECTION_FLAG_UPDATE)
-
-    await db.execute(query, (flag, point.x, point.y))
     await db.commit()

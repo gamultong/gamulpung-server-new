@@ -51,11 +51,6 @@ class Section(DataObj):
             PointRange(rel_top_left, rel_bottom_right)
         )
 
-    def at_tile_by_abs_point(self, point: Point):
-        rel_point = self.get_point_rel_by_abs(point)
-
-        return self.tiles.at_tile(rel_point)
-
     def at_map_tile_by_abs_point(self, point: Point) -> Tile:
         rel_point = self.get_point_rel_by_abs(point)
         return self.tiles.map_tile_at(rel_point)
@@ -64,7 +59,7 @@ class Section(DataObj):
         rel_point = self.get_point_rel_by_abs(point)
         return self.tiles.cursor_tile_at(rel_point)
 
-    def update_by_abs_point(self, point: Point, tile: Tile):
+    def update_by_abs_point(self, point: Point, tile: Tile | CursorTile):
         rel_point = self.get_point_rel_by_abs(point)
 
         self.tiles.update_at(rel_point, tile)

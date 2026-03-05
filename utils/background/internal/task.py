@@ -30,18 +30,19 @@ def _create_background_task(
     return task
 
 
-def run_after_delay(
-    delay_seconds: float,
-    coro_factory: Callable[[], Coroutine[Any, Any, Any]],
-    *,
-    name: str | None = None,
-) -> asyncio.Task:
-    """지연 후 코루틴을 백그라운드에서 실행한다.
-
-    코루틴을 미리 생성하지 않고, 지연 후 생성해서 await한다.
-    """
-    async def _runner() -> None:
-        await asyncio.sleep(delay_seconds)
-        await coro_factory()
-
-    return _create_background_task(_runner(), name=name)
+# 현재는 사용하지 않음
+# def run_after_delay(
+#     delay_seconds: float,
+#     coro_factory: Callable[[], Coroutine[Any, Any, Any]],
+#     *,
+#     name: str | None = None,
+# ) -> asyncio.Task:
+#     """지연 후 코루틴을 백그라운드에서 실행한다.
+#
+#     코루틴을 미리 생성하지 않고, 지연 후 생성해서 await한다.
+#     """
+#     async def _runner() -> None:
+#         await asyncio.sleep(delay_seconds)
+#         await coro_factory()
+#
+#     return _create_background_task(_runner(), name=name)

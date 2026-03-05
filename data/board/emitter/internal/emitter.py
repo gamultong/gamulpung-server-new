@@ -1,11 +1,8 @@
 from __future__ import annotations
 
-from typing import Generator, ClassVar, TYPE_CHECKING, Callable
+from typing import Generator, ClassVar, Callable
 from core.event import Event
-from data.board import Point
-
-if TYPE_CHECKING:
-    from data.board import Tile
+from data.board import Point, Tile
 
 
 class TileEmitter:
@@ -69,23 +66,34 @@ class TileEmitter:
         )]
 
     @classmethod
-    def get_install_bomb_events(cls, point: Point, tile: "Tile") -> list[Event]:
-        """폭탄 설치 시 발행할 Event 목록 반환
+    def get_explosion_events(
+        cls,
+        point: Point,
+        tile: Tile,
+        explosion_range: int,
+    ) -> list[Event]:
+        """폭발 시 발행할 Event 목록 반환
 
-        Install bomb emits only NOTIFY_EXPLOSION (color handling skipped).
+        Explosion emits only NOTIFY_EXPLOSION (color handling skipped).
 
         Args:
-            point: bomb position
+            point: explosion position
             tile: previous tile state at the position
+            explosion_range: 폭발 범위
 
         Returns:
             NOTIFY_EXPLOSION events
         """
         from data.event import InternalEvent
         from data.payload import IdDataPayload
+        from data.bomb import ExplosionInfo
 
         return [
             Event(
                 event_name=InternalEvent.NOTIFY_EXPLOSION,
-                payload=IdDataPayload(id=point, data=tile))
+                payload=IdDataPayload(
+                    id=point,
+                    data=ExplosionInfo(tile=tile, explosion_range=explosion_range),
+                )
+            )
         ]

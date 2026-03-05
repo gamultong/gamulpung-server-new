@@ -34,19 +34,19 @@ class EventNaming_TestCase(unittest.TestCase):
     def test_server_event_members(self):
         self.assertEnumHasNames(
             ServerEvent,
-            ["CHAT", "CURSORS_STATE", "EXPLOSION", "SCOREBOARD_STATE", "TILES_STATE", "MY_CURSOR", "QUIT_CURSOR"],
+            ["CHAT", "CURSORS_STATE", "COLORED_TILES_STATE", "EXPLOSION", "SCOREBOARD_STATE", "TILES_STATE", "MY_CURSOR", "QUIT_CURSOR"],
         )
         self.assertEnumValuesUnique(ServerEvent)
 
     def test_internal_event_members(self):
         self.assertEnumHasNames(
             InternalEvent,
-            ["NOTIFY_CURSORS", "NOTIFY_EXPLOSION", "NOTIFY_SCOREBOARD", "NOTIFY_TILES", "SETTED_WINDOW"],
+            ["NOTIFY_CURSORS", "NOTIFY_DRAW", "NOTIFY_EXPLOSION", "NOTIFY_SCOREBOARD", "NOTIFY_TILES", "SETTED_WINDOW"],
         )
         self.assertEnumValuesUnique(InternalEvent)
 
     def test_trigger_event_members(self):
-        self.assertEnumHasNames(TriggerEvent, ["JOIN", "QUIT"])
+        self.assertEnumHasNames(TriggerEvent, ["JOIN", "QUIT", "DRAW_BOARD"])
         self.assertEnumValuesUnique(TriggerEvent)
 
     def test_value_format_is_kebab_case(self):
@@ -54,6 +54,8 @@ class EventNaming_TestCase(unittest.TestCase):
         self.assertEqual(ClientEvent.OPEN_TILES.value, "OPEN-TILES")
         self.assertEqual(ServerEvent.CURSORS_STATE.value, "CURSORS-STATE")
         self.assertEqual(InternalEvent.NOTIFY_SCOREBOARD.value, "NOTIFY-SCOREBOARD")
+        self.assertEqual(ServerEvent.COLORED_TILES_STATE.value, "COLORED-TILES-STATE")
+        self.assertEqual(InternalEvent.NOTIFY_DRAW.value, "NOTIFY-DRAW")
 
     def test_scope_is_accumulated(self):
         """ScopedBase __init_subclass__ 규칙: 부모 scope + 자신의 __scope_part__가 누적되는지 검증"""

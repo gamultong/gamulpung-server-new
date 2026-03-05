@@ -5,6 +5,7 @@ from core.event import EventEnum
 class InternalEvent(EventEnum):
     __scope_part__ = "INTERNAL"
     NOTIFY_CURSORS = auto()
+    NOTIFY_DRAW = auto()
     NOTIFY_EXPLOSION = auto()
     NOTIFY_SCOREBOARD = auto()
     NOTIFY_TILES = auto()

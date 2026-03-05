@@ -6,6 +6,7 @@ from core.broker import EventBroker
 from core.lifecycle import HLife, LifeCycle
 
 from data.cursor import Cursor, CursorRankRange, RankRange, ItemType, Items
+from data.board.cursorboard import Color
 from data.cursor.emitter import CursorEmitter
 from data.payload import IdPayload, IdDataPayload
 from data.board import is_overlap, PointRange, Point
@@ -26,6 +27,10 @@ class CursorHandler:
         hlife = HLife.get_lifecycle()
 
         new_cursor = cursor.copy()
+
+        if await cls.is_color_taken(new_cursor.color):
+            raise ValueError(f"이미 사용 중인 color 입니다: {int(new_cursor.color)}")
+
         cls.cursor_dict[cursor.id] = new_cursor
 
         hlife.set_snapshot(before=None, after=new_cursor)
@@ -43,6 +48,10 @@ class CursorHandler:
     @classmethod
     async def get_by_id(cls, id: str):
         return cls.cursor_dict[id].copy()
+
+    @classmethod
+    async def is_color_taken(cls, color: Color) -> bool:
+        return any(cursor.color == color for cursor in cls.cursor_dict.values())
 
     @classmethod
     async def get_cursors_by_cursor_window(cls, cursor: Cursor) -> list[Cursor]:

@@ -6,6 +6,7 @@ from websockets.exceptions import ConnectionClosed
 from core.broker import EventBroker
 from handler.connection import ConnectionHandler, Conn
 from handler.board import initialize_board
+from handler.bomb import start_bomb_scheduler, stop_bomb_scheduler
 from handler.board.storage import _get_db, set_table, set_cursor_table
 import sentry_sdk
 from config import SentryConfig
@@ -33,19 +34,18 @@ async def lifespan(app: FastAPI):
     async with _get_db() as db:
         try:
             await set_table(db)
-        except:
-            pass
-        try:
             await set_cursor_table(db)
         except:
             pass
 
         await initialize_board(db)
     logger.debug("init end")
+    await start_bomb_scheduler()
 
     yield  # app 실행
 
     # teardown
+    await stop_bomb_scheduler()
 
     elapsed = 0
     step = 0.1

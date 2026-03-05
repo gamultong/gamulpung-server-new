@@ -65,8 +65,8 @@ class InitializeStartMap_TestCase(TestCase.UseTable_TestCase):
 
 
 class InitializeCursorSection_TestCase(TestCase.UseTable_TestCase):
-    async def test_cursor_section_flag_sync(self):
-        """cursor_section flag가 section과 동일한지 확인"""
+    async def test_cursor_section_is_created_with_map_section(self):
+        """cursor_section이 section과 1:1로 생성되는지 확인"""
         await initialize_board(self.db)
 
         point_range = PointRange(Point(-2, 2), Point(2, -2))
@@ -79,9 +79,8 @@ class InitializeCursorSection_TestCase(TestCase.UseTable_TestCase):
 
         self.assertEqual(len(section_dict), len(cursor_dict))
 
-        for point, section in section_dict.items():
+        for point in section_dict:
             self.assertIn(point, cursor_dict)
-            self.assertEqual(cursor_dict[point].flag, section.flag)
 
 
 if __name__ == "__main__":

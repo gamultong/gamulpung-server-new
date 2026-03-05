@@ -5,6 +5,7 @@ import asyncio
 from server import app
 from data.event import ServerEvent, ClientEvent
 from data.board import Point, Section, SectionFlag, PointRange, Tile, Tiles
+from data.board.cursorboard import Color
 from data.payload import ServerMessage
 from data.conn import Message
 from core.event import Event
@@ -92,8 +93,20 @@ def create_cursor_at_position(pos: Point):
     from data.cursor import Cursor
     origin_create = Cursor.create
 
-    def create_cursor_effect(id: str, width: int = 0, height: int = 0, **kwargs):
-        return origin_create(id, width=width, height=height, position=pos)
+    def create_cursor_effect(
+        id: str,
+        width: int = 0,
+        height: int = 0,
+        color: Color = Color.RED,
+        **_kwargs,
+    ):
+        return origin_create(
+            id,
+            width=width,
+            height=height,
+            position=pos,
+            color=color,
+        )
 
     return create_cursor_effect
 
@@ -114,7 +127,7 @@ async def test_ft003_open_tile_scenario():
         with patch("data.cursor.Cursor.create", side_effect=create_cursor_at_position(Point(0, 1))):
             cl_a.ws.send_json({
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 1, "height": 1}
+                "payload": {"width": 1, "height": 1, "color": Color.RED.value}
             })
 
             # Cursor 생성 완료 대기
@@ -241,7 +254,7 @@ async def test_ft003_business_rule_flagged_tile():
         with patch("data.cursor.Cursor.create", side_effect=create_cursor_at_position(Point(0, 1))):
             cl_a.ws.send_json({
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 1, "height": 1}
+                "payload": {"width": 1, "height": 1, "color": Color.RED.value}
             })
 
             cl_a.ws.send_json({
@@ -279,7 +292,7 @@ async def test_ft003_business_rule_closed_tile_only():
         with patch("data.cursor.Cursor.create", side_effect=create_cursor_at_position(Point(0, 1))):
             cl_a.ws.send_json({
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 1, "height": 1}
+                "payload": {"width": 1, "height": 1, "color": Color.RED.value}
             })
 
             cl_a.ws.send_json({
@@ -320,7 +333,7 @@ async def test_ft003_business_rule_dead_cursor():
         with patch("data.cursor.Cursor.create", side_effect=create_cursor_at_position(Point(0, 1))):
             cl_a.ws.send_json({
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 1, "height": 1}
+                "payload": {"width": 1, "height": 1, "color": Color.RED.value}
             })
 
             cl_a.ws.send_json({
@@ -362,7 +375,7 @@ async def test_ft003_state_change_tile_opened():
         with patch("data.cursor.Cursor.create", side_effect=create_cursor_at_position(Point(0, 1))):
             cl_a.ws.send_json({
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 1, "height": 1}
+                "payload": {"width": 1, "height": 1, "color": Color.RED.value}
             })
 
             assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
@@ -406,7 +419,7 @@ async def test_ft003_state_change_explosion():
         with patch("data.cursor.Cursor.create", side_effect=create_cursor_at_position(Point(0, 1))):
             cl_a.ws.send_json({
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 5, "height": 5}
+                "payload": {"width": 5, "height": 5, "color": Color.RED.value}
             })
 
             cl_a.ws.send_json({
@@ -420,7 +433,7 @@ async def test_ft003_state_change_explosion():
         with patch("data.cursor.Cursor.create", side_effect=create_cursor_at_position(Point(3, 3))):
             cl_b.ws.send_json({
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 5, "height": 5}
+                "payload": {"width": 5, "height": 5, "color": Color.BLUE.value}
             })
 
             cl_b.ws.send_json({

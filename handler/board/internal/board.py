@@ -169,34 +169,6 @@ class BoardHandler:
             await EventBroker.publish(event)
 
     @classmethod
-    @LifeCycle.with_async_lifecycle(
-        factory=HLife.create_factory("BoardHandler", "install_bomb")
-    )
-    async def install_bomb(cls, point: Point):
-        hlife = HLife.get_lifecycle()
-
-        sec_p = abs_to_sec(point)
-
-        async with _get_db() as db:
-            section = await get_section(db, sec_p)
-            # 섹션이 반드시 존재해야 함
-            assert section
-
-            # 섹션이 INTERACTION 상태여야만 상호작용 가능
-            if section.flag == SectionFlag.NUMBERING:
-                await upgrade_interaction_section(db, sec_p)
-
-            old_tile = section.at_map_tile_by_abs_point(point)
-
-        # Do not change tile state; emit install-bomb events only.
-        events = TileEmitter.get_install_bomb_events(point, old_tile)
-        logger.debug(events)
-
-        hlife.add_events(events)
-        for event in events:
-            await EventBroker.publish(event)
-
-    @classmethod
     async def fetch_tile(cls, point: Point) -> Tile:
         sec_p = abs_to_sec(point)
 

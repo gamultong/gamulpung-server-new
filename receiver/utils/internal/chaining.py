@@ -26,7 +26,7 @@ async def chaining(point: Point):
             section = await BoardHandler.fetch_section(sec_p)
             sections[sec_p] = section
 
-        tile = sections[sec_p].at_tile_by_abs_point(p)
+        tile = sections[sec_p].at_map_tile_by_abs_point(p)
         if tile.is_mine:  # 첫 번째만 가능
             logger.warning("number를 거치지 않은 mine 접근이 불가능해야함")
             continue
