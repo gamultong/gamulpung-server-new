@@ -9,6 +9,7 @@ from data.event import InternalEvent, ServerEvent
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler
 from handler.board import BoardHandler
+from handler.cursor_board import CursorBoardHandler
 
 SET_WINDOW_EVENT = Event[IdDataPayload[str, Cursor] | IdPayload[str]]
 
@@ -37,6 +38,21 @@ async def set_window_receiver(event: SET_WINDOW_EVENT):
     )
 
     await ConnectionHandler.multicast([id], tiles_event)
+
+    colored_tiles_data = await CursorBoardHandler.fetch(window_range)
+    colored_tiles_li = [
+        ServerMessage.ColoredTilesState.Elem(
+            data=colored_tiles_data,
+            range=window_range
+        )
+    ]
+
+    colored_tiles_event = Event(
+        event_name=ServerEvent.COLORED_TILES_STATE,
+        payload=ServerMessage.ColoredTilesState(colored_tiles_li=colored_tiles_li)
+    )
+
+    await ConnectionHandler.multicast([id], colored_tiles_event)
 
     # 커서 정보 조회 및 전송
     cursors = await CursorHandler.get_cursors_by_cursor_window(cursor)

@@ -1,5 +1,5 @@
 from core.lifecycle import HLife, LifeCycle
-from data.board import Point, PointRange, Section, Tiles, CursorTile, abs_to_sec
+from data.board import Point, PointRange, CursorTile, abs_to_sec
 from handler.board.storage import (
     _get_db,
     create_cursor_section,
@@ -51,7 +51,9 @@ class CursorBoardHandler:
     @LifeCycle.with_async_lifecycle(
         factory=HLife.create_factory("CursorBoardHandler", "fetch")
     )
-    async def fetch(cls, point_range: PointRange):
+    async def fetch(cls, point_range: PointRange) -> str:
+        from handler.cursor import CursorHandler
+
         sec_pr = PointRange(
             abs_to_sec(point_range.top_left),
             abs_to_sec(point_range.bottom_right),
@@ -65,31 +67,34 @@ class CursorBoardHandler:
             for section in sections
         }
 
-        result: Tiles | None = None
+        tile_count = point_range.width * point_range.height
+        territory_data = bytearray(tile_count)
+        user_color_cache: dict[str, int] = {}
 
-        for y in range(sec_pr.top, sec_pr.bottom - 1, -1):
-            line: list[Tiles] = []
-            for x in range(sec_pr.left, sec_pr.right + 1):
-                sec_point = Point(x, y)
-
-                if sec_point not in section_dict:
-                    section = make_cursor_section(sec_point)
-                else:
-                    section = section_dict[sec_point]
-
-                tiles = section.at_tiles_by_abs_range(point_range)
-                line.append(tiles)
-
-            base, *other = line
-            line_tiles = base.h_append(*other)
-
-            if result is None:
-                result = line_tiles
+        for idx, point in enumerate(point_range.iter()):
+            sec_point = abs_to_sec(point)
+            if sec_point not in section_dict:
+                section = make_cursor_section(sec_point)
+                section_dict[sec_point] = section
             else:
-                result = result.v_append(line_tiles)
+                section = section_dict[sec_point]
 
-        assert result is not None
-        assert result.width == point_range.width
-        assert result.height == point_range.height
+            user_id = section.at_cursor_tile_by_abs_point(point).user_id
+            if user_id is None:
+                territory_data[idx] = 0
+                continue
 
-        return result
+            if user_id in user_color_cache:
+                number = user_color_cache[user_id]
+            else:
+                try:
+                    cursor = await CursorHandler.get_by_id(user_id)
+                except KeyError:
+                    territory_data[idx] = 0
+                    continue
+                number = int(cursor.color)
+                user_color_cache[user_id] = number
+
+            territory_data[idx] = number
+
+        return territory_data.hex()

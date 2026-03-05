@@ -30,6 +30,14 @@ class TilesState(ServerMessage):
     tiles_li: list[Elem]
 
 
+class ColoredTilesState(ServerMessage):
+    class Elem(DataObj):
+        data: str
+        range: PointRange
+
+    colored_tiles_li: list[Elem]
+
+
 class Explosion(ServerMessage):
     position: Point
 

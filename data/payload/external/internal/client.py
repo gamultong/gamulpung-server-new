@@ -1,5 +1,6 @@
 from .base import ClientMessage
 from data.board import Point
+from data.board.cursorboard import Color
 
 
 class Chat(ClientMessage):
@@ -9,6 +10,18 @@ class Chat(ClientMessage):
 class CreateCursor(ClientMessage):
     width: int
     height: int
+    color: int
+
+    @classmethod
+    def from_dict(cls, dict: dict):
+        if "color" not in dict:
+            raise ValueError("CREATE_CURSOR payload에 color가 필요합니다.")
+
+        return cls(
+            width=dict["width"],
+            height=dict["height"],
+            color=int(dict["color"]),
+        )
 
 
 class SetWindow(ClientMessage):

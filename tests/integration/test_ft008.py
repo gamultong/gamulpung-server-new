@@ -6,12 +6,14 @@ from datetime import datetime, timedelta
 from server import app
 from config import BoardConfig, BombConfig
 
-from data.event import ServerEvent, ClientEvent
+from data.event import ServerEvent, ClientEvent, InternalEvent
 from data.board import Point, Section, SectionFlag, PointRange
+from data.board.cursorboard import Color
 from data.cursor import ItemType, Items, Cursor
-from data.payload import ServerMessage
+from data.payload import ServerMessage, IdPayload
 from data.conn import Message
 from core.event import Event
+from core.broker import EventBroker
 
 from tests.utils import PytestTCM, assert_wait_event, assert_wait_call_if, assert_wait_message, build_tiles
 
@@ -33,7 +35,13 @@ def create_cursor_by_id(
     items_map = items_map or {}
     active_at_map = active_at_map or {}
 
-    def create_cursor_effect(id: str, width: int = 0, height: int = 0, **kwargs):
+    def create_cursor_effect(
+        id: str,
+        width: int = 0,
+        height: int = 0,
+        color: Color = Color.RED,
+        **_kwargs,
+    ):
         pos = pos_map.get(id, Point(0, 0))
         items = items_map.get(id, Items())
         active_at = active_at_map.get(id)
@@ -43,7 +51,8 @@ def create_cursor_by_id(
             height=height,
             position=pos,
             items=items,
-            active_at=active_at
+            active_at=active_at,
+            color=color,
         )
 
     return create_cursor_effect
@@ -127,11 +136,11 @@ async def test_ft008_scenario_install_bomb():
         ):
             cl_a.ws.send_json({
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 1, "height": 1}
+                "payload": {"width": 1, "height": 1, "color": Color.RED.value}
             })
             cl_b.ws.send_json({
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 1, "height": 1}
+                "payload": {"width": 1, "height": 1, "color": Color.BLUE.value}
             })
 
             assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
@@ -153,7 +162,8 @@ async def test_ft008_scenario_install_bomb():
             width=1,
             height=1,
             active_at=fixed_active_at,
-            items=Items()
+            items=Items(),
+            color=Color.RED,
         )
         expected_msg = Message(
             event=Event(
@@ -212,7 +222,7 @@ async def test_ft008_business_rule_dead_cursor_cannot_install():
         ):
             cl_a.ws.send_json({
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 1, "height": 1}
+                "payload": {"width": 1, "height": 1, "color": Color.RED.value}
             })
             assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
@@ -247,7 +257,7 @@ async def test_ft008_business_rule_need_bomb_item():
         with patch("data.cursor.Cursor.create", side_effect=create_cursor_by_id({CL_A: Point(0, 0)})):
             cl_a.ws.send_json({
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 1, "height": 1}
+                "payload": {"width": 1, "height": 1, "color": Color.RED.value}
             })
             assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
@@ -290,7 +300,7 @@ async def test_ft008_state_change_bomb_decrease():
         ):
             cl_a.ws.send_json({
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 1, "height": 1}
+                "payload": {"width": 1, "height": 1, "color": Color.RED.value}
             })
             assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
@@ -328,7 +338,7 @@ async def test_ft008_state_change_cursor_death():
         ):
             cl_a.ws.send_json({
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 1, "height": 1}
+                "payload": {"width": 1, "height": 1, "color": Color.RED.value}
             })
             assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
@@ -373,7 +383,7 @@ async def test_ft008_background_allows_move_before_explosion():
         ):
             cl_a.ws.send_json({
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 1, "height": 1}
+                "payload": {"width": 1, "height": 1, "color": Color.RED.value}
             })
             assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
@@ -432,7 +442,7 @@ async def test_ft008_cursor_board_draw_single_point():
         ):
             cl_a.ws.send_json({
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 1, "height": 1}
+                "payload": {"width": 1, "height": 1, "color": Color.RED.value}
             })
             assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
@@ -449,9 +459,8 @@ async def test_ft008_cursor_board_draw_single_point():
             error_msg="폭탄 설치 후 EXPLOSION을 받지 못함"
         )
 
-        tiles = await CursorBoardHandler.fetch(PointRange(target, target))
-        tile = tiles.cursor_tile_at(Point(0, 0))
-        assert tile.user_id == CL_A
+        territory_data = await CursorBoardHandler.fetch(PointRange(target, target))
+        assert bytes.fromhex(territory_data) == bytes([Color.RED.value])
 
 
 @patch.object(BombConfig, "DEFAULT_DELAY_SECONDS", new=0.1)
@@ -477,7 +486,7 @@ async def test_ft008_cursor_board_draw_range():
         ):
             cl_a.ws.send_json({
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 1, "height": 1}
+                "payload": {"width": 1, "height": 1, "color": Color.RED.value}
             })
             assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
@@ -497,6 +506,60 @@ async def test_ft008_cursor_board_draw_range():
         )
 
         for p in draw_points.iter():
-            tiles = await CursorBoardHandler.fetch(PointRange(p, p))
-            tile = tiles.cursor_tile_at(Point(0, 0))
-            assert tile.user_id == CL_A
+            territory_data = await CursorBoardHandler.fetch(PointRange(p, p))
+            assert bytes.fromhex(territory_data) == bytes([Color.RED.value])
+
+
+@patch.object(BoardConfig, "LENGTH", new=4)
+@patch("server.initialize_board", new=empty_board_map)
+@pytest.mark.asyncio
+async def test_ft008_notify_draw_colored_tiles_state_encodes_color_map():
+    """
+    NOTIFY_DRAW는 COLORED-TILES-STATE의 data에 타일별 color 번호를 담아 전달한다.
+    """
+    from handler.cursor_board.internal.cursor_board import CursorBoardHandler
+
+    with PytestTCM(app).append_client(CL_A).append_client(CL_B) as tcm:
+        cl_a = tcm.get_client(CL_A)
+        cl_b = tcm.get_client(CL_B)
+
+        with patch(
+            "data.cursor.Cursor.create",
+            side_effect=create_cursor_by_id({
+                CL_A: Point(0, 0),
+                CL_B: Point(1, 0),
+            })
+        ):
+            cl_a.ws.send_json({
+                "header": {"event": ClientEvent.CREATE_CURSOR.value},
+                "payload": {"width": 3, "height": 3, "color": Color.RED.value}
+            })
+            cl_b.ws.send_json({
+                "header": {"event": ClientEvent.CREATE_CURSOR.value},
+                "payload": {"width": 3, "height": 3, "color": Color.BLUE.value}
+            })
+            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
+            assert_wait_event(cl_b.conn.send, ServerEvent.CURSORS_STATE)
+
+        await CursorBoardHandler.draw_board(CL_A, Point(0, 0), 0)
+        await CursorBoardHandler.draw_board(CL_B, Point(1, 0), 0)
+
+        cl_a.conn.send.await_args_list.clear()
+
+        await EventBroker.publish(
+            Event(
+                event_name=InternalEvent.NOTIFY_DRAW,
+                payload=IdPayload(id=PointRange(Point(0, 0), Point(1, 0)))
+            )
+        )
+
+        assert_wait_call_if(
+            cl_a.conn.send,
+            lambda msg: (
+                msg.event.event_name == ServerEvent.COLORED_TILES_STATE and
+                len(msg.event.payload.colored_tiles_li) == 1 and
+                bytes.fromhex(msg.event.payload.colored_tiles_li[0].data) == bytes([1, 2])
+            ),
+            timeout=3.0,
+            error_msg="COLORED-TILES-STATE data가 타일별 color 번호 맵 형식이 아님"
+        )

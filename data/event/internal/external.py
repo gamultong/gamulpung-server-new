@@ -22,6 +22,7 @@ class ServerEvent(ExternalEvent):
     __scope_part__ = "SERVER"
     CHAT = auto()
     CURSORS_STATE = auto()
+    COLORED_TILES_STATE = auto()
     EXPLOSION = auto()
     SCOREBOARD_STATE = auto()
     TILES_STATE = auto()

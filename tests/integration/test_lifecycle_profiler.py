@@ -9,6 +9,7 @@ from unittest.mock import patch
 from server import app
 from data.event import ServerEvent, ClientEvent
 from data.board import Point, Section, SectionFlag
+from data.board.cursorboard import Color
 from handler.cursor import CursorHandler
 from tests.utils import PytestTCM, assert_wait_event, build_tiles
 from config import BoardConfig
@@ -39,8 +40,20 @@ def create_cursor_at_position(pos: Point):
     from data.cursor import Cursor
     origin_create = Cursor.create
 
-    def create_cursor_effect(id: str, width: int = 0, height: int = 0, **kwargs):
-        return origin_create(id, width=width, height=height, position=pos)
+    def create_cursor_effect(
+        id: str,
+        width: int = 0,
+        height: int = 0,
+        color: Color = Color.RED,
+        **_kwargs,
+    ):
+        return origin_create(
+            id,
+            width=width,
+            height=height,
+            position=pos,
+            color=color,
+        )
 
     return create_cursor_effect
 
@@ -62,7 +75,7 @@ async def test_lifecycle_profiler_basic():
             with patch("data.cursor.Cursor.create", side_effect=create_cursor_at_position(Point(1, 1))):
                 cl_a.ws.send_json({
                     "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                    "payload": {"width": 1, "height": 1}
+                    "payload": {"width": 1, "height": 1, "color": Color.RED.value}
                 })
                 assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
@@ -94,7 +107,7 @@ async def test_lifecycle_profiler_move_scenario():
             with patch("data.cursor.Cursor.create", side_effect=create_cursor_at_position(Point(1, 1))):
                 cl_a.ws.send_json({
                     "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                    "payload": {"width": 1, "height": 1}
+                    "payload": {"width": 1, "height": 1, "color": Color.RED.value}
                 })
                 assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
@@ -155,7 +168,7 @@ async def test_lifecycle_profiler_json_output():
             with patch("data.cursor.Cursor.create", side_effect=create_cursor_at_position(Point(1, 1))):
                 cl_a.ws.send_json({
                     "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                    "payload": {"width": 1, "height": 1}
+                    "payload": {"width": 1, "height": 1, "color": Color.RED.value}
                 })
                 assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 

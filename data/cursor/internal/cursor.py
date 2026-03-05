@@ -52,13 +52,25 @@ class Cursor(DataObj):
         dict = super().to_dict()
         del dict["width"]
         del dict["height"]
+        del dict["color"]
 
         dict["active_at"] = self.active_at.isoformat()
 
         return dict
 
     @classmethod
-    def create(cls, id: str, position=Point(0, 0), width=0, height=0, active_at: datetime | None = None, score: int = 0, items=Items()):
+    def create(
+        cls,
+        id: str,
+        position: Point = Point(0, 0),
+        width: int = 0,
+        height: int = 0,
+        active_at: datetime | None = None,
+        score: int = 0,
+        items: Items = Items(),
+        *,
+        color: Color
+    ):
         if active_at is None:
             active_at = datetime.now()
         return cls(
@@ -68,5 +80,6 @@ class Cursor(DataObj):
             height=height,
             active_at=active_at,
             score=score,
-            items=items.copy()
+            items=items.copy(),
+            color=color,
         )

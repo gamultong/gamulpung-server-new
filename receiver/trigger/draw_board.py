@@ -2,9 +2,10 @@ from core.event import Event
 from core.broker import EventBroker
 from core.lifecycle import LifeCycle, RLife
 
-from data.payload import IdDataPayload
+from data.payload import IdDataPayload, IdPayload
 from data.bomb import InstalledBomb
-from data.event import TriggerEvent
+from data.board import PointRange
+from data.event import TriggerEvent, InternalEvent
 from handler.cursor_board.internal.cursor_board import CursorBoardHandler
 
 
@@ -22,3 +23,14 @@ async def draw_board_receiver(event: DRAW_BOARD_EVENT):
         point=bomb.position,
         draw_range=bomb.explosion_range,
     )
+
+    draw_range = PointRange.create_by_mid(
+        mid=bomb.position,
+        height=bomb.explosion_range,
+        width=bomb.explosion_range,
+    )
+    notify_event = Event(
+        event_name=InternalEvent.NOTIFY_DRAW,
+        payload=IdPayload(id=draw_range)
+    )
+    await EventBroker.publish(notify_event)
