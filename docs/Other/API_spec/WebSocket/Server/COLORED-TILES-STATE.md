@@ -1,7 +1,7 @@
 # COLORED-TILES-STATE
 
 이는 사용자의 `window`안 `cursor_board`가 변화 되었을 때 발행됩니다.
-cursor의 `color` 정보는 이 이벤트에서만 전달됩니다.
+타일 단위 색상 맵 정보는 이 이벤트를 통해 전달됩니다.
 
 ## Payload
 

@@ -9,7 +9,7 @@ from data.cursor import Cursor, CursorRankRange, RankRange, ItemType, Items
 from data.board.cursorboard import Color
 from data.cursor.emitter import CursorEmitter
 from data.payload import IdPayload, IdDataPayload
-from data.board import is_overlap, PointRange, Point
+from data.board import is_overlap, PointRange, Point, Tiles, TileKind, CursorTile
 from data.event import InternalEvent
 from datetime import datetime, timedelta
 
@@ -48,6 +48,41 @@ class CursorHandler:
     @classmethod
     async def get_by_id(cls, id: str):
         return cls.cursor_dict[id].copy()
+
+    @classmethod
+    async def to_colored_tiles_data(cls, cursor_tiles: Tiles) -> str:
+        assert cursor_tiles.tile_kind == TileKind.CURSOR
+
+        tile_bytes = len(CursorTile.create(None).data)
+        tile_count = cursor_tiles.width * cursor_tiles.height
+        assert len(cursor_tiles.data) == tile_count * tile_bytes
+
+        colored_tiles_data = bytearray(tile_count)
+        color_cache: dict[str, int] = {}
+
+        for idx in range(tile_count):
+            start = idx * tile_bytes
+            end = start + tile_bytes
+            tile = CursorTile.from_bytes(bytes(cursor_tiles.data[start:end]))
+            user_id = tile.user_id
+
+            if user_id is None:
+                continue
+
+            if user_id in color_cache:
+                colored_tiles_data[idx] = color_cache[user_id]
+                continue
+
+            try:
+                cursor = await cls.get_by_id(user_id)
+            except KeyError:
+                continue
+
+            color = int(cursor.color)
+            color_cache[user_id] = color
+            colored_tiles_data[idx] = color
+
+        return colored_tiles_data.hex()
 
     @classmethod
     async def is_color_taken(cls, color: Color) -> bool:

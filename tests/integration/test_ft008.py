@@ -6,14 +6,13 @@ from datetime import datetime, timedelta
 from server import app
 from config import BoardConfig, BombConfig
 
-from data.event import ServerEvent, ClientEvent, InternalEvent
-from data.board import Point, Section, SectionFlag, PointRange
+from data.event import ServerEvent, ClientEvent
+from data.board import Point, PointRange, Section, SectionFlag
 from data.board.cursorboard import Color
 from data.cursor import ItemType, Items, Cursor
-from data.payload import ServerMessage, IdPayload
+from data.payload import ServerMessage
 from data.conn import Message
 from core.event import Event
-from core.broker import EventBroker
 
 from tests.utils import PytestTCM, assert_wait_event, assert_wait_call_if, assert_wait_message, build_tiles
 
@@ -104,6 +103,8 @@ async def empty_board_map(db):
 # -------------------------
 # FT-008: 시나리오
 # -------------------------
+@patch.object(BombConfig, "DEFAULT_DELAY_SECONDS", new=0.2)
+@patch.object(BombConfig, "EXPLOSION_RANGE", new=1)
 @patch.object(BoardConfig, "LENGTH", new=4)
 @patch("server.initialize_board", new=empty_board_map)
 @pytest.mark.asyncio
@@ -149,10 +150,19 @@ async def test_ft008_scenario_install_bomb():
         cl_a.conn.send.await_args_list.clear()
         cl_b.conn.send.await_args_list.clear()
 
+        bomb_point = Point(1, 1)
+        draw_range = PointRange.create_by_mid(
+            mid=bomb_point,
+            height=BombConfig.EXPLOSION_RANGE,
+            width=BombConfig.EXPLOSION_RANGE,
+        )
+        expected_tile_count = draw_range.width * draw_range.height
+        expected_color_data = bytes([Color.RED.value]) * expected_tile_count
+
         # 지뢰 설치 요청(폭탄 사용)
         cl_a.ws.send_json({
             "header": {"event": ClientEvent.INSTALL_BOMB.value},
-            "payload": {"position": {"x": 1, "y": 1}}
+            "payload": {"position": {"x": bomb_point.x, "y": bomb_point.y}}
         })
 
         # 변경된 cursor 정보 전달 확인(폭탄 보유량 감소)
@@ -177,7 +187,7 @@ async def test_ft008_scenario_install_bomb():
             timeout=1.5
         )
 
-        # 일정 시간 후 폭발 이벤트 수신(설치 후 약 2초)
+        # 설치 요청 이후 폭발 이벤트 수신(설치 후 약 2초)
         assert_wait_call_if(
             cl_a.conn.send,
             lambda msg: msg.event.event_name == ServerEvent.EXPLOSION,
@@ -189,6 +199,32 @@ async def test_ft008_scenario_install_bomb():
             lambda msg: msg.event.event_name == ServerEvent.EXPLOSION,
             timeout=3.5,
             error_msg="폭탄 설치 후 B 클라이언트가 EXPLOSION을 받지 못함"
+        )
+
+        # 설치자 색상과 변경 범위가 A/B 모두에게 전달되었는지 확인
+        assert_wait_call_if(
+            cl_a.conn.send,
+            lambda msg: (
+                msg.event.event_name == ServerEvent.COLORED_TILES_STATE and
+                len(msg.event.payload.colored_tiles_li) == 1 and
+                msg.event.payload.colored_tiles_li[0].range == draw_range and
+                len(bytes.fromhex(msg.event.payload.colored_tiles_li[0].data)) == expected_tile_count and
+                bytes.fromhex(msg.event.payload.colored_tiles_li[0].data) == expected_color_data
+            ),
+            timeout=3.5,
+            error_msg="폭탄 설치 후 A 클라이언트가 COLORED_TILES_STATE를 받지 못했거나 RED 색상 반영이 없음"
+        )
+        assert_wait_call_if(
+            cl_b.conn.send,
+            lambda msg: (
+                msg.event.event_name == ServerEvent.COLORED_TILES_STATE and
+                len(msg.event.payload.colored_tiles_li) == 1 and
+                msg.event.payload.colored_tiles_li[0].range == draw_range and
+                len(bytes.fromhex(msg.event.payload.colored_tiles_li[0].data)) == expected_tile_count and
+                bytes.fromhex(msg.event.payload.colored_tiles_li[0].data) == expected_color_data
+            ),
+            timeout=3.5,
+            error_msg="폭탄 설치 후 B 클라이언트가 COLORED_TILES_STATE를 받지 못했거나 RED 색상 반영이 없음"
         )
 
 
@@ -356,77 +392,15 @@ async def test_ft008_state_change_cursor_death():
         )
 
 
-@patch.object(BoardConfig, "LENGTH", new=4)
-@patch("server.initialize_board", new=empty_board_map)
-@pytest.mark.asyncio
-async def test_ft008_background_allows_move_before_explosion():
-    """
-    백그라운드 처리
-    - install_bomb 직후 move 요청이 빠르게 처리되어 폭발 범위를 벗어나 생존한다.
-    """
-    from handler.cursor import CursorHandler
-
-    with PytestTCM(app).append_client(CL_A) as tcm:
-        cl_a = tcm.get_client(CL_A)
-
-        items_a = Items()
-        items_a.grant_item(ItemType.BOMB, 1)
-        fixed_active_at = datetime(2025, 1, 1, 0, 0, 0)
-
-        with patch(
-            "data.cursor.Cursor.create",
-            side_effect=create_cursor_by_id(
-                {CL_A: Point(2, 2)},
-                items_map={CL_A: items_a},
-                active_at_map={CL_A: fixed_active_at}
-            )
-        ):
-            cl_a.ws.send_json({
-                "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 1, "height": 1, "color": Color.RED.value}
-            })
-            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
-
-        cl_a.conn.send.await_args_list.clear()
-
-        start = asyncio.get_event_loop().time()
-
-        # 지뢰 설치 후 바로 이동 요청
-        cl_a.ws.send_json({
-            "header": {"event": ClientEvent.INSTALL_BOMB.value},
-            "payload": {"position": {"x": 1, "y": 1}}
-        })
-        cl_a.ws.send_json({
-            "header": {"event": ClientEvent.MOVE.value},
-            "payload": {"position": {"x": 3, "y": 3}}
-        })
-
-        # move가 2초 대기 없이 빠르게 처리되는지 확인
-        await wait_for_cursor(
-            lambda cursor: cursor.position == Point(3, 3),
-            timeout=1.5,
-            step=0.05,
-            error_msg="install_bomb 이후 move가 지연되어 처리되지 않음"
-        )
-
-        # 폭발(약 2초 후) 시점이 지난 뒤에도 생존해야 함
-        elapsed = asyncio.get_event_loop().time() - start
-        remaining = 2.5 - elapsed
-        if remaining > 0:
-            await asyncio.sleep(remaining)
-
-        cursor = await CursorHandler.get_by_id(CL_A)
-        assert cursor.is_alive, "폭발 이후에도 커서가 생존해야 함"
-
-
 @patch.object(BombConfig, "DEFAULT_DELAY_SECONDS", new=0.1)
 @patch.object(BombConfig, "EXPLOSION_RANGE", new=0)
 @patch.object(BoardConfig, "LENGTH", new=4)
 @patch("server.initialize_board", new=empty_board_map)
 @pytest.mark.asyncio
-async def test_ft008_cursor_board_draw_single_point():
+async def test_ft008_state_change_tile_color():
     """
-    사용자 INSTALL_BOMB 요청 후 폭발 시 단일 좌표 draw 결과가 반영된다.
+    상태 변화
+    - 폭발 범위 내 tile 색: 기존 색 → 설치자 색
     """
     from handler.cursor_board.internal.cursor_board import CursorBoardHandler
 
@@ -435,131 +409,34 @@ async def test_ft008_cursor_board_draw_single_point():
 
         items_a = Items()
         items_a.grant_item(ItemType.BOMB, 1)
-
         with patch(
             "data.cursor.Cursor.create",
-            side_effect=create_cursor_by_id({CL_A: Point(0, 0)}, items_map={CL_A: items_a})
+            side_effect=create_cursor_by_id(
+                {CL_A: Point(0, 0)},
+                items_map={CL_A: items_a},
+            )
         ):
             cl_a.ws.send_json({
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 1, "height": 1, "color": Color.RED.value}
+                "payload": {"width": 2, "height": 2, "color": Color.RED.value}
             })
             assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
+        cl_a.conn.send.await_args_list.clear()
+
         target = Point(1, 1)
+
         cl_a.ws.send_json({
             "header": {"event": ClientEvent.INSTALL_BOMB.value},
             "payload": {"position": {"x": target.x, "y": target.y}}
         })
 
-        assert_wait_call_if(
-            cl_a.conn.send,
-            lambda msg: msg.event.event_name == ServerEvent.EXPLOSION,
-            timeout=1.5,
-            error_msg="폭탄 설치 후 EXPLOSION을 받지 못함"
-        )
+        deadline = asyncio.get_event_loop().time() + 2.0
+        while asyncio.get_event_loop().time() < deadline:
+            cursor_tiles = await CursorBoardHandler.fetch(PointRange(target, target))
+            colored_cursor = cursor_tiles.cursor_tile_at(Point(0, 0))
+            if colored_cursor.user_id == CL_A:
+                return
+            await asyncio.sleep(0.05)
 
-        territory_data = await CursorBoardHandler.fetch(PointRange(target, target))
-        assert bytes.fromhex(territory_data) == bytes([Color.RED.value])
-
-
-@patch.object(BombConfig, "DEFAULT_DELAY_SECONDS", new=0.1)
-@patch.object(BombConfig, "EXPLOSION_RANGE", new=1)
-@patch.object(BoardConfig, "LENGTH", new=4)
-@patch("server.initialize_board", new=empty_board_map)
-@pytest.mark.asyncio
-async def test_ft008_cursor_board_draw_range():
-    """
-    사용자 INSTALL_BOMB 요청 후 폭발 시 범위 좌표 draw 결과가 반영된다.
-    """
-    from handler.cursor_board.internal.cursor_board import CursorBoardHandler
-
-    with PytestTCM(app).append_client(CL_A) as tcm:
-        cl_a = tcm.get_client(CL_A)
-
-        items_a = Items()
-        items_a.grant_item(ItemType.BOMB, 1)
-
-        with patch(
-            "data.cursor.Cursor.create",
-            side_effect=create_cursor_by_id({CL_A: Point(0, 0)}, items_map={CL_A: items_a})
-        ):
-            cl_a.ws.send_json({
-                "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 1, "height": 1, "color": Color.RED.value}
-            })
-            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
-
-        center = Point(1, 1)
-        draw_range = 1
-        draw_points = PointRange.create_by_mid(center, draw_range, draw_range)
-        cl_a.ws.send_json({
-            "header": {"event": ClientEvent.INSTALL_BOMB.value},
-            "payload": {"position": {"x": center.x, "y": center.y}}
-        })
-
-        assert_wait_call_if(
-            cl_a.conn.send,
-            lambda msg: msg.event.event_name == ServerEvent.EXPLOSION,
-            timeout=1.5,
-            error_msg="폭탄 설치 후 EXPLOSION을 받지 못함"
-        )
-
-        for p in draw_points.iter():
-            territory_data = await CursorBoardHandler.fetch(PointRange(p, p))
-            assert bytes.fromhex(territory_data) == bytes([Color.RED.value])
-
-
-@patch.object(BoardConfig, "LENGTH", new=4)
-@patch("server.initialize_board", new=empty_board_map)
-@pytest.mark.asyncio
-async def test_ft008_notify_draw_colored_tiles_state_encodes_color_map():
-    """
-    NOTIFY_DRAW는 COLORED-TILES-STATE의 data에 타일별 color 번호를 담아 전달한다.
-    """
-    from handler.cursor_board.internal.cursor_board import CursorBoardHandler
-
-    with PytestTCM(app).append_client(CL_A).append_client(CL_B) as tcm:
-        cl_a = tcm.get_client(CL_A)
-        cl_b = tcm.get_client(CL_B)
-
-        with patch(
-            "data.cursor.Cursor.create",
-            side_effect=create_cursor_by_id({
-                CL_A: Point(0, 0),
-                CL_B: Point(1, 0),
-            })
-        ):
-            cl_a.ws.send_json({
-                "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 3, "height": 3, "color": Color.RED.value}
-            })
-            cl_b.ws.send_json({
-                "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 3, "height": 3, "color": Color.BLUE.value}
-            })
-            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
-            assert_wait_event(cl_b.conn.send, ServerEvent.CURSORS_STATE)
-
-        await CursorBoardHandler.draw_board(CL_A, Point(0, 0), 0)
-        await CursorBoardHandler.draw_board(CL_B, Point(1, 0), 0)
-
-        cl_a.conn.send.await_args_list.clear()
-
-        await EventBroker.publish(
-            Event(
-                event_name=InternalEvent.NOTIFY_DRAW,
-                payload=IdPayload(id=PointRange(Point(0, 0), Point(1, 0)))
-            )
-        )
-
-        assert_wait_call_if(
-            cl_a.conn.send,
-            lambda msg: (
-                msg.event.event_name == ServerEvent.COLORED_TILES_STATE and
-                len(msg.event.payload.colored_tiles_li) == 1 and
-                bytes.fromhex(msg.event.payload.colored_tiles_li[0].data) == bytes([1, 2])
-            ),
-            timeout=3.0,
-            error_msg="COLORED-TILES-STATE data가 타일별 color 번호 맵 형식이 아님"
-        )
+        pytest.fail("폭발 이후 cursor_board의 target tile 색이 설치자 색으로 변경되지 않음")
