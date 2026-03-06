@@ -71,7 +71,8 @@ async def test_ft006_join_scenario():
             lambda msg: (
                 msg.event.event_name == ServerEvent.CURSORS_STATE and
                 len(msg.event.payload.cursors) == 1 and
-                msg.event.payload.cursors[0].id == CL_A
+                msg.event.payload.cursors[0].id == CL_A and
+                msg.to_dict()["payload"]["cursors"][0]["color"] == Color.RED.value
             ),
             timeout=3.0,
             error_msg="CURSORS_STATE에 올바른 cursor가 없음"

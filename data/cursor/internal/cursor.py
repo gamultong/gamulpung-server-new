@@ -52,9 +52,9 @@ class Cursor(DataObj):
         dict = super().to_dict()
         del dict["width"]
         del dict["height"]
-        del dict["color"]
 
         dict["active_at"] = self.active_at.isoformat()
+        dict["color"] = int(self.color)
 
         return dict
 
