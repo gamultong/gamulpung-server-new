@@ -2,7 +2,6 @@
 
 이는 사용자 `window`의 `Cursor`정보가 변경될 경우 발행됩니다.
 이는 자신의 `cursor`와 타인의 `cursor`를 포함합니다.
-관련 문서: /docs/Other/API_spec/WebSocket/Server/COLORED-TILES-STATE.md
 
 ## Payload
 

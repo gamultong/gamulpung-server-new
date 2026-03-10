@@ -22,17 +22,22 @@ async def notify_draw_receiver(event: NOTIFY_DRAW_EVENT):
     targets = [cur.id for cur in cursors]
 
     cursor_tiles = await CursorBoardHandler.fetch(point_range)
-    colored_tiles_data = await CursorHandler.to_colored_tiles_data(cursor_tiles)
-    colored_tiles_li = [
-        ServerMessage.ColoredTilesState.Elem(
-            data=colored_tiles_data,
-            range=point_range
+    for target_id in targets:
+        colored_tiles_data = await CursorHandler.to_colored_tiles_data(
+            cursor_tiles,
+            target_id
         )
-    ]
 
-    colored_tiles_event = Event(
-        event_name=ServerEvent.COLORED_TILES_STATE,
-        payload=ServerMessage.ColoredTilesState(colored_tiles_li=colored_tiles_li)
-    )
+        colored_tiles_li = [
+            ServerMessage.ColoredTilesState.Elem(
+                data=colored_tiles_data,
+                range=point_range
+            )
+        ]
 
-    await ConnectionHandler.multicast(targets, colored_tiles_event)
+        colored_tiles_event = Event(
+            event_name=ServerEvent.COLORED_TILES_STATE,
+            payload=ServerMessage.ColoredTilesState(colored_tiles_li=colored_tiles_li)
+        )
+
+        await ConnectionHandler.multicast([target_id], colored_tiles_event)

@@ -157,7 +157,8 @@ async def test_ft008_scenario_install_bomb():
             width=BombConfig.EXPLOSION_RANGE,
         )
         expected_tile_count = draw_range.width * draw_range.height
-        expected_color_data = bytes([Color.RED.value]) * expected_tile_count
+        expected_data_for_a = bytes([1]) * expected_tile_count
+        expected_data_for_b = bytes([0]) * expected_tile_count
 
         # 지뢰 설치 요청(폭탄 사용)
         cl_a.ws.send_json({
@@ -201,7 +202,7 @@ async def test_ft008_scenario_install_bomb():
             error_msg="폭탄 설치 후 B 클라이언트가 EXPLOSION을 받지 못함"
         )
 
-        # 설치자 색상과 변경 범위가 A/B 모두에게 전달되었는지 확인
+        # 수신자 기준 내 영토만 data(1/0)로 전달되는지 확인
         assert_wait_call_if(
             cl_a.conn.send,
             lambda msg: (
@@ -209,10 +210,10 @@ async def test_ft008_scenario_install_bomb():
                 len(msg.event.payload.colored_tiles_li) == 1 and
                 msg.event.payload.colored_tiles_li[0].range == draw_range and
                 len(bytes.fromhex(msg.event.payload.colored_tiles_li[0].data)) == expected_tile_count and
-                bytes.fromhex(msg.event.payload.colored_tiles_li[0].data) == expected_color_data
+                bytes.fromhex(msg.event.payload.colored_tiles_li[0].data) == expected_data_for_a
             ),
             timeout=3.5,
-            error_msg="폭탄 설치 후 A 클라이언트가 COLORED_TILES_STATE를 받지 못했거나 RED 색상 반영이 없음"
+            error_msg="폭탄 설치 후 A 클라이언트가 COLORED_TILES_STATE를 받지 못했거나 내 영토 data가 올바르지 않음"
         )
         assert_wait_call_if(
             cl_b.conn.send,
@@ -221,10 +222,10 @@ async def test_ft008_scenario_install_bomb():
                 len(msg.event.payload.colored_tiles_li) == 1 and
                 msg.event.payload.colored_tiles_li[0].range == draw_range and
                 len(bytes.fromhex(msg.event.payload.colored_tiles_li[0].data)) == expected_tile_count and
-                bytes.fromhex(msg.event.payload.colored_tiles_li[0].data) == expected_color_data
+                bytes.fromhex(msg.event.payload.colored_tiles_li[0].data) == expected_data_for_b
             ),
             timeout=3.5,
-            error_msg="폭탄 설치 후 B 클라이언트가 COLORED_TILES_STATE를 받지 못했거나 RED 색상 반영이 없음"
+            error_msg="폭탄 설치 후 B 클라이언트가 COLORED_TILES_STATE를 받지 못했거나 내 영토 data가 올바르지 않음"
         )
 
 
