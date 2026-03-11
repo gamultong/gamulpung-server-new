@@ -46,7 +46,7 @@ class CursorHandler:
         return cls.cursor_dict[id].copy()
 
     @classmethod
-    async def to_colored_tiles_data(cls, cursor_tiles: Tiles, owner_id: str) -> str:
+    async def to_my_tiles_data(cls, cursor_tiles: Tiles, owner_id: str) -> str:
         assert cursor_tiles.tile_kind == TileKind.CURSOR
 
         tile_bytes = len(CursorTile.create(None).data)
@@ -68,6 +68,41 @@ class CursorHandler:
                 my_tiles_data[idx] = 1
 
         return my_tiles_data.hex()
+
+    @classmethod
+    async def to_colored_tiles_data(cls, cursor_tiles: Tiles) -> str:
+        assert cursor_tiles.tile_kind == TileKind.CURSOR
+
+        tile_bytes = len(CursorTile.create(None).data)
+        tile_count = cursor_tiles.width * cursor_tiles.height
+        assert len(cursor_tiles.data) == tile_count * tile_bytes
+
+        colored_tiles_data = bytearray(tile_count)
+        color_cache: dict[str, int] = {}
+
+        for idx in range(tile_count):
+            start = idx * tile_bytes
+            end = start + tile_bytes
+            tile = CursorTile.from_bytes(bytes(cursor_tiles.data[start:end]))
+            user_id = tile.user_id
+
+            if user_id is None:
+                continue
+
+            if user_id in color_cache:
+                colored_tiles_data[idx] = color_cache[user_id]
+                continue
+
+            try:
+                cursor = await cls.get_by_id(user_id)
+            except KeyError:
+                continue
+
+            color_value = int(cursor.color)
+            color_cache[user_id] = color_value
+            colored_tiles_data[idx] = color_value
+
+        return colored_tiles_data.hex()
 
     @classmethod
     async def get_cursors_by_cursor_window(cls, cursor: Cursor) -> list[Cursor]:

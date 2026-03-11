@@ -16,7 +16,8 @@
 \<elem> 
 ```json
 {
-    "data": string,
+    "my_tiles_data": string,
+    "colored_tiles_data": string,
     "range": {
         "top_left":{
             "x": int,
@@ -31,5 +32,7 @@
 ```
 
 **Note:**
-- `data`는 타일 순서대로 "내 영토 여부"를 직렬화한 hex 문자열입니다.
-- 값 규칙: `0=내 영토 아님`, `1=내 영토`
+- `my_tiles_data`는 타일 순서대로 "내 영토 여부"를 직렬화한 hex 문자열입니다.
+- 값 규칙: `0=내 영토 아님`, `1=나의 영토`
+- `colored_tiles_data`는 타일 순서대로 "영토 색상"을 직렬화한 hex 문자열입니다.
+- 값 규칙: `0=None`, `1=RED`, `2=BLUE`, `3=YELLOW`, `4=PURPLE`
