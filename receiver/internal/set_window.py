@@ -40,10 +40,12 @@ async def set_window_receiver(event: SET_WINDOW_EVENT):
     await ConnectionHandler.multicast([id], tiles_event)
 
     cursor_tiles = await CursorBoardHandler.fetch(window_range)
+    my_tiles_data = await CursorHandler.to_my_tiles_data(cursor_tiles, id)
     colored_tiles_data = await CursorHandler.to_colored_tiles_data(cursor_tiles)
     colored_tiles_li = [
         ServerMessage.ColoredTilesState.Elem(
-            data=colored_tiles_data,
+            my_tiles_data=my_tiles_data,
+            colored_tiles_data=colored_tiles_data,
             range=window_range
         )
     ]

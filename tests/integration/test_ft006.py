@@ -115,63 +115,6 @@ async def test_ft006_business_rule_initial_position(frozen_time):
 
 
 @pytest.mark.asyncio
-async def test_ft006_business_rule_color_must_be_unique(frozen_time):
-    """
-    비즈니스 규칙 검증:
-    - color는 중복될 수 없다.
-    """
-    with PytestTCM(app).append_client(CL_A).append_client(CL_B) as tcm:
-        cl_a = tcm.get_client(CL_A)
-        cl_b = tcm.get_client(CL_B)
-
-        # 기준 cursor 생성
-        cl_a.ws.send_json({
-            "header": {"event": ClientEvent.CREATE_CURSOR.value},
-            "payload": {"width": 5, "height": 5, "color": Color.RED.value}
-        })
-        assert_wait_call_if(
-            cl_a.conn.send,
-            lambda msg: (
-                msg.event.event_name == ServerEvent.MY_CURSOR and
-                msg.event.payload.id == CL_A
-            ),
-            timeout=3.0,
-            error_msg="기준 cursor 생성(MY_CURSOR) 실패"
-        )
-
-        # 중복 color 생성 시도
-        cl_b.conn.send.await_args_list.clear()
-        cl_b.ws.send_json({
-            "header": {"event": ClientEvent.CREATE_CURSOR.value},
-            "payload": {"width": 5, "height": 5, "color": Color.RED.value}
-        })
-
-        # 중복 color 요청자는 MY_CURSOR를 받지 않아야 함
-        with pytest.raises(AssertionError):
-            assert_wait_call_if(
-                cl_b.conn.send,
-                lambda msg: (
-                    msg.event.event_name == ServerEvent.MY_CURSOR and
-                    msg.event.payload.id == CL_B
-                ),
-                timeout=0.8,
-                error_msg="중복 color인데 MY_CURSOR가 발행됨"
-            )
-
-        # 중복 color 요청자는 본인 CURSORS_STATE를 받지 않아야 함
-        with pytest.raises(AssertionError):
-            assert_wait_call_if(
-                cl_b.conn.send,
-                lambda msg: (
-                    msg.event.event_name == ServerEvent.CURSORS_STATE and
-                    any(cur.id == CL_B for cur in msg.event.payload.cursors)
-                ),
-                timeout=0.8,
-                error_msg="중복 color인데 본인 CURSORS_STATE가 발행됨"
-            )
-
-
-@pytest.mark.asyncio
 async def test_ft006_state_change_cursor_creation(frozen_time):
     """
     상태 변화 검증:

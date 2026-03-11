@@ -35,10 +35,6 @@ async def create_cursor_receiver(event: CREATE_CURSOR_EVENT):
         logger.warning(f"유효하지 않은 color 값: id={id}, color={data.color}")
         return
 
-    if await CursorHandler.is_color_taken(color):
-        logger.warning(f"중복 color 사용 시도: id={id}, color={color.value}")
-        return
-
     # 클라이언트가 제공한 window 크기와 color로 커서 생성
     cursor = Cursor.create(
         id=id,
