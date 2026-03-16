@@ -6,7 +6,7 @@ from data.payload import IdDataPayload, ClientMessage, ServerMessage
 from data.cursor import Cursor
 from data.event import ServerEvent, ClientEvent
 from data.board import Point
-from data.board.cursorboard import Color
+from data.cursor_board import Color
 
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler

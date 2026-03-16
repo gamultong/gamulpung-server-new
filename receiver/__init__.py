@@ -17,3 +17,4 @@ from .internal.notify_tiles import notify_tiles_receiver
 from .internal.notify_draw import notify_draw_receiver
 from .internal.notify_explosion import notify_explosion_receiver
 from .internal.notify_scoreboard import notify_scoreboard_receiver
+from .internal.installed_bomb import installed_bomb_receiver

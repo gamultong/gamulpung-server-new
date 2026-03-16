@@ -8,7 +8,7 @@ from config import BoardConfig, BombConfig
 
 from data.event import ServerEvent, ClientEvent
 from data.board import Point, PointRange, Section, SectionFlag
-from data.board.cursorboard import Color
+from data.cursor_board import Color
 from data.cursor import ItemType, Items, Cursor
 from data.payload import ServerMessage
 from data.conn import Message
@@ -92,6 +92,21 @@ async def empty_board_map(db):
 ....
 ....
 ....
+"""
+    tiles = build_tiles(map_str)
+    sections = [Section(Point(0, 0), tiles.copy(), flag=SectionFlag.INTERACTIONAL)]
+    from handler.board.storage import create_section
+    for s in sections:
+        await create_section(db, s)
+
+
+async def mixed_open_closed_board_map(db):
+    """폭발 범위 내에 열린 타일/닫힌 타일이 섞인 4x4 보드."""
+    map_str = """\
+....
+.#..
+..#.
+.#..
 """
     tiles = build_tiles(map_str)
     sections = [Section(Point(0, 0), tiles.copy(), flag=SectionFlag.INTERACTIONAL)]
@@ -187,6 +202,28 @@ async def test_ft008_scenario_install_bomb():
             cl_a.conn.send,
             expected_msg,
             timeout=1.5
+        )
+
+        # 설치 시점 알림 이벤트(BOMB-POSITION)는 설치자 포함 주변 커서에게 전달됨
+        assert_wait_call_if(
+            cl_a.conn.send,
+            lambda msg: (
+                msg.event.event_name == ServerEvent.BOMB_POSITION and
+                msg.event.payload.color == int(Color.RED) and
+                msg.event.payload.position == bomb_point
+            ),
+            timeout=1.5,
+            error_msg="폭탄 설치 후 A 클라이언트가 BOMB_POSITION를 받지 못함"
+        )
+        assert_wait_call_if(
+            cl_b.conn.send,
+            lambda msg: (
+                msg.event.event_name == ServerEvent.BOMB_POSITION and
+                msg.event.payload.color == int(Color.RED) and
+                msg.event.payload.position == bomb_point
+            ),
+            timeout=1.5,
+            error_msg="폭탄 설치 후 B 클라이언트가 BOMB_POSITION를 받지 못함"
         )
 
         # 설치 요청 이후 폭발 이벤트 수신(설치 후 약 2초)
@@ -446,3 +483,71 @@ async def test_ft008_state_change_tile_color():
             await asyncio.sleep(0.05)
 
         pytest.fail("폭발 이후 cursor_board의 target tile 색이 설치자 색으로 변경되지 않음")
+
+
+@patch.object(BombConfig, "DEFAULT_DELAY_SECONDS", new=0.2)
+@patch.object(BombConfig, "EXPLOSION_RANGE", new=1)
+@patch.object(BoardConfig, "LENGTH", new=4)
+@patch("server.initialize_board", new=mixed_open_closed_board_map)
+@pytest.mark.asyncio
+async def test_ft008_state_change_tile_color_only_open_tiles():
+    """
+    상태 변화
+    - 폭발 점령은 열린 타일에만 적용된다.
+    """
+    with PytestTCM(app).append_client(CL_A) as tcm:
+        cl_a = tcm.get_client(CL_A)
+
+        items_a = Items()
+        items_a.grant_item(ItemType.BOMB, 1)
+        with patch(
+            "data.cursor.Cursor.create",
+            side_effect=create_cursor_by_id(
+                {CL_A: Point(0, 0)},
+                items_map={CL_A: items_a},
+            )
+        ):
+            cl_a.ws.send_json({
+                "header": {"event": ClientEvent.CREATE_CURSOR.value},
+                "payload": {"width": 1, "height": 1, "color": Color.RED.value}
+            })
+            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
+
+        cl_a.conn.send.await_args_list.clear()
+
+        bomb_point = Point(1, 1)
+        draw_range = PointRange.create_by_mid(
+            mid=bomb_point,
+            height=BombConfig.EXPLOSION_RANGE,
+            width=BombConfig.EXPLOSION_RANGE,
+        )
+        expected_my_tiles = bytes([1, 0, 1, 1, 1, 0, 1, 0, 1])
+        expected_colored_tiles = bytes([
+            Color.RED.value if v == 1 else 0
+            for v in expected_my_tiles
+        ])
+
+        cl_a.ws.send_json({
+            "header": {"event": ClientEvent.INSTALL_BOMB.value},
+            "payload": {"position": {"x": bomb_point.x, "y": bomb_point.y}}
+        })
+
+        assert_wait_call_if(
+            cl_a.conn.send,
+            lambda msg: msg.event.event_name == ServerEvent.EXPLOSION,
+            timeout=3.5,
+            error_msg="폭탄 설치 후 EXPLOSION을 받지 못함"
+        )
+
+        assert_wait_call_if(
+            cl_a.conn.send,
+            lambda msg: (
+                msg.event.event_name == ServerEvent.COLORED_TILES_STATE and
+                len(msg.event.payload.colored_tiles_li) == 1 and
+                msg.event.payload.colored_tiles_li[0].range == draw_range and
+                bytes.fromhex(msg.event.payload.colored_tiles_li[0].my_tiles_data) == expected_my_tiles and
+                bytes.fromhex(msg.event.payload.colored_tiles_li[0].colored_tiles_data) == expected_colored_tiles
+            ),
+            timeout=3.5,
+            error_msg="COLORED_TILES_STATE가 열림 타일 기준으로 반영되지 않음"
+        )

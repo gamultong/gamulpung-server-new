@@ -4,7 +4,7 @@ import asyncio
 from server import app
 from data.event import ServerEvent, ClientEvent
 from data.board import Point, Section, SectionFlag, PointRange
-from data.board.cursorboard import Color
+from data.cursor_board import Color
 from handler.board import BoardHandler
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler
