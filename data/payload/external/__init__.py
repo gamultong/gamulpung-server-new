@@ -10,7 +10,9 @@ class ClientMessage:
         SetWindow,
         Move,
         OpenTiles,
-        SetFlag
+        SetFlag,
+        DismantleMine,
+        InstallBomb,
     )
 
 
@@ -22,6 +24,8 @@ class ServerMessage:
         MyCursor,
         CursorsState,
         TilesState,
+        ColoredTilesState,
+        BombPosition,
         Explosion,
         ScoreBoardState,
         QuitCursor

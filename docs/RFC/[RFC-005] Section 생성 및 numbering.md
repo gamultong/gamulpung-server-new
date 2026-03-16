@@ -6,6 +6,7 @@
 ## 규칙
 - Section은 3단계 상태를 가진다: closed -> numbering -> interaction
 - numbering section 상호작용 시 주변 1칸을 numbering section으로 격상한다.
+- cursor_section은 section과 1:1로 생성되며 색상 데이터만 관리한다.
 
 ### 생성 플로우
 1. numbering section에 상호작용

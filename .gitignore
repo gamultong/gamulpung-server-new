@@ -3,6 +3,7 @@ labs/
 *.pyc
 
 .claude/
+AGENTS.md
 *.db
 .ssh/
 .env
@@ -24,3 +25,7 @@ __pypackages__/
 dist/
 build/
 *.egg
+
+# Grafana MCP
+bin/mcp-grafana
+.env.grafana-mcp

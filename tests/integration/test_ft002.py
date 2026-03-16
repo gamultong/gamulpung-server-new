@@ -4,6 +4,7 @@ import asyncio
 from server import app
 from data.event import ServerEvent, ClientEvent
 from data.board import Point, Section, SectionFlag
+from data.cursor_board import Color
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler
 from tests.utils import PytestTCM, assert_wait_event, build_tiles
@@ -48,8 +49,20 @@ def create_cursor_at_position(pos: Point):
     from data.cursor import Cursor
     origin_create = Cursor.create
 
-    def create_cursor_effect(id: str, width: int = 0, height: int = 0, **kwargs):
-        return origin_create(id, width=width, height=height, position=pos)
+    def create_cursor_effect(
+        id: str,
+        width: int = 0,
+        height: int = 0,
+        color: Color = Color.RED,
+        **_kwargs,
+    ):
+        return origin_create(
+            id,
+            width=width,
+            height=height,
+            position=pos,
+            color=color,
+        )
 
     return create_cursor_effect
 
@@ -71,7 +84,7 @@ async def test_ft002_move_scenario():
         with patch("data.cursor.Cursor.create", side_effect=create_cursor_at_position(Point(1, 1))):
             cl_a.ws.send_json({
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 1, "height": 1}
+                "payload": {"width": 1, "height": 1, "color": Color.RED.value}
             })
             assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
@@ -113,7 +126,7 @@ async def test_ft002_business_rule_opened_tile_only():
         with patch("data.cursor.Cursor.create", side_effect=create_cursor_at_position(Point(1, 1))):
             cl_a.ws.send_json({
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 1, "height": 1}
+                "payload": {"width": 1, "height": 1, "color": Color.RED.value}
             })
             cl_a.ws.send_json({
                 "header": {"event": ClientEvent.SET_WINDOW.value},
@@ -150,7 +163,7 @@ async def test_ft002_business_rule_dead_cursor():
         with patch("data.cursor.Cursor.create", side_effect=create_cursor_at_position(Point(1, 1))):
             cl_a.ws.send_json({
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 1, "height": 1}
+                "payload": {"width": 1, "height": 1, "color": Color.RED.value}
             })
             cl_a.ws.send_json({
                 "header": {"event": ClientEvent.SET_WINDOW.value},
@@ -194,7 +207,7 @@ async def test_ft002_state_change_position_and_score():
         with patch("data.cursor.Cursor.create", side_effect=create_cursor_at_position(Point(1, 1))):
             cl_a.ws.send_json({
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 1, "height": 1}
+                "payload": {"width": 1, "height": 1, "color": Color.RED.value}
             })
             assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 

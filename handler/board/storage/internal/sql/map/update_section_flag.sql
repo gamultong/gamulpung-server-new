@@ -1,0 +1,1 @@
+UPDATE section SET flag=? WHERE x=? and y=?;

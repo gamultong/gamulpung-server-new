@@ -10,7 +10,6 @@ class Chat(ServerMessage):
 
 
 class MyCursor(ServerMessage):
-
     id: str
 
 
@@ -28,6 +27,20 @@ class TilesState(ServerMessage):
         range: PointRange
 
     tiles_li: list[Elem]
+
+
+class ColoredTilesState(ServerMessage):
+    class Elem(DataObj):
+        my_tiles_data: str
+        colored_tiles_data: str
+        range: PointRange
+
+    colored_tiles_li: list[Elem]
+
+
+class BombPosition(ServerMessage):
+    color: int
+    position: Point
 
 
 class Explosion(ServerMessage):

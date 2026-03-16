@@ -1,0 +1,242 @@
+[
+  {
+    "name": "join_receiver",
+    "cat": "RLife",
+    "ph": "B",
+    "ts": 111039.34600032517,
+    "pid": 1,
+    "tid": 1,
+    "args": {
+      "event": "JOIN"
+    }
+  },
+  {
+    "name": "join_receiver",
+    "cat": "RLife",
+    "ph": "E",
+    "ts": 123087.78400074516,
+    "pid": 1,
+    "tid": 1
+  },
+  {
+    "name": "create_cursor_receiver",
+    "cat": "RLife",
+    "ph": "B",
+    "ts": 151180.91000022105,
+    "pid": 1,
+    "tid": 1,
+    "args": {
+      "event": "CREATE-CURSOR"
+    }
+  },
+  {
+    "name": "CursorHandler.create",
+    "cat": "HLife",
+    "ph": "B",
+    "ts": 156979.8440004888,
+    "pid": 1,
+    "tid": 1,
+    "args": {
+      "caller_id": "8e8870aa-9990-47ab-81c0-b84854c29cee"
+    }
+  },
+  {
+    "name": "notify_cursors_receiver",
+    "cat": "RLife",
+    "ph": "B",
+    "ts": 165067.57600018318,
+    "pid": 1,
+    "tid": 1,
+    "args": {
+      "event": "NOTIFY-CURSORS"
+    }
+  },
+  {
+    "name": "notify_cursors_receiver",
+    "cat": "RLife",
+    "ph": "E",
+    "ts": 183579.16700006172,
+    "pid": 1,
+    "tid": 1
+  },
+  {
+    "name": "set_window_receiver",
+    "cat": "RLife",
+    "ph": "B",
+    "ts": 199923.9660008243,
+    "pid": 1,
+    "tid": 1,
+    "args": {
+      "event": "SETTED-WINDOW"
+    }
+  },
+  {
+    "name": "CursorBoardHandler.fetch",
+    "cat": "HLife",
+    "ph": "B",
+    "ts": 215959.59100068285,
+    "pid": 1,
+    "tid": 1,
+    "args": {
+      "caller_id": "0ce9b4d5-2f88-44f6-a723-74bf71cd4b14"
+    }
+  },
+  {
+    "name": "CursorBoardHandler.fetch",
+    "cat": "HLife",
+    "ph": "E",
+    "ts": 219731.82000056113,
+    "pid": 1,
+    "tid": 1
+  },
+  {
+    "name": "set_window_receiver",
+    "cat": "RLife",
+    "ph": "E",
+    "ts": 248664.5340004543,
+    "pid": 1,
+    "tid": 1
+  },
+  {
+    "name": "CursorHandler.create",
+    "cat": "HLife",
+    "ph": "E",
+    "ts": 262385.45600062935,
+    "pid": 1,
+    "tid": 1,
+    "args": {
+      "events": [
+        "NOTIFY-CURSORS",
+        "SETTED-WINDOW"
+      ]
+    }
+  },
+  {
+    "name": "create_cursor_receiver",
+    "cat": "RLife",
+    "ph": "E",
+    "ts": 268189.44700062275,
+    "pid": 1,
+    "tid": 1
+  },
+  {
+    "name": "move_receiver",
+    "cat": "RLife",
+    "ph": "B",
+    "ts": 296116.4060006922,
+    "pid": 1,
+    "tid": 1,
+    "args": {
+      "event": "MOVE"
+    }
+  },
+  {
+    "name": "CursorHandler.move",
+    "cat": "HLife",
+    "ph": "B",
+    "ts": 299563.9990003838,
+    "pid": 1,
+    "tid": 1,
+    "args": {
+      "caller_id": "99a662e6-1a34-428a-aa79-ed7c10460d29"
+    }
+  },
+  {
+    "name": "notify_scoreboard_receiver",
+    "cat": "RLife",
+    "ph": "B",
+    "ts": 305989.46400004934,
+    "pid": 1,
+    "tid": 1,
+    "args": {
+      "event": "NOTIFY-SCOREBOARD"
+    }
+  },
+  {
+    "name": "notify_scoreboard_receiver",
+    "cat": "RLife",
+    "ph": "E",
+    "ts": 306287.3970002329,
+    "pid": 1,
+    "tid": 1
+  },
+  {
+    "name": "notify_cursors_receiver",
+    "cat": "RLife",
+    "ph": "B",
+    "ts": 323697.81300076284,
+    "pid": 1,
+    "tid": 1,
+    "args": {
+      "event": "NOTIFY-CURSORS"
+    }
+  },
+  {
+    "name": "notify_cursors_receiver",
+    "cat": "RLife",
+    "ph": "E",
+    "ts": 335244.6090002559,
+    "pid": 1,
+    "tid": 1
+  },
+  {
+    "name": "set_window_receiver",
+    "cat": "RLife",
+    "ph": "B",
+    "ts": 351385.0490007826,
+    "pid": 1,
+    "tid": 1,
+    "args": {
+      "event": "SETTED-WINDOW"
+    }
+  },
+  {
+    "name": "CursorBoardHandler.fetch",
+    "cat": "HLife",
+    "ph": "B",
+    "ts": 363753.99799999286,
+    "pid": 1,
+    "tid": 1,
+    "args": {
+      "caller_id": "f80588a9-8920-425e-85c1-d34b42be4444"
+    }
+  },
+  {
+    "name": "CursorBoardHandler.fetch",
+    "cat": "HLife",
+    "ph": "E",
+    "ts": 366250.0340005863,
+    "pid": 1,
+    "tid": 1
+  },
+  {
+    "name": "set_window_receiver",
+    "cat": "RLife",
+    "ph": "E",
+    "ts": 371611.65900033666,
+    "pid": 1,
+    "tid": 1
+  },
+  {
+    "name": "CursorHandler.move",
+    "cat": "HLife",
+    "ph": "E",
+    "ts": 382327.5620006825,
+    "pid": 1,
+    "tid": 1,
+    "args": {
+      "events": [
+        "NOTIFY-CURSORS",
+        "SETTED-WINDOW"
+      ]
+    }
+  },
+  {
+    "name": "move_receiver",
+    "cat": "RLife",
+    "ph": "E",
+    "ts": 386937.11800078745,
+    "pid": 1,
+    "tid": 1
+  }
+]

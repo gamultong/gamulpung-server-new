@@ -1,5 +1,9 @@
+from __future__ import annotations
+
 from core.dataobj import DataObj
 from data.board import Point, PointRange
+from data.cursor_board import Color
+from .items import Items
 from datetime import datetime
 
 INTERACTION_RANGE = 1
@@ -12,6 +16,8 @@ class Cursor(DataObj):
     height: int
     active_at: datetime
     score: int
+    items: Items
+    color: Color
 
     @property
     def window(self):
@@ -48,11 +54,23 @@ class Cursor(DataObj):
         del dict["height"]
 
         dict["active_at"] = self.active_at.isoformat()
+        dict["color"] = int(self.color)
 
         return dict
 
     @classmethod
-    def create(cls, id: str, position=Point(0, 0), width=0, height=0, active_at: datetime | None = None, score: int = 0):
+    def create(
+        cls,
+        id: str,
+        position: Point = Point(0, 0),
+        width: int = 0,
+        height: int = 0,
+        active_at: datetime | None = None,
+        score: int = 0,
+        items: Items = Items(),
+        *,
+        color: Color
+    ):
         if active_at is None:
             active_at = datetime.now()
         return cls(
@@ -61,5 +79,7 @@ class Cursor(DataObj):
             width=width,
             height=height,
             active_at=active_at,
-            score=score
+            score=score,
+            items=items.copy(),
+            color=color,
         )

@@ -6,19 +6,33 @@
 ## Payload
 
 ```json
-{   
-    "cursors" :[
+{
+    "cursors": [
         <cursor>
     ]
 }
 
 // <cursor>
 {
-    "id":str,
+    "id": str,
     "position": {
         "x": int,
         "y": int
     },
-    "active_at": datetime // iso format으로 보냅니다. 'YYYY-MM-DD HH:MM:SS.mmmmmm'
+    "active_at": datetime, // ISO 형식: 'YYYY-MM-DDTHH:MM:SS.mmmmmm'
+    "score": int,
+    "items": {
+        "bomb": int
+    },
+    "color": int
 }
 ```
+
+`color` 값 규칙
+- `1=RED`
+- `2=BLUE`
+- `3=YELLOW`
+- `4=PURPLE`
+
+주의
+- `width`, `height`는 내부 상태이며 `CURSORS-STATE` payload에 포함되지 않습니다.

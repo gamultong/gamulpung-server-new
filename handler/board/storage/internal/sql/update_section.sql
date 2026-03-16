@@ -1,1 +1,0 @@
-UPDATE section SET data=? WHERE x=? and y=?;

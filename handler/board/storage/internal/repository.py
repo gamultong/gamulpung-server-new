@@ -5,7 +5,7 @@ from data.board import Point, PointRange, Tiles, Section
 from config import BoardConfig
 import os
 
-SQL_PATH = os.path.join(os.path.dirname(__file__), "sql") + os.sep
+SQL_PATH = os.path.join(os.path.dirname(__file__), "sql", "map") + os.sep
 
 TABLE_SET = "table.sql"
 SECTION_GET = "get_section.sql"

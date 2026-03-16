@@ -6,6 +6,7 @@ from data.event import ServerEvent, ClientEvent
 from data.payload import ServerMessage
 from data.conn import Message
 from data.board import Point
+from data.cursor_board import Color
 from data.cursor import Cursor
 from core.event import Event
 from handler.cursor import CursorHandler
@@ -17,6 +18,7 @@ from freezegun import freeze_time
 import time
 
 CL_A = "TestClient_A"
+CL_B = "TestClient_B"
 
 
 @pytest.fixture
@@ -51,7 +53,7 @@ async def test_ft006_join_scenario():
         # CREATE_CURSOR 이벤트 전송
         cl_a.ws.send_json({
             "header": {"event": ClientEvent.CREATE_CURSOR.value},
-            "payload": {"width": 10, "height": 10}
+            "payload": {"width": 10, "height": 10, "color": Color.RED.value}
         })
 
         # 시나리오 2: MY_CURSOR 수신 검증
@@ -69,7 +71,8 @@ async def test_ft006_join_scenario():
             lambda msg: (
                 msg.event.event_name == ServerEvent.CURSORS_STATE and
                 len(msg.event.payload.cursors) == 1 and
-                msg.event.payload.cursors[0].id == CL_A
+                msg.event.payload.cursors[0].id == CL_A and
+                msg.to_dict()["payload"]["cursors"][0]["color"] == Color.RED.value
             ),
             timeout=3.0,
             error_msg="CURSORS_STATE에 올바른 cursor가 없음"
@@ -99,14 +102,14 @@ async def test_ft006_business_rule_initial_position(frozen_time):
         # CREATE_CURSOR 전송
         cl_a.ws.send_json({
             "header": {"event": ClientEvent.CREATE_CURSOR.value},
-            "payload": {"width": 5, "height": 5}
+            "payload": {"width": 5, "height": 5, "color": Color.RED.value}
         })
 
         # CURSORS_STATE 수신 대기 (cursor 생성 완료 확인)
         assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
         # Server 내부 상태 확인: 예상 cursor 객체와 완전히 일치하는지 검증
-        expected_cursor = Cursor.create(CL_A, width=5, height=5)
+        expected_cursor = Cursor.create(CL_A, width=5, height=5, color=Color.RED)
         actual_cursor = await CursorHandler.get_by_id(CL_A)
         assert actual_cursor == expected_cursor
 
@@ -130,13 +133,13 @@ async def test_ft006_state_change_cursor_creation(frozen_time):
         # CREATE_CURSOR 전송
         cl_a.ws.send_json({
             "header": {"event": ClientEvent.CREATE_CURSOR.value},
-            "payload": {"width": 5, "height": 5}
+            "payload": {"width": 5, "height": 5, "color": Color.RED.value}
         })
 
         # CURSORS_STATE 수신 대기 (cursor 생성 완료 확인)
         assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
         # After: cursor 생성됨 (Server 내부 상태 검증)
-        expected_cursor = Cursor.create(CL_A, width=5, height=5)
+        expected_cursor = Cursor.create(CL_A, width=5, height=5, color=Color.RED)
         actual_cursor = await CursorHandler.get_by_id(CL_A)
         assert actual_cursor == expected_cursor

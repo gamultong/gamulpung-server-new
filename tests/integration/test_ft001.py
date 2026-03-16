@@ -6,6 +6,7 @@ from data.event import ServerEvent, ClientEvent
 from data.payload import ServerMessage
 from data.conn import Message
 from data.board import Point
+from data.cursor_board import Color
 from core.event import Event
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler
@@ -33,11 +34,11 @@ async def test_ft001_chat_scenario():
         # 접속: CREATE_CURSOR로 cursor 생성 (FT-006 의존)
         cl_a.ws.send_json({
             "header": {"event": ClientEvent.CREATE_CURSOR.value},
-            "payload": {"width": 10, "height": 10}
+            "payload": {"width": 10, "height": 10, "color": Color.RED.value}
         })
         cl_b.ws.send_json({
             "header": {"event": ClientEvent.CREATE_CURSOR.value},
-            "payload": {"width": 10, "height": 10}
+            "payload": {"width": 10, "height": 10, "color": Color.BLUE.value}
         })
 
         # cursor 생성 완료 대기
@@ -75,10 +76,10 @@ async def test_ft001_business_rule_visibility():
         cl_c = tcm.get_client(CL_C)
 
         # 접속: 모든 클라이언트 cursor 생성
-        for cl in [cl_a, cl_b, cl_c]:
+        for idx, cl in enumerate([cl_a, cl_b, cl_c], start=1):
             cl.ws.send_json({
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
-                "payload": {"width": 5, "height": 5}
+                "payload": {"width": 5, "height": 5, "color": idx}
             })
 
         # cursor 생성 완료 대기

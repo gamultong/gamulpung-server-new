@@ -1,7 +1,7 @@
 from data.board import PointRange, Tiles, Point, Tile, abs_to_sec, SectionFlag
+from data.board.emitter import TileEmitter
 from data.payload import IdDataPayload, IdPayload
 from data.event import InternalEvent
-from data.event.emitter import get_tile_events
 
 from core.event import Event
 from core.broker import EventBroker
@@ -83,7 +83,7 @@ class BoardHandler:
             if section.flag == SectionFlag.NUMBERING:
                 await upgrade_interaction_section(db, sec_p)
 
-            old_tile = section.at_tile_by_abs_point(point)
+            old_tile = section.at_map_tile_by_abs_point(point)
             new_tile = old_tile.changed(is_flag=not old_tile.is_flag)
 
             hlife.set_snapshot(before=old_tile, after=new_tile)
@@ -91,7 +91,7 @@ class BoardHandler:
             section.update_by_abs_point(point, new_tile)
             await update_section(db, section)
 
-        events = get_tile_events(old_tile, new_tile, point)
+        events = TileEmitter.get_events(old=old_tile, new=new_tile, point=point)
         hlife.add_events(events)
         for event in events:
             await EventBroker.publish(event)
@@ -114,7 +114,7 @@ class BoardHandler:
             if section.flag == SectionFlag.NUMBERING:
                 await upgrade_interaction_section(db, sec_p)
 
-            old_tile = section.at_tile_by_abs_point(point)
+            old_tile = section.at_map_tile_by_abs_point(point)
 
             # 깃발 설치 시 타일 오픈 불가
             if old_tile.is_flag:
@@ -127,7 +127,41 @@ class BoardHandler:
             section.update_by_abs_point(point, new_tile)
             await update_section(db, section)
 
-        events = get_tile_events(old_tile, new_tile, point)
+        events = TileEmitter.get_events(old=old_tile, new=new_tile, point=point)
+        logger.debug(events)
+
+        hlife.add_events(events)
+        for event in events:
+            await EventBroker.publish(event)
+
+    @classmethod
+    @LifeCycle.with_async_lifecycle(
+        factory=HLife.create_factory("BoardHandler", "dismantle_mine")
+    )
+    async def dismantle_mine(cls, point: Point):
+        hlife = HLife.get_lifecycle()
+
+        sec_p = abs_to_sec(point)
+
+        async with _get_db() as db:
+            section = await get_section(db, sec_p)
+            # 섹션이 반드시 존재해야 함
+            assert section
+
+            # 섹션이 INTERACTION 상태여야만 상호작용 가능
+            if section.flag == SectionFlag.NUMBERING:
+                await upgrade_interaction_section(db, sec_p)
+
+            old_tile = section.at_map_tile_by_abs_point(point)
+
+            new_tile = old_tile.changed(is_open=True)
+
+            hlife.set_snapshot(before=old_tile, after=new_tile)
+
+            section.update_by_abs_point(point, new_tile)
+            await update_section(db, section)
+
+        events = TileEmitter.get_dismantle_events(point)
         logger.debug(events)
 
         hlife.add_events(events)
@@ -142,7 +176,7 @@ class BoardHandler:
             section = await get_section(db, sec_p)
         assert section
 
-        tile = section.at_tile_by_abs_point(point)
+        tile = section.at_map_tile_by_abs_point(point)
         return tile
 
     @classmethod

@@ -29,7 +29,7 @@ def count_mine(tiles: Tiles):
     for point in point_range.iter():
         if point == Point(1, 1):
             continue
-        tile = tiles.at_tile(point)
+        tile = tiles.map_tile_at(point)
         count += tile.is_mine
 
     return count
@@ -46,7 +46,7 @@ def numbering_tiles(tiles: Tiles):
     for point in point_range.iter():
         pr = PointRange.create_by_mid(point, 1, 1)
         tiles = around_tiles.at_tiles(pr)
-        tile = around_tiles.at_tile(point)
+        tile = around_tiles.map_tile_at(point)
         if tile.is_mine:
             continue
         new_tile = tile.changed(number=count_mine(tiles))

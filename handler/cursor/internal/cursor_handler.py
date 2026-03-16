@@ -5,17 +5,11 @@ from core.event import Event
 from core.broker import EventBroker
 from core.lifecycle import HLife, LifeCycle
 
-from data.cursor import Cursor, CursorRankRange, RankRange
+from data.cursor import Cursor, CursorRankRange, RankRange, ItemType, Items
+from data.cursor.emitter import CursorEmitter
 from data.payload import IdPayload, IdDataPayload
-from data.board import is_overlap, PointRange, Point
+from data.board import is_overlap, PointRange, Point, Tiles, TileKind, CursorTile
 from data.event import InternalEvent
-from data.event.emitter import (
-    get_cursor_create_events,
-    get_cursor_move_events,
-    get_cursor_death_events,
-    get_cursor_score_events,
-    get_cursor_window_events
-)
 from datetime import datetime, timedelta
 
 from config import CursorConfig
@@ -32,11 +26,12 @@ class CursorHandler:
         hlife = HLife.get_lifecycle()
 
         new_cursor = cursor.copy()
+
         cls.cursor_dict[cursor.id] = new_cursor
 
         hlife.set_snapshot(before=None, after=new_cursor)
 
-        events = get_cursor_create_events(cursor)
+        events = CursorEmitter.get_events(old=None, new=new_cursor)
         hlife.add_events(events)
         for event in events:
             await EventBroker.publish(event=event)
@@ -49,6 +44,65 @@ class CursorHandler:
     @classmethod
     async def get_by_id(cls, id: str):
         return cls.cursor_dict[id].copy()
+
+    @classmethod
+    async def to_my_tiles_data(cls, cursor_tiles: Tiles, owner_id: str) -> str:
+        assert cursor_tiles.tile_kind == TileKind.CURSOR
+
+        tile_bytes = len(CursorTile.create(None).data)
+        tile_count = cursor_tiles.width * cursor_tiles.height
+        assert len(cursor_tiles.data) == tile_count * tile_bytes
+
+        my_tiles_data = bytearray(tile_count)
+
+        for idx in range(tile_count):
+            start = idx * tile_bytes
+            end = start + tile_bytes
+            tile = CursorTile.from_bytes(bytes(cursor_tiles.data[start:end]))
+            user_id = tile.user_id
+
+            if user_id is None:
+                continue
+
+            if user_id == owner_id:
+                my_tiles_data[idx] = 1
+
+        return my_tiles_data.hex()
+
+    @classmethod
+    async def to_colored_tiles_data(cls, cursor_tiles: Tiles) -> str:
+        assert cursor_tiles.tile_kind == TileKind.CURSOR
+
+        tile_bytes = len(CursorTile.create(None).data)
+        tile_count = cursor_tiles.width * cursor_tiles.height
+        assert len(cursor_tiles.data) == tile_count * tile_bytes
+
+        colored_tiles_data = bytearray(tile_count)
+        color_cache: dict[str, int] = {}
+
+        for idx in range(tile_count):
+            start = idx * tile_bytes
+            end = start + tile_bytes
+            tile = CursorTile.from_bytes(bytes(cursor_tiles.data[start:end]))
+            user_id = tile.user_id
+
+            if user_id is None:
+                continue
+
+            if user_id in color_cache:
+                colored_tiles_data[idx] = color_cache[user_id]
+                continue
+
+            try:
+                cursor = await cls.get_by_id(user_id)
+            except KeyError:
+                continue
+
+            color_value = int(cursor.color)
+            color_cache[user_id] = color_value
+            colored_tiles_data[idx] = color_value
+
+        return colored_tiles_data.hex()
 
     @classmethod
     async def get_cursors_by_cursor_window(cls, cursor: Cursor) -> list[Cursor]:
@@ -91,7 +145,7 @@ class CursorHandler:
         new_cur_rank_range = await cls.get_cursor_by_rank_range(rank_range)
         await cls.scoreboard_modify(old_cur_rank_range, new_cur_rank_range)
 
-        events = get_cursor_move_events(old_cur, new_cur)
+        events = CursorEmitter.get_events(old=old_cur, new=new_cur)
         hlife.add_events(events)
         for event in events:
             await EventBroker.publish(event=event)
@@ -123,7 +177,7 @@ class CursorHandler:
         new_cur_rank_range = await cls.get_cursor_by_rank_range(rank_range)
         await cls.scoreboard_modify(old_cur_rank_range, new_cur_rank_range)
 
-        events = get_cursor_death_events(old_cur, new_cur)
+        events = CursorEmitter.get_events(old=old_cur, new=new_cur)
         hlife.add_events(events)
         for event in events:
             await EventBroker.publish(event=event)
@@ -150,7 +204,7 @@ class CursorHandler:
         new_cur_rank_range = await cls.get_cursor_by_rank_range(rank_range)
         await cls.scoreboard_modify(old_cur_rank_range, new_cur_rank_range)
 
-        events = get_cursor_score_events(old_cur, new_cur)
+        events = CursorEmitter.get_events(old=old_cur, new=new_cur)
         hlife.add_events(events)
         for event in events:
             await EventBroker.publish(event=event)
@@ -208,7 +262,28 @@ class CursorHandler:
 
         await cls.update(new_cur)
 
-        events = get_cursor_window_events(old_cur, new_cur)
+        events = CursorEmitter.get_events(old=old_cur, new=new_cur)
+        hlife.add_events(events)
+        for event in events:
+            await EventBroker.publish(event=event)
+
+    @classmethod
+    @LifeCycle.with_async_lifecycle(
+        factory=HLife.create_factory("CursorHandler", "grant_item")
+    )
+    async def grant_item(cls, cursor: Cursor, item_type: ItemType, amount: int):
+        hlife = HLife.get_lifecycle()
+
+        old_cur = await cls.get_by_id(cursor.id)
+
+        new_cur = old_cur.copy()
+        new_cur.items.grant_item(item_type, amount)
+
+        hlife.set_snapshot(before=old_cur, after=new_cur)
+
+        await cls.update(new_cur)
+
+        events = CursorEmitter.get_events(old=old_cur, new=new_cur)
         hlife.add_events(events)
         for event in events:
             await EventBroker.publish(event=event)

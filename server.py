@@ -6,10 +6,12 @@ from websockets.exceptions import ConnectionClosed
 from core.broker import EventBroker
 from handler.connection import ConnectionHandler, Conn
 from handler.board import initialize_board
-from handler.board.storage import _get_db, set_table
+from handler.bomb import start_bomb_scheduler, stop_bomb_scheduler
+from handler.board.storage import _get_db, set_table, set_cursor_table
 import sentry_sdk
 from config import SentryConfig
 from asyncio import sleep
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 
 # SENTRY_DSN이 있을 때만 Sentry 초기화
 if hasattr(SentryConfig, 'SENTRY_DSN') and SentryConfig.SENTRY_DSN:
@@ -32,15 +34,18 @@ async def lifespan(app: FastAPI):
     async with _get_db() as db:
         try:
             await set_table(db)
+            await set_cursor_table(db)
         except:
             pass
 
         await initialize_board(db)
     logger.debug("init end")
+    await start_bomb_scheduler()
 
     yield  # app 실행
 
     # teardown
+    await stop_bomb_scheduler()
 
     elapsed = 0
     step = 0.1
@@ -87,6 +92,15 @@ def health_check():
 @app.get("/sentry-debug")
 def div_zero():
     error = 1 / 0
+
+
+@app.get("/metrics")
+def metrics():
+    """Prometheus 메트릭 엔드포인트"""
+    return Response(
+        content=generate_latest(),
+        media_type=CONTENT_TYPE_LATEST
+    )
 
 
 if __name__ == "__main__":
