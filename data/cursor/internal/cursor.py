@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from core.dataobj import DataObj
 from data.board import Point, PointRange
-from data.board.cursorboard import Color
+from data.cursor_board import Color
 from .items import Items
 from datetime import datetime
 

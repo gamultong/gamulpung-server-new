@@ -1,9 +1,10 @@
 from core.lifecycle import HLife, LifeCycle
-from data.board import Point, PointRange, CursorTile, Tiles, TileKind, abs_to_sec
+from data.board import Point, PointRange, CursorTile, Tiles, TileKind, Section, abs_to_sec
 from handler.board.storage import (
     _get_db,
     create_cursor_section,
     get_cursor_dict_by_section_range,
+    get_section,
     get_cursor_list_by_section_range,
     update_cursor_section,
 )
@@ -28,6 +29,7 @@ class CursorBoardHandler:
 
         async with _get_db() as db:
             sections = await get_cursor_dict_by_section_range(db, sec_draw_range)
+            map_sections: dict[Point, Section | None] = {}
             for sec_p in sec_draw_range.iter():
                 if sec_p in sections:
                     continue
@@ -37,6 +39,15 @@ class CursorBoardHandler:
 
             for p in draw_point_range.iter():
                 sec_p = abs_to_sec(p)
+                if sec_p not in map_sections:
+                    map_sections[sec_p] = await get_section(db, sec_p)
+                map_section = map_sections[sec_p]
+                if map_section is None:
+                    continue
+                map_tile = map_section.at_map_tile_by_abs_point(p)
+                if not map_tile.is_open:
+                    continue
+
                 section = sections[sec_p]
                 old_tile = section.at_cursor_tile_by_abs_point(p)
                 if old_tile == new_tile:

@@ -23,6 +23,7 @@ class ServerEvent(ExternalEvent):
     CHAT = auto()
     CURSORS_STATE = auto()
     COLORED_TILES_STATE = auto()
+    BOMB_POSITION = auto()
     EXPLOSION = auto()
     SCOREBOARD_STATE = auto()
     TILES_STATE = auto()
