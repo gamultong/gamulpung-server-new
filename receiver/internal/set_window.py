@@ -10,6 +10,7 @@ from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler
 from handler.board import BoardHandler
 from handler.cursor_board import CursorBoardHandler
+from handler.bomb import BombHandler
 
 SET_WINDOW_EVENT = Event[IdDataPayload[str, Cursor] | IdPayload[str]]
 
@@ -56,6 +57,17 @@ async def set_window_receiver(event: SET_WINDOW_EVENT):
     )
 
     await ConnectionHandler.multicast([id], colored_tiles_event)
+
+    installed_bombs = await BombHandler.get_installed_bombs_in_range(window_range)
+    for bomb in installed_bombs:
+        bomb_event = Event(
+            event_name=ServerEvent.BOMB_POSITION,
+            payload=ServerMessage.BombPosition(
+                color=int(bomb.color),
+                position=bomb.position,
+            ),
+        )
+        await ConnectionHandler.multicast([id], bomb_event)
 
     # 커서 정보 조회 및 전송
     cursors = await CursorHandler.get_cursors_by_cursor_window(cursor)

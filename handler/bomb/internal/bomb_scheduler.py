@@ -10,7 +10,7 @@ from .bomb import BombHandler
 
 class BombScheduler:
     def __init__(self) -> None:
-        self._queue: list[tuple[float, int, InstalledBomb]] = []
+        self._queue: list[tuple[float, int, str, InstalledBomb]] = []
         self._seq: int = 0
         self._condition = asyncio.Condition()
         self._task: asyncio.Task | None = None
@@ -37,11 +37,19 @@ class BombScheduler:
             logger.exception("BombScheduler 종료 중 오류")
         self._task = None
 
-    async def enqueue(self, bomb: InstalledBomb) -> None:
+    async def enqueue(self, owner_id: str, bomb: InstalledBomb) -> None:
         async with self._condition:
             self._seq += 1
-            heapq.heappush(self._queue, (bomb.active_at_mono, self._seq, bomb))
+            heapq.heappush(self._queue, (bomb.active_at_mono, self._seq, owner_id, bomb))
             self._condition.notify()
+
+    async def get_pending_bombs(self) -> list[InstalledBomb]:
+        async with self._condition:
+            # 활성 시각 기준으로 정렬된 snapshot을 반환한다.
+            return [
+                bomb.copy()
+                for _, _, _, bomb in sorted(self._queue)
+            ]
 
     async def _run(self) -> None:
         loop = asyncio.get_running_loop()
@@ -53,7 +61,7 @@ class BombScheduler:
                     return
 
                 while True:
-                    active_at_mono, _, bomb = self._queue[0]
+                    active_at_mono, _, owner_id, bomb = self._queue[0]
                     now = loop.time()
                     delay = active_at_mono - now
                     if delay <= 0:
@@ -68,11 +76,12 @@ class BombScheduler:
                         return
 
             try:
-                await BombHandler.explode_bomb(bomb)
+                await BombHandler.explode_bomb(owner_id, bomb)
             except Exception:
                 logger.exception(
-                    "폭탄 폭발 처리 실패: cur_id=%s position=%s",
-                    bomb.cur_id,
+                    "폭탄 폭발 처리 실패: owner_id=%s color=%s position=%s",
+                    owner_id,
+                    int(bomb.color),
                     bomb.position,
                 )
 
@@ -114,7 +123,13 @@ async def stop_bomb_scheduler() -> None:
     _SCHEDULERS.pop(key, None)
 
 
-async def enqueue_installed_bomb(bomb: InstalledBomb) -> None:
+async def enqueue_installed_bomb(owner_id: str, bomb: InstalledBomb) -> None:
     scheduler = _get_scheduler()
     await scheduler.start()
-    await scheduler.enqueue(bomb)
+    await scheduler.enqueue(owner_id, bomb)
+
+
+async def get_pending_bombs() -> list[InstalledBomb]:
+    scheduler = _get_scheduler()
+    await scheduler.start()
+    return await scheduler.get_pending_bombs()

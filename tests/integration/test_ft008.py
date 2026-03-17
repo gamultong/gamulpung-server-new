@@ -271,6 +271,117 @@ async def test_ft008_scenario_install_bomb():
         )
 
 
+@patch.object(BombConfig, "DEFAULT_DELAY_SECONDS", new=1.0)
+@patch.object(BombConfig, "EXPLOSION_RANGE", new=1)
+@patch.object(BoardConfig, "LENGTH", new=4)
+@patch("server.initialize_board", new=empty_board_map)
+@pytest.mark.asyncio
+async def test_ft008_scenario_bomb_position_when_move_into_view():
+    """
+    시나리오
+    1. 시야 밖의 설치 지뢰는 BOMB-POSITION을 받지 않는다.
+    2. move로 시야에 들어오면 BOMB-POSITION을 받는다.
+    3. 시야 내에서 move를 반복하면 BOMB-POSITION이 재전송된다.
+    """
+    with PytestTCM(app).append_client(CL_A).append_client(CL_B) as tcm:
+        cl_a = tcm.get_client(CL_A)
+        cl_b = tcm.get_client(CL_B)
+
+        positions = {
+            CL_A: Point(0, 0),
+            CL_B: Point(3, 3),
+        }
+        items_a = Items()
+        items_a.grant_item(ItemType.BOMB, 1)
+        fixed_active_at = datetime(2025, 1, 1, 0, 0, 0)
+
+        with patch(
+            "data.cursor.Cursor.create",
+            side_effect=create_cursor_by_id(
+                positions,
+                items_map={CL_A: items_a},
+                active_at_map={CL_A: fixed_active_at, CL_B: fixed_active_at}
+            )
+        ):
+            cl_a.ws.send_json({
+                "header": {"event": ClientEvent.CREATE_CURSOR.value},
+                "payload": {"width": 1, "height": 1, "color": Color.RED.value}
+            })
+            cl_b.ws.send_json({
+                "header": {"event": ClientEvent.CREATE_CURSOR.value},
+                "payload": {"width": 1, "height": 1, "color": Color.BLUE.value}
+            })
+
+            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
+            assert_wait_event(cl_b.conn.send, ServerEvent.CURSORS_STATE)
+
+        cl_a.conn.send.await_args_list.clear()
+        cl_b.conn.send.await_args_list.clear()
+
+        bomb_point = Point(1, 1)
+
+        cl_a.ws.send_json({
+            "header": {"event": ClientEvent.INSTALL_BOMB.value},
+            "payload": {"position": {"x": bomb_point.x, "y": bomb_point.y}}
+        })
+
+        # 설치자는 즉시 설치 위치 알림을 받는다.
+        assert_wait_call_if(
+            cl_a.conn.send,
+            lambda msg: (
+                msg.event.event_name == ServerEvent.BOMB_POSITION and
+                msg.event.payload.color == int(Color.RED) and
+                msg.event.payload.position == bomb_point
+            ),
+            timeout=1.5,
+            error_msg="설치자가 BOMB_POSITION를 받지 못함"
+        )
+
+        # 시야 밖인 B는 설치 시점 알림을 받지 않는다.
+        assert_no_event(
+            cl_b.conn.send,
+            ServerEvent.BOMB_POSITION,
+            timeout=0.4,
+            reason="시야 밖 cursor는 설치 시점 BOMB_POSITION를 받으면 안됨"
+        )
+
+        # B를 폭탄 위치 시야로 이동
+        cl_b.ws.send_json({
+            "header": {"event": ClientEvent.MOVE.value},
+            "payload": {"position": {"x": 2, "y": 2}}
+        })
+        assert_wait_event(cl_b.conn.send, ServerEvent.CURSORS_STATE)
+
+        # 시야에 들어온 시점에 BOMB_POSITION 수신
+        assert_wait_call_if(
+            cl_b.conn.send,
+            lambda msg: (
+                msg.event.event_name == ServerEvent.BOMB_POSITION and
+                msg.event.payload.color == int(Color.RED) and
+                msg.event.payload.position == bomb_point
+            ),
+            timeout=1.5,
+            error_msg="move로 시야 진입 후 B가 BOMB_POSITION를 받지 못함"
+        )
+
+        # 시야 안에서 move를 반복해도 BOMB_POSITION 재전송
+        cl_b.ws.send_json({
+            "header": {"event": ClientEvent.MOVE.value},
+            "payload": {"position": {"x": 2, "y": 1}}
+        })
+        assert_wait_event(cl_b.conn.send, ServerEvent.CURSORS_STATE)
+        assert_wait_call_if(
+            cl_b.conn.send,
+            lambda msg: (
+                msg.event.event_name == ServerEvent.BOMB_POSITION and
+                msg.event.payload.color == int(Color.RED) and
+                msg.event.payload.position == bomb_point
+            ),
+            timeout=1.5,
+            error_msg="시야 내 move 이후 BOMB_POSITION 재전송을 받지 못함"
+        )
+
+
 # -------------------------
 # FT-008: 비즈니스 규칙
 # -------------------------
