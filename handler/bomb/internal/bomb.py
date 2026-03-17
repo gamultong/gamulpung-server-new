@@ -1,9 +1,10 @@
 from core.broker import EventBroker
 from core.lifecycle import HLife, LifeCycle
 
-from data.board import Point, abs_to_sec, SectionFlag
+from data.board import Point, PointRange, abs_to_sec, SectionFlag
 from data.board.emitter import TileEmitter
 from data.bomb import InstalledBomb, BombEmitter
+from data.cursor import Cursor
 from handler.board.storage import _get_db, get_section
 from handler.board.internal.section_handling.upgrade_section import upgrade_interaction_section
 from loguru import logger
@@ -14,7 +15,7 @@ from config import BombConfig
 
 class BombHandler:
     @classmethod
-    async def install_bomb(cls, cur_id: str, point: Point):
+    async def install_bomb(cls, cursor: Cursor, point: Point):
         from .bomb_scheduler import enqueue_installed_bomb
 
         delay_seconds = BombConfig.DEFAULT_DELAY_SECONDS
@@ -22,23 +23,34 @@ class BombHandler:
         active_at = datetime.now() + timedelta(seconds=delay_seconds)
         active_at_mono = loop.time() + delay_seconds
         installed_bomb = InstalledBomb(
-            cur_id=cur_id,
+            color=cursor.color,
             position=point,
             explosion_range=BombConfig.EXPLOSION_RANGE,
             active_at=active_at,
             active_at_mono=active_at_mono,
         )
-        await enqueue_installed_bomb(installed_bomb)
+        await enqueue_installed_bomb(owner_id=cursor.id, bomb=installed_bomb)
 
-        installed_events = BombEmitter.get_installed_events(installed_bomb)
+        installed_events = BombEmitter.get_installed_events(cursor.id, installed_bomb)
         for event in installed_events:
             await EventBroker.publish(event=event)
+
+    @classmethod
+    async def get_installed_bombs_in_range(cls, point_range: PointRange) -> list[InstalledBomb]:
+        from .bomb_scheduler import get_pending_bombs
+
+        bombs = await get_pending_bombs()
+        return [
+            bomb
+            for bomb in bombs
+            if point_range.is_in(bomb.position)
+        ]
 
     @classmethod
     @LifeCycle.with_async_lifecycle(
         factory=HLife.create_factory("BombHandler", "explode_bomb")
     )
-    async def explode_bomb(cls, installed_bomb: InstalledBomb):
+    async def explode_bomb(cls, owner_id: str, installed_bomb: InstalledBomb):
         hlife = HLife.get_lifecycle()
         point = installed_bomb.position
 
@@ -53,7 +65,7 @@ class BombHandler:
 
             old_tile = section.at_map_tile_by_abs_point(point)
 
-        draw_events = BombEmitter.get_draw_events(installed_bomb)
+        draw_events = BombEmitter.get_draw_events(owner_id, installed_bomb)
         for event in draw_events:
             await EventBroker.publish(event=event)
 

@@ -35,4 +35,4 @@ async def install_bomb_receiver(event: INSTALL_BOMB_EVENT):
 
     await CursorHandler.grant_item(cursor, ItemType.BOMB, -1)
 
-    await BombHandler.install_bomb(cursor.id, point)
+    await BombHandler.install_bomb(cursor, point)

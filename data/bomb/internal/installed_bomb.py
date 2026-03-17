@@ -1,10 +1,11 @@
 from core.dataobj import DataObj
 from data.board import Point
+from data.cursor_board import Color
 from datetime import datetime
 
 
 class InstalledBomb(DataObj):
-    cur_id: str
+    color: Color
     position: Point
     explosion_range: int
     active_at: datetime

@@ -16,10 +16,8 @@ INSTALLED_BOMB_EVENT = Event[IdDataPayload[str, InstalledBomb]]
 @EventBroker.add_receiver(InternalEvent.INSTALLED_BOMB)
 @LifeCycle.with_async_lifecycle(factory=RLife.create_factory)
 async def installed_bomb_receiver(event: INSTALLED_BOMB_EVENT):
-    cursor_id = event.payload.id
     bomb = event.payload.data
     point = bomb.position
-    cursor = await CursorHandler.get_by_id(cursor_id)
 
     watching_cursors = await CursorHandler.get_cursor_by_watching_range(
         PointRange(point, point)
@@ -28,7 +26,7 @@ async def installed_bomb_receiver(event: INSTALLED_BOMB_EVENT):
     bomb_installed_event = Event(
         event_name=ServerEvent.BOMB_POSITION,
         payload=ServerMessage.BombPosition(
-            color=int(cursor.color),
+            color=int(bomb.color),
             position=point
         )
     )
