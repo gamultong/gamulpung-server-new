@@ -100,25 +100,32 @@ class Tiles(DataObj):
     def to_str(self):
         return self.data.hex()
 
-    def hide_info(self):
-        # 불변 객체 반환으로 변경 필요
+    def hide_info(self) -> 'Tiles':
         """
-        타일들의 mine, number 정보를 제거한다.
+        타일들의 mine, number 정보를 제거한 새 Tiles를 반환한다.
         타일의 상태가 CLOSED일 때만 해당한다.
-
-        주의: Tiles 데이터가 변형된다.
+        원본 데이터는 변경하지 않는다.
         """
         if self.tile_kind == TileKind.CURSOR:
-            return
+            return self
+
+        new_data = bytearray(self.data)
         opened = 0b10000000
         mask = 0b10111000
-        for idx in range(len(self.data)):
-            b = self.data[idx]
+        for idx in range(len(new_data)):
+            b = new_data[idx]
             if b & opened:
                 continue
 
             b &= mask
-            self.data[idx] = b
+            new_data[idx] = b
+
+        return Tiles(
+            data=new_data,
+            width=self.width,
+            height=self.height,
+            tile_kind=self.tile_kind
+        )
 
     def h_append(self, *values: Tiles):
         """가로 병합"""
@@ -181,10 +188,12 @@ class Tiles(DataObj):
         return bytes([tile.data])
 
     def to_dict(self):
-        self.hide_info()
+        hidden = self.hide_info()
         res = super().to_dict()
 
-        res["data"] = self.to_str()
+        res["data"] = hidden.to_str()
+
+        return res
 
     def __eq__(self, value: Tiles) -> bool:
         r = self.to_str() == value.to_str()
