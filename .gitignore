@@ -29,3 +29,4 @@ build/
 # Grafana MCP
 bin/mcp-grafana
 .env.grafana-mcp
+.omc/
