@@ -27,7 +27,10 @@ if hasattr(SentryConfig, 'SENTRY_DSN') and SentryConfig.SENTRY_DSN:
 async def lifespan(app: FastAPI):
     # setup
 
+    logger.remove()
     logger.add("log.log")
+    import sys
+    logger.add(sys.stderr, level="INFO")
 
     logger.debug("init start")
     # TODO : is table 같은거 구현 S

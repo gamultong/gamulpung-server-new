@@ -187,5 +187,6 @@ class BoardHandler:
 
             if section.flag == SectionFlag.CLOSED:
                 await upgrade_numbering_section(db, sec_point)
+                section = await get_section(db, sec_point)
 
         return section

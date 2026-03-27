@@ -61,10 +61,10 @@ def make_closed_section(point: Point):
 
 def make_section(point: Point):
     length = BoardConfig.LENGTH
-    m = (length**2)/BoardConfig.MINE_RATIO
+    m = (length**2) * BoardConfig.MINE_RATIO
 
     tiles, count = rand_tiles()
-    while m/2 <= count <= m*2:
+    while not (m/2 <= count <= m*2):
         tiles, count = rand_tiles()
 
     return Section(point, tiles)

@@ -1,1 +1,1 @@
-INSERT INTO section (x, y, data, flag) VALUES (?, ?, ?, ?);
+INSERT OR IGNORE INTO section (x, y, data, flag) VALUES (?, ?, ?, ?);

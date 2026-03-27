@@ -3,4 +3,4 @@ from server import app
 
 from receiver import *
 
-run(app, host="0.0.0.0", port=8000)
+run(app, host="0.0.0.0", port=2002)

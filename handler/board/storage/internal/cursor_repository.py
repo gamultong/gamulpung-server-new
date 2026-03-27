@@ -93,7 +93,7 @@ async def get_dict_by_section_range(db: DB, point_range: PointRange):
     }
 
 
-async def create_section(db: DB, section: Section):
+async def create_section(db: DB, section: Section) -> Section:
     point = section.point
     tiles = section.tiles
 
@@ -101,6 +101,10 @@ async def create_section(db: DB, section: Section):
 
     await db.execute(query, (point.x, point.y, tiles.data))
     await db.commit()
+
+    # INSERT OR IGNORE 후 항상 re-SELECT: DB의 실제 레코드를 반환
+    existing = await get_section(db, point)
+    return existing
 
 
 async def update_section(db: DB, section: Section):
