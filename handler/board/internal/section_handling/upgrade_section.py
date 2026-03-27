@@ -1,3 +1,5 @@
+import asyncio
+
 from data.board import PointRange, Point, Section, SectionFlag
 from handler.board.storage import (
     create_section,
@@ -13,6 +15,10 @@ from .make_section import make_section
 from .make_cursor_section import make_cursor_section
 from .numbering import numbering
 
+# 섹션 생성/넘버링 동시성 보호를 위한 글로벌 Lock
+# SQLite single-writer + 단일 프로세스 환경에서 유효한 2차 방어
+_section_creation_lock = asyncio.Lock()
+
 
 def _get_surrounding_section_range(sec_point: Point) -> PointRange:
     """
@@ -26,15 +32,17 @@ async def make_surround_sections(db: DB, surround_sections: dict[Point, Section]
         if p in surround_sections:
             continue
         section = make_section(p)
-        surround_sections[p] = section
-        await create_section(db, section)
-        await _sync_cursor_section(db, section)
+        # INSERT OR IGNORE + re-SELECT: DB의 실제 레코드를 사용
+        existing = await create_section(db, section)
+        surround_sections[p] = existing
+        await _sync_cursor_section(db, existing)
 
 
 async def _sync_cursor_section(db: DB, section: Section):
     cursor_section = await get_cursor_section(db, section.point)
     if cursor_section is None:
         cursor_section = make_cursor_section(section.point)
+        # INSERT OR IGNORE + re-SELECT
         await create_cursor_section(db, cursor_section)
 
 
@@ -55,11 +63,12 @@ async def _upgrade_numbering_sections(db: DB, sec_point: Point, surround_section
 
 
 async def upgrade_numbering_section(db: DB, sec_point: Point):
-    surround_range = _get_surrounding_section_range(sec_point)
-    surround_sections = await get_dict_by_section_range(db, surround_range)
+    async with _section_creation_lock:
+        surround_range = _get_surrounding_section_range(sec_point)
+        surround_sections = await get_dict_by_section_range(db, surround_range)
 
-    await make_surround_sections(db, surround_sections, surround_range)
-    await _upgrade_numbering_sections(db, sec_point, surround_sections)
+        await make_surround_sections(db, surround_sections, surround_range)
+        await _upgrade_numbering_sections(db, sec_point, surround_sections)
 
 
 async def _upgrade_interaction_sections(db: DB, sec_point: Point, surround_sections: dict[Point, Section]):

@@ -1,1 +1,1 @@
-INSERT INTO cursor_section (x, y, data) VALUES (?, ?, ?);
+INSERT OR IGNORE INTO cursor_section (x, y, data) VALUES (?, ?, ?);

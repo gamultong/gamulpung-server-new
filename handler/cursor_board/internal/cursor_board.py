@@ -34,8 +34,9 @@ class CursorBoardHandler:
                 if sec_p in sections:
                     continue
                 new_section = make_cursor_section(sec_p)
-                await create_cursor_section(db, new_section)
-                sections[sec_p] = new_section
+                # INSERT OR IGNORE + re-SELECT: DB의 실제 레코드 사용
+                existing = await create_cursor_section(db, new_section)
+                sections[sec_p] = existing
 
             for p in draw_point_range.iter():
                 sec_p = abs_to_sec(p)
