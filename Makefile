@@ -1,7 +1,31 @@
 ACT = bin/act
 TYPE = dev
+HOST ?= 0.0.0.0
+PORT ?= 8000
+CONTAINER_INTERNAL_PORT ?= 8000
+CONTAINER_PORT_MAPPING ?= $(PORT):$(CONTAINER_INTERNAL_PORT)
 
-.PHONY: act-ci act-cd-dev act-cd-prod
+.PHONY: dev run check-port up deploy act-ci act-cd-dev act-cd-prod test-all profile branch-clear
+
+dev: check-port
+	@echo "Starting dev server on $(HOST):$(PORT)"
+	uv run python -c "from server import app; from receiver import *; import uvicorn; uvicorn.run(app, host='$(HOST)', port=$(PORT))"
+
+run: dev
+
+check-port:
+	@if command -v lsof >/dev/null 2>&1; then \
+		if lsof -iTCP:$(PORT) -sTCP:LISTEN -Pn >/dev/null; then \
+			echo "ERROR: port $(PORT) is already in use."; \
+			lsof -iTCP:$(PORT) -sTCP:LISTEN -Pn; \
+			exit 1; \
+		fi; \
+	fi
+
+up:
+	CONTAINER_PORT_MAPPING="$(CONTAINER_PORT_MAPPING)" bash scripts/deploy/main.sh
+
+deploy: up
 
 ## CI workflow 로컬 테스트
 act-ci:

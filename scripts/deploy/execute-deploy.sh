@@ -9,7 +9,7 @@ set -euo pipefail
 : "${DOCKER_TAG:?ERROR: DOCKER_TAG is required}"
 : "${ENVIRONMENT:?ERROR: ENVIRONMENT is required}"
 : "${CONTAINER_NAME:?ERROR: CONTAINER_NAME is required}"
-: "${CONTAINER_PORT_MAPPING:?ERROR: CONTAINER_PORT_MAPPING is required}"
+: "${CONTAINER_PORT_MAPPING:=8000:8000}"
 
 # SSH connection options
 SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222"
