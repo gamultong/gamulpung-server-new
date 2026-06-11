@@ -18,3 +18,11 @@ from .internal.cursor_repository import (
     get_list_by_section_range as get_cursor_list_by_section_range,
     get_dict_by_section_range as get_cursor_dict_by_section_range,
 )
+
+from .internal.log_repository import (
+    insert_app_log,
+    insert_stat_event,
+    insert_stat_event_sync,
+    set_app_log_table,
+    set_stat_event_table,
+)

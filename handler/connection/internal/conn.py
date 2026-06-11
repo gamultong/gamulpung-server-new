@@ -4,7 +4,8 @@ from data.conn import Message
 from data.payload import IdDataPayload
 from core.event import Event
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from uuid import uuid4
 import json
 from loguru import logger
@@ -23,6 +24,7 @@ from loguru import logger
 class Conn():
     id: str
     conn: WebSocket
+    connected_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     @staticmethod
     async def create(ws: WebSocket, id: str | None = None):

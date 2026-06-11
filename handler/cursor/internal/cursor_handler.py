@@ -11,6 +11,7 @@ from data.payload import IdPayload, IdDataPayload
 from data.board import is_overlap, PointRange, Point, Tiles, TileKind, CursorTile
 from data.event import InternalEvent
 from datetime import datetime, timedelta
+from handler.stats import StatsHandler
 
 from config import CursorConfig
 
@@ -181,6 +182,13 @@ class CursorHandler:
         hlife.add_events(events)
         for event in events:
             await EventBroker.publish(event=event)
+        await StatsHandler.record(
+            "DEATH",
+            actor_id=cursor.id,
+            point=old_cur.position,
+            value=1,
+            payload={"revive_at": new_cur.active_at.isoformat()},
+        )
 
     @classmethod
     @LifeCycle.with_async_lifecycle(
@@ -208,6 +216,16 @@ class CursorHandler:
         hlife.add_events(events)
         for event in events:
             await EventBroker.publish(event=event)
+        await StatsHandler.record(
+            "SCORE_CHANGE",
+            actor_id=cursor.id,
+            point=new_cur.position,
+            value=score,
+            payload={
+                "before_score": old_cur.score,
+                "after_score": new_cur.score,
+            },
+        )
 
     @classmethod
     async def get_cursor_by_rank_range(cls, rank_range: RankRange):
@@ -287,6 +305,17 @@ class CursorHandler:
         hlife.add_events(events)
         for event in events:
             await EventBroker.publish(event=event)
+        await StatsHandler.record(
+            "GRANT_ITEM",
+            actor_id=cursor.id,
+            point=new_cur.position,
+            value=amount,
+            payload={
+                "item_type": item_type.value,
+                "before_items": old_cur.items.to_dict(),
+                "after_items": new_cur.items.to_dict(),
+            },
+        )
 
     @classmethod
     async def update(cls, cursor: Cursor):

@@ -9,6 +9,7 @@ from data.event import ClientEvent
 from data.cursor import ItemType
 from handler.bomb import BombHandler
 from handler.cursor import CursorHandler
+from handler.stats import StatsHandler
 
 
 INSTALL_BOMB_EVENT = Event[IdDataPayload[str, ClientMessage.InstallBomb]]
@@ -36,3 +37,10 @@ async def install_bomb_receiver(event: INSTALL_BOMB_EVENT):
     await CursorHandler.grant_item(cursor, ItemType.BOMB, -1)
 
     await BombHandler.install_bomb(cursor.id, point)
+    await StatsHandler.record(
+        "INSTALL_BOMB",
+        actor_id=id,
+        point=point,
+        value=1,
+        payload={"item_type": ItemType.BOMB.value, "item_delta": -1},
+    )
