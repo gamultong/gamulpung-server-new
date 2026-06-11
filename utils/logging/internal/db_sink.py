@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import time
 from datetime import date, datetime
 from enum import Enum
 from pathlib import Path
@@ -25,11 +26,15 @@ class AppLogDbSink:
             pass
 
     def stop(self):
-        self._flush()
-        if self._db is None:
-            return
-        self._db.close()
-        self._db = None
+        try:
+            self._flush()
+        except sqlite3.Error:
+            pass
+        finally:
+            if self._db is None:
+                return
+            self._db.close()
+            self._db = None
 
     def _insert(self, record: dict[str, Any]):
         self._buffer.append(
@@ -51,21 +56,34 @@ class AppLogDbSink:
 
         records = self._buffer
         self._buffer = []
-        db = self._get_db()
-        db.executemany(
-            """
-            INSERT INTO app_log (
-                level,
-                module,
-                function_name,
-                line,
-                message,
-                context_json
-            ) VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            records,
-        )
-        db.commit()
+        last_error = None
+        for attempt in range(3):
+            try:
+                db = self._get_db()
+                db.executemany(
+                    """
+                    INSERT INTO app_log (
+                        level,
+                        module,
+                        function_name,
+                        line,
+                        message,
+                        context_json
+                    ) VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    records,
+                )
+                db.commit()
+                return
+            except sqlite3.OperationalError as e:
+                last_error = e
+                if "locked" not in str(e).lower():
+                    break
+                time.sleep(0.1 * (attempt + 1))
+
+        self._buffer = records + self._buffer
+        if last_error is not None:
+            raise last_error
 
     def _get_db(self):
         if self._db is not None:
@@ -75,9 +93,9 @@ class AppLogDbSink:
         self._db = sqlite3.connect(
             self.db_path,
             check_same_thread=False,
-            timeout=0.1,
+            timeout=5,
         )
-        self._db.execute("PRAGMA busy_timeout = 100")
+        self._db.execute("PRAGMA busy_timeout = 5000")
         return self._db
 
 
