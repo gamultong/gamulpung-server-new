@@ -11,7 +11,7 @@ from data.payload import IdPayload, IdDataPayload
 from data.board import is_overlap, PointRange, Point, Tiles, TileKind, CursorTile
 from data.event import InternalEvent
 from datetime import datetime, timedelta
-from handler.stats import StatsHandler
+from utils.stats import record_stat_event
 
 from config import CursorConfig
 
@@ -182,7 +182,7 @@ class CursorHandler:
         hlife.add_events(events)
         for event in events:
             await EventBroker.publish(event=event)
-        await StatsHandler.record(
+        await record_stat_event(
             "DEATH",
             actor_id=cursor.id,
             point=old_cur.position,
@@ -216,7 +216,7 @@ class CursorHandler:
         hlife.add_events(events)
         for event in events:
             await EventBroker.publish(event=event)
-        await StatsHandler.record(
+        await record_stat_event(
             "SCORE_CHANGE",
             actor_id=cursor.id,
             point=new_cur.position,
@@ -305,7 +305,7 @@ class CursorHandler:
         hlife.add_events(events)
         for event in events:
             await EventBroker.publish(event=event)
-        await StatsHandler.record(
+        await record_stat_event(
             "GRANT_ITEM",
             actor_id=cursor.id,
             point=new_cur.position,

@@ -7,7 +7,7 @@ from core.broker import EventBroker
 from core.lifecycle import LifeCycle, RLife
 from handler.connection import ConnectionHandler
 from handler.cursor import CursorHandler
-from handler.stats import StatsHandler
+from utils.stats import record_stat_event
 
 JOIN = Event[IdPayload[str]]
 
@@ -37,7 +37,7 @@ async def join_receiver(event: JOIN):
         target_ids=[id],
         event=_event
     )
-    await StatsHandler.record(
+    await record_stat_event(
         "JOIN",
         actor_id=id,
         value=1,

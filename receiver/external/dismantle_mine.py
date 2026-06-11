@@ -10,7 +10,7 @@ from data.cursor import ItemType
 
 from handler.board import BoardHandler
 from handler.cursor import CursorHandler
-from handler.stats import StatsHandler
+from utils.stats import record_stat_event
 
 from receiver.utils import chaining
 
@@ -47,7 +47,7 @@ async def dismantle_mine_receiver(event: DISMANTLE_MINE_EVENT):
         await BoardHandler.dismantle_mine(point)
         # 지뢰 획득 로직
         await CursorHandler.grant_item(cursor, ItemType.BOMB, 1)
-        await StatsHandler.record(
+        await record_stat_event(
             "DISMANTLE_MINE",
             actor_id=id,
             point=point,
@@ -59,7 +59,7 @@ async def dismantle_mine_receiver(event: DISMANTLE_MINE_EVENT):
     chaining_points = await chaining(point)
     for p in chaining_points:
         await BoardHandler.open_tiles(p)
-        await StatsHandler.record(
+        await record_stat_event(
             "OPEN_TILE",
             actor_id=id,
             point=p,

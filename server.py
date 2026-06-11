@@ -9,7 +9,7 @@ from handler.connection import ConnectionHandler, Conn
 from handler.board import initialize_board
 from handler.bomb import start_bomb_scheduler, stop_bomb_scheduler
 from handler.cursor import CursorHandler
-from handler.stats import get_dashboard
+from utils.stats import get_dashboard
 from handler.board.storage import (
     _get_db,
     set_app_log_table,
@@ -154,23 +154,17 @@ def stats_dashboard(range: str = "24h", bucket: str = "1m", limit: int = 50):
 
 def _active_cursors():
     cursors = []
-    now = datetime.now(timezone.utc)
-    connections = dict(ConnectionHandler.conn_dict)
-    connection_ids = set(connections.keys())
+    connection_ids = set(ConnectionHandler.conn_dict.keys())
 
     for cursor_id, cursor in list(CursorHandler.cursor_dict.items()):
         if cursor_id not in connection_ids:
             continue
 
-        conn = connections[cursor_id]
-        connected_at = _ensure_aware(conn.connected_at)
         position = cursor.position
         cursors.append(
             {
                 "connection_id": cursor_id,
                 "cursor_id": cursor_id,
-                "connected_at": connected_at.isoformat(),
-                "session_seconds": max(0, int((now - connected_at).total_seconds())),
                 "color": int(cursor.color),
                 "tile_id": f"tile:{position.x}:{position.y}",
                 "x": position.x,

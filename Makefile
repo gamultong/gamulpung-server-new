@@ -2,8 +2,6 @@ ACT = bin/act
 TYPE = dev
 HOST ?= 0.0.0.0
 PORT ?= 8000
-CONTAINER_INTERNAL_PORT ?= 8000
-CONTAINER_PORT_MAPPING ?= $(PORT):$(CONTAINER_INTERNAL_PORT)
 
 .PHONY: dev run check-port up deploy act-ci act-cd-dev act-cd-prod test-all profile branch-clear
 
@@ -23,7 +21,7 @@ check-port:
 	fi
 
 up:
-	CONTAINER_PORT_MAPPING="$(CONTAINER_PORT_MAPPING)" bash scripts/deploy/main.sh
+	bash scripts/deploy/main.sh
 
 deploy: up
 

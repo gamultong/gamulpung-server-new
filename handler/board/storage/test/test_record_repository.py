@@ -15,7 +15,7 @@ from handler.board.storage import (
     set_app_log_table,
     set_stat_event_table,
 )
-from handler.stats import StatsHandler
+from utils.stats import record_stat_event
 from utils.logging import AppLogDbSink
 
 
@@ -112,8 +112,8 @@ async def test_insert_stat_event_records_json_payload(record_db):
 
 
 @pytest.mark.asyncio
-async def test_stats_handler_records_tile_event(record_db):
-    await StatsHandler.record(
+async def test_record_stat_event_records_tile_event(record_db):
+    await record_stat_event(
         "MOVE",
         actor_id="player-1",
         point=Point(4, 5),

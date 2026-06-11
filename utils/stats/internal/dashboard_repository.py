@@ -28,9 +28,9 @@ def get_dashboard(
         previous_connection_count = _fetch_previous_connection_count(db, since)
         recent_events = _fetch_recent_events(db, limit)
         recent_logs = _fetch_recent_logs(db, limit)
+        active_cursors = _with_connection_times(db, active_cursors or [], now)
 
     event_counts = Counter(event["event_type"] for event in stat_events)
-    active_cursors = active_cursors or []
     if current_connections is None:
         current_connections = _current_connections(stat_events)
 
@@ -152,6 +152,67 @@ def _fetch_recent_logs(db: sqlite3.Connection, limit: int):
         }
         for row in rows
     ]
+
+
+def _with_connection_times(
+    db: sqlite3.Connection,
+    active_cursors: list[dict[str, Any]],
+    now: datetime,
+):
+    if not active_cursors:
+        return []
+    if not _table_exists(db, "stat_event"):
+        return [
+            {
+                **cursor,
+                "connected_at": None,
+                "session_seconds": 0,
+            }
+            for cursor in active_cursors
+        ]
+
+    actor_ids = [
+        cursor["cursor_id"]
+        for cursor in active_cursors
+        if cursor.get("cursor_id") is not None
+    ]
+    if not actor_ids:
+        return [
+            {
+                **cursor,
+                "connected_at": None,
+                "session_seconds": 0,
+            }
+            for cursor in active_cursors
+        ]
+
+    placeholders = ",".join("?" for _ in actor_ids)
+    rows = db.execute(
+        f"""
+        SELECT actor_id, MAX(added_at) AS connected_at
+        FROM stat_event
+        WHERE event_type = 'JOIN'
+          AND actor_id IN ({placeholders})
+        GROUP BY actor_id
+        """,
+        actor_ids,
+    ).fetchall()
+    connected_at_by_actor = {
+        row["actor_id"]: row["connected_at"]
+        for row in rows
+    }
+
+    result = []
+    for cursor in active_cursors:
+        connected_at = connected_at_by_actor.get(cursor.get("cursor_id"))
+        result.append(
+            {
+                **cursor,
+                "connected_at": connected_at,
+                "session_seconds": _session_seconds(connected_at, now),
+            }
+        )
+    return result
 
 
 def _table_exists(db: sqlite3.Connection, table_name: str):
@@ -312,6 +373,15 @@ def _bucket_start(value: str, bucket: str):
 def _parse_added_at(value: str):
     normalized = value.replace("Z", "+00:00")
     return datetime.fromisoformat(normalized)
+
+
+def _session_seconds(connected_at: str | None, now: datetime):
+    if connected_at is None:
+        return 0
+    return max(
+        0,
+        int((now - _parse_added_at(connected_at).astimezone(timezone.utc)).total_seconds()),
+    )
 
 
 def _players(events: list[dict[str, Any]]):

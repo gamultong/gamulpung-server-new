@@ -8,7 +8,7 @@ from data.event import ServerEvent, ClientEvent
 
 from handler.cursor import CursorHandler
 from handler.board import BoardHandler
-from handler.stats import StatsHandler
+from utils.stats import record_stat_event
 from loguru import logger
 
 MOVE_EVENT = Event[IdDataPayload[str, ClientMessage.Move]]
@@ -42,4 +42,4 @@ async def move_receiver(event: MOVE_EVENT):
         return
 
     await CursorHandler.move(cursor, point)
-    await StatsHandler.record("MOVE", actor_id=id, point=point, value=1)
+    await record_stat_event("MOVE", actor_id=id, point=point, value=1)

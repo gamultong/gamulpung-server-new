@@ -6,7 +6,7 @@ from core.broker import EventBroker
 from core.lifecycle import LifeCycle, RLife
 from handler.connection import ConnectionHandler
 from handler.cursor import CursorHandler
-from handler.stats import StatsHandler
+from utils.stats import record_stat_event
 
 QUIT = Event[IdPayload[str]]
 
@@ -35,7 +35,7 @@ async def quit_receiver(event: QUIT):
     )
 
     await ConnectionHandler.broadcast(_event)
-    await StatsHandler.record(
+    await record_stat_event(
         "QUIT",
         actor_id=id,
         point=point,

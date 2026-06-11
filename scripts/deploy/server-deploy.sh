@@ -3,15 +3,13 @@
 set -e  # 에러 발생 시 즉시 종료
 
 # 환경변수 검증
-required_vars=("DOCKER_USERNAME" "DOCKER_REPONAME" "DOCKER_TAG" "ENVIRONMENT" "CONTAINER_NAME")
+required_vars=("DOCKER_USERNAME" "DOCKER_REPONAME" "DOCKER_TAG" "ENVIRONMENT" "CONTAINER_NAME" "CONTAINER_PORT_MAPPING")
 for var in "${required_vars[@]}"; do
   if [ -z "${!var}" ]; then
     echo "❌ ERROR: Required environment variable $var is not set"
     exit 1
   fi
 done
-
-CONTAINER_PORT_MAPPING="${CONTAINER_PORT_MAPPING:-8000:8000}"
 
 echo "🚀 Starting deployment for $ENVIRONMENT environment"
 echo "📦 Image: $DOCKER_USERNAME/$DOCKER_REPONAME:$DOCKER_TAG"
