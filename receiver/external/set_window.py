@@ -23,5 +23,5 @@ async def set_window_receiver(event: SET_WINDOW_EVENT):
         logger.error(f"윈도우 설정 실패: id {id}에 해당하는 커서를 찾을 수 없음")
         return
 
-    # CursorHandler.set_window()가 viewport 업데이트 및 SETTED_WINDOW 이벤트 발행
+    # CursorHandler.set_window()가 viewport 업데이트 및 WINDOW_SET 이벤트 발행
     await CursorHandler.set_window(cursor, data.width, data.height)

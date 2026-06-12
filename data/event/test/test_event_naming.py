@@ -41,7 +41,7 @@ class EventNaming_TestCase(unittest.TestCase):
     def test_internal_event_members(self):
         self.assertEnumHasNames(
             InternalEvent,
-            ["NOTIFY_CURSORS", "NOTIFY_DRAW", "NOTIFY_EXPLOSION", "NOTIFY_SCOREBOARD", "NOTIFY_TILES", "SETTED_WINDOW"],
+            ["NOTIFY_CURSORS", "NOTIFY_DRAW", "NOTIFY_EXPLOSION", "NOTIFY_SCOREBOARD", "NOTIFY_TILES", "WINDOW_SET"],
         )
         self.assertEnumValuesUnique(InternalEvent)
 

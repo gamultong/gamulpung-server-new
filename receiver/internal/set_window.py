@@ -15,7 +15,7 @@ from handler.cursor_board import CursorBoardHandler
 SET_WINDOW_EVENT = Event[IdDataPayload[str, Cursor] | IdPayload[str]]
 
 
-@EventBroker.add_receiver(InternalEvent.SETTED_WINDOW)
+@EventBroker.add_receiver(InternalEvent.WINDOW_SET)
 @LifeCycle.with_async_lifecycle(factory=RLife.create_factory)
 async def set_window_receiver(event: SET_WINDOW_EVENT):
     id = event.payload.id

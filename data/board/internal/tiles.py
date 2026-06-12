@@ -77,9 +77,9 @@ class Tiles(DataObj):
             x_end = row_start + point_range.bottom_right.x + 1
             start = x_start * tile_bytes
             end = x_end * tile_bytes
-            law = self.data[start:end]
+            raw = self.data[start:end]
 
-            data += law
+            data += raw
 
         return Tiles(
             data=data,

@@ -16,7 +16,7 @@ class BoardHandler:
     - fetch(PointRange) -> Tiles
 
     - open_tiles(Point)
-    - togle_flag(Point)
+    - toggle_flag(Point)
     """
 
     @classmethod
@@ -63,9 +63,9 @@ class BoardHandler:
 
     @classmethod
     @LifeCycle.with_async_lifecycle(
-        factory=HLife.create_factory("BoardHandler", "togle_flag")
+        factory=HLife.create_factory("BoardHandler", "toggle_flag")
     )
-    async def togle_flag(cls, point: Point):
+    async def toggle_flag(cls, point: Point):
         hlife = HLife.get_lifecycle()
 
         sec_p = abs_to_sec(point)
