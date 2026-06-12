@@ -1,5 +1,7 @@
 # 1단계: Event 정의 이동
 
+> 반영 완료 — 공식 스펙은 [[RFC-009]](/docs/RFC/%5BRFC-009%5D%20Emitter.md) 참고
+
 ## 목표
 
 Event 발행 규칙을 Data Layer로 이동.
