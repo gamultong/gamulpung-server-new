@@ -6,12 +6,9 @@ from data.payload import ClientMessage
 from data.event import ClientEvent
 
 from .exceptions import (
-    InvalidFormat_Exception,
-    InvalidEvent_Exception
+    InvalidFormat_Exception
 )
 
-from data.event import ClientEvent
-from json import loads
 
 EVENT_TYPE = TypeVar("EVENT_TYPE", bound=Event)
 

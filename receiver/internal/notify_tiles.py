@@ -2,7 +2,7 @@ from core.event import Event
 from core.broker import EventBroker
 from core.lifecycle import LifeCycle, RLife
 
-from data.payload import IdDataPayload, ServerMessage, IdPayload
+from data.payload import ServerMessage, IdPayload
 from data.board import PointRange
 from data.event import InternalEvent, ServerEvent
 

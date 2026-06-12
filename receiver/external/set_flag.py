@@ -1,6 +1,6 @@
 from core.event import Event
 from data.payload import IdDataPayload, ClientMessage
-from data.event import ServerEvent, ClientEvent
+from data.event import ClientEvent
 
 from core.broker import EventBroker
 from core.lifecycle import LifeCycle, RLife

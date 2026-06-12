@@ -1,7 +1,7 @@
 from loguru import logger
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, WebSocket, Response, WebSocketDisconnect
+from fastapi import WebSocket, Response, WebSocketDisconnect
 from websockets.exceptions import ConnectionClosed
 from core.broker import EventBroker
 from handler.connection import ConnectionHandler, Conn
@@ -75,7 +75,7 @@ async def session(ws: WebSocket):
             client_event = message.event
             await ConnectionHandler.publish_client_event(client_event)
 
-    except (WebSocketDisconnect, ConnectionClosed) as e:
+    except (WebSocketDisconnect, ConnectionClosed):
         # 연결 종료됨
         pass
 

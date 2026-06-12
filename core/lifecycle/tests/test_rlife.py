@@ -1,6 +1,5 @@
 """RLife 테스트"""
 
-import pytest
 from core.lifecycle import RLife, LifeCycle
 
 

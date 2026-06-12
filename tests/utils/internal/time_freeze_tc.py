@@ -1,4 +1,3 @@
-from unittest.mock import patch
 from unittest import IsolatedAsyncioTestCase
 from datetime import datetime
 

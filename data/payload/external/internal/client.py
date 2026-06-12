@@ -1,6 +1,5 @@
 from .base import ClientMessage
 from data.board import Point
-from data.board.cursorboard import Color
 
 
 class Chat(ClientMessage):

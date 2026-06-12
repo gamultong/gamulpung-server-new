@@ -26,9 +26,12 @@ act-cd-prod:
 test-all:
 	uv run pytest
 
+lint:
+	uv run ruff check .
+
 profile:
 	@if [ -z "$(pfn)" ]; then \
-		echo "❌ pfn 파라미터가 필요합니다." \
+		echo "❌ pfn 파라미터가 필요합니다."; \
 		exit 1; \
 	fi
 	uv run python -m tests.profile.${pfn}.profiling

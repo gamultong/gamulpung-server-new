@@ -8,9 +8,7 @@ from handler.board.storage import (
     set_table,
     set_cursor_table,
 )
-from datetime import datetime
 
-from freezegun import freeze_time
 
 
 class UseDB_TestCase(IsolatedAsyncioTestCase):
