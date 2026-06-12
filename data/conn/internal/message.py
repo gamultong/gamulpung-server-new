@@ -6,7 +6,8 @@ from data.payload import ClientMessage
 from data.event import ClientEvent
 
 from .exceptions import (
-    InvalidFormat_Exception
+    InvalidFormat_Exception,
+    InvalidEvent_Exception
 )
 
 
@@ -63,7 +64,7 @@ def get_payload_by_event_name(event_name: EventEnum) -> Type[ClientMessage.Base]
             return ClientMessage.DismantleMine
         case ClientEvent.INSTALL_BOMB:
             return ClientMessage.InstallBomb
-    raise
+    raise InvalidEvent_Exception(event_name)
 
 
 class Message(Generic[EVENT_TYPE], DataObj):

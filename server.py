@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import WebSocket, Response, WebSocketDisconnect
 from websockets.exceptions import ConnectionClosed
 from core.broker import EventBroker
+from data.conn import InvalidFormat_Exception, InvalidEvent_Exception
 from handler.connection import ConnectionHandler, Conn
 from handler.board import initialize_board
 from handler.bomb import start_bomb_scheduler, stop_bomb_scheduler
@@ -66,7 +67,12 @@ async def session(ws: WebSocket):
 
     try:
         while True:
-            message = await conn.receive()
+            try:
+                message = await conn.receive()
+            except (InvalidFormat_Exception, InvalidEvent_Exception) as e:
+                # 잘못된 메시지는 연결을 끊지 않고 무시한다
+                logger.warning(f"[{conn.id}]잘못된 client-message 수신 | {e}")
+                continue
             logger.debug(f"[{conn.id}]client-message : \n{message}")
 
             client_event = message.event

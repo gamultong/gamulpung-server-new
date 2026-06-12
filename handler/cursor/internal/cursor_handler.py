@@ -14,6 +14,7 @@ from data.event import InternalEvent
 from datetime import datetime, timedelta
 
 from config import CursorConfig
+from loguru import logger
 
 
 class CursorHandler:
@@ -144,8 +145,9 @@ class CursorHandler:
         # old_cur get 없이 cursor 그냥 써도됨
         old_cur = await cls.get_by_id(cursor.id)
         if old_cur.active_at > datetime.now():
-            # TODO : exception or skip
-            raise "already death"  # type:ignore
+            # 이미 죽은 커서(예: 폭발 범위 중복)는 무시한다
+            logger.warning(f"이미 사망한 커서의 death 호출 | cursor:{old_cur}")
+            return
 
         new_cur = old_cur.copy()
         new_cur.score = 0
