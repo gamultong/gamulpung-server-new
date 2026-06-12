@@ -4,6 +4,8 @@
 """
 import pytest
 import asyncio
+import os
+import tempfile
 from unittest.mock import patch
 
 from server import app
@@ -110,9 +112,11 @@ async def test_lifecycle_profiler_move_scenario():
             print(f"{r.timestamp:>12.0f} | {phase:5} | {r.category:5} | {r.name:35} | {args_str}")
         print()
 
-        # JSON 저장
-        profiler.save("tests/profile/move_scenario.json")
-        print("Saved to: tests/profile/move_scenario.json")
+        # JSON 저장 (git 추적 파일을 변경하지 않도록 임시 경로 사용)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            save_path = os.path.join(tmp_dir, "move_scenario.json")
+            profiler.save(save_path)
+            assert os.path.exists(save_path)
 
         # Chrome Trace 형식 검증
         trace_events = profiler.to_trace_events()
