@@ -8,7 +8,7 @@ from data.conn import InvalidFormat_Exception, InvalidEvent_Exception
 from handler.connection import ConnectionHandler, Conn
 from handler.board import initialize_board
 from handler.bomb import start_bomb_scheduler, stop_bomb_scheduler
-from handler.board.storage import _get_db, set_table, set_cursor_table
+from handler.board.storage import get_db, set_table, set_cursor_table
 import sentry_sdk
 from config import SentryConfig
 from asyncio import sleep
@@ -31,7 +31,7 @@ async def lifespan(app: FastAPI):
     logger.add("log.log")
 
     logger.debug("init start")
-    async with _get_db() as db:
+    async with get_db() as db:
         # 테이블 생성은 IF NOT EXISTS로 멱등하다
         await set_table(db)
         await set_cursor_table(db)

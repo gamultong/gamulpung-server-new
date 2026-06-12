@@ -1,13 +1,13 @@
 from core.lifecycle import HLife, LifeCycle
 from data.board import Point, PointRange, CursorTile, Tiles, TileKind, abs_to_sec
 from handler.board.storage import (
-    _get_db,
+    get_db,
     create_cursor_section,
     get_cursor_dict_by_section_range,
     get_cursor_list_by_section_range,
     update_cursor_section,
 )
-from handler.board.internal.section_handling.make_cursor_section import make_cursor_section
+from handler.board import make_cursor_section
 
 
 class CursorBoardHandler:
@@ -26,7 +26,7 @@ class CursorBoardHandler:
         new_tile = CursorTile.create(cur_id)
         changed_sec_points: set[Point] = set()
 
-        async with _get_db() as db:
+        async with get_db() as db:
             sections = await get_cursor_dict_by_section_range(db, sec_draw_range)
             for sec_p in sec_draw_range.iter():
                 if sec_p in sections:
@@ -57,7 +57,7 @@ class CursorBoardHandler:
             abs_to_sec(point_range.bottom_right),
         )
 
-        async with _get_db() as db:
+        async with get_db() as db:
             sections = await get_cursor_list_by_section_range(db, sec_pr)
 
         section_dict = {

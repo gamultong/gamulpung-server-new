@@ -4,8 +4,8 @@ from core.lifecycle import HLife, LifeCycle
 from data.board import Point, abs_to_sec, SectionFlag
 from data.board.emitter import TileEmitter
 from data.bomb import InstalledBomb, BombEmitter
-from handler.board.storage import _get_db, get_section
-from handler.board.internal.section_handling.upgrade_section import upgrade_interaction_section
+from handler.board import upgrade_interaction_section
+from handler.board.storage import get_db, get_section
 from loguru import logger
 import asyncio
 from datetime import datetime, timedelta
@@ -40,7 +40,7 @@ class BombHandler:
 
         sec_p = abs_to_sec(point)
 
-        async with _get_db() as db:
+        async with get_db() as db:
             section = await get_section(db, sec_p)
             assert section
 

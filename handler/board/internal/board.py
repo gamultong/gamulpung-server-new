@@ -3,7 +3,7 @@ from data.board.emitter import TileEmitter
 
 from core.broker import EventBroker
 from core.lifecycle import HLife, LifeCycle
-from handler.board.storage import _get_db, get_list_by_section_range, get_section, update_section
+from handler.board.storage import get_db, get_list_by_section_range, get_section, update_section
 
 from .section_handling.upgrade_section import upgrade_interaction_section, upgrade_numbering_section
 from .section_handling.make_section import make_closed_section
@@ -26,7 +26,7 @@ class BoardHandler:
             abs_to_sec(point_range.bottom_right)
         )
 
-        async with _get_db() as db:
+        async with get_db() as db:
             sections = await get_list_by_section_range(db, sec_pr)
 
         section_dict = {
@@ -70,7 +70,7 @@ class BoardHandler:
 
         sec_p = abs_to_sec(point)
 
-        async with _get_db() as db:
+        async with get_db() as db:
             section = await get_section(db, sec_p)
             # 섹션이 반드시 존재해야 함
             assert section
@@ -101,7 +101,7 @@ class BoardHandler:
 
         sec_p = abs_to_sec(point)
 
-        async with _get_db() as db:
+        async with get_db() as db:
             section = await get_section(db, sec_p)
             # 섹션이 반드시 존재해야 함
             assert section
@@ -139,7 +139,7 @@ class BoardHandler:
 
         sec_p = abs_to_sec(point)
 
-        async with _get_db() as db:
+        async with get_db() as db:
             section = await get_section(db, sec_p)
             # 섹션이 반드시 존재해야 함
             assert section
@@ -168,7 +168,7 @@ class BoardHandler:
     async def fetch_tile(cls, point: Point) -> Tile:
         sec_p = abs_to_sec(point)
 
-        async with _get_db() as db:
+        async with get_db() as db:
             section = await get_section(db, sec_p)
         assert section
 
@@ -177,7 +177,7 @@ class BoardHandler:
 
     @classmethod
     async def fetch_section(cls, sec_point: Point):
-        async with _get_db() as db:
+        async with get_db() as db:
             section = await get_section(db, sec_point)
             assert section
 
