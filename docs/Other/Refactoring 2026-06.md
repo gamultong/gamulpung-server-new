@@ -13,10 +13,13 @@
 - `docs/sync`: Lifecycle/Emitter를 [[RFC-008]](/docs/RFC/%5BRFC-008%5D%20Lifecycle.md)·[[RFC-009]](/docs/RFC/%5BRFC-009%5D%20Emitter.md)로 공식화, 이벤트 scope·cursor board Glossary 추가, 깨진 링크 8건 수정
 
 ## 남은 작업 (의사결정 필요)
-- 타일 마스킹: `BoardHandler.fetch` 경로가 닫힌 타일의 mine 비트를 그대로 클라이언트에 전송한다. `Tiles.hide_info`를 와이어 경로에 적용할지는 프로토콜 변경이라 보류 (클라이언트 영향 검토 필요)
 - naive datetime: 커서 생존/부활 판정이 타임존 없는 벽시계에 의존하고 `active_at`이 API 스펙에 고착됨
 - repository 중복: map/cursor 저장소 약 100줄 평행 복제, 스코어보드 갱신 블록 3중 복붙, `RankRange(1, 10)` 등 매직 넘버 상수화
 - ClientMessage 입력 검증: 8종 중 CreateCursor만 수동 검증, 나머지는 무검증 통과
-- EventBroker: 전역 정적 상태(테스트 격리 불가), receiver 예외의 Handler 역전파, receiver의 직접 publish(단방향 규칙 위반)
+- EventBroker: 전역 정적 상태(테스트 격리 불가), receiver의 직접 publish(단방향 규칙 위반) — 단 Event 실패 무복구는 의도된 결정([[ADR-005]](/docs/ADR/%5BADR-005%5D%20데이터%20정합성%20수준%20채택.md))
 - CI/CD: CD가 테스트에 게이트되지 않음, Dockerfile `COPY . .` 캐시·이미지 비대, 타입체크(mypy/pyright) 미도입
 - builtin 가리기(`id` 18곳 등), 테스트 고정 `sleep(0.1)` 9곳의 폴링 전환
+
+## 후속 반영 (설계 문답 이후)
+- 타일 마스킹 적용 완료 — 설계 문답 Q11에서 실수로 확인되어 수정 ([설계 문답](/docs/Other/Design%20QnA%202026-06.md))
+- 의사결정 사유 문서화: ADR-003~006
