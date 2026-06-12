@@ -19,7 +19,7 @@ SDD는 문서를 최소 단위로 유지하고, 스펙을 명확하게 남기며
 #### Glossary ([작성 가이드](/docs/Other/SDD%20guide/Glossary.md))
 - 일반적인 의미와 다른 용도로 사용하는 용어를 정의하는 문서이다.
 
-#### Feature(FT) ([작성 가이드](/docs/Other/SDD%20guide/Feature(FT).md))
+#### Feature(FT) ([작성 가이드](/docs/Other/SDD%20guide/Feature%28FT%29.md))
 - 도메인 기능을 정리한 문서이다.
 
 ### 문서 작성 가이드
