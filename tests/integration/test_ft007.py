@@ -12,7 +12,7 @@ from data.board.cursorboard import Color
 
 from handler.board import BoardHandler
 from handler.cursor import CursorHandler
-from tests.utils import PytestTCM, assert_wait_event, assert_wait_call_if, build_tiles
+from tests.utils import PytestTCM, assert_wait_event, assert_wait_call_if, build_tiles, create_cursor_at_position
 
 CL_A = "TestClient_A"
 
@@ -20,27 +20,6 @@ CL_A = "TestClient_A"
 # -------------------------
 # Helpers
 # -------------------------
-def create_cursor_at_position(pos: Point):
-    """Cursor를 특정 위치에 생성하는 헬퍼"""
-    from data.cursor import Cursor
-    origin_create = Cursor.create
-
-    def create_cursor_effect(
-        id: str,
-        width: int = 0,
-        height: int = 0,
-        color: Color = Color.RED,
-        **_kwargs,
-    ):
-        return origin_create(
-            id,
-            width=width,
-            height=height,
-            position=pos,
-            color=color,
-        )
-
-    return create_cursor_effect
 
 
 FLAG_BIT = 0b00100000

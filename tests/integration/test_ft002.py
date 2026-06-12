@@ -5,7 +5,7 @@ from data.event import ServerEvent, ClientEvent
 from data.board import Point, Section, SectionFlag
 from data.board.cursorboard import Color
 from handler.cursor import CursorHandler
-from tests.utils import PytestTCM, assert_wait_event, build_tiles
+from tests.utils import PytestTCM, assert_wait_event, build_tiles, create_cursor_at_position
 from unittest.mock import patch
 from config import BoardConfig
 from datetime import datetime, timedelta
@@ -42,27 +42,6 @@ async def opened_board_map(db):
     logger.debug("init_board end")
 
 
-def create_cursor_at_position(pos: Point):
-    """Cursor를 특정 위치에 생성하는 헬퍼"""
-    from data.cursor import Cursor
-    origin_create = Cursor.create
-
-    def create_cursor_effect(
-        id: str,
-        width: int = 0,
-        height: int = 0,
-        color: Color = Color.RED,
-        **_kwargs,
-    ):
-        return origin_create(
-            id,
-            width=width,
-            height=height,
-            position=pos,
-            color=color,
-        )
-
-    return create_cursor_effect
 
 
 @patch.object(BoardConfig, "LENGTH", new=5)

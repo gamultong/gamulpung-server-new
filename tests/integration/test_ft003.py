@@ -8,7 +8,7 @@ from data.conn import Message
 from core.event import Event
 from handler.cursor import CursorHandler
 from handler.board import BoardHandler
-from tests.utils import PytestTCM, assert_wait_event, assert_wait_message, build_tiles
+from tests.utils import PytestTCM, assert_wait_event, assert_wait_message, build_tiles, create_cursor_at_position
 from unittest.mock import patch
 from config import BoardConfig
 from datetime import datetime, timedelta
@@ -83,27 +83,6 @@ async def flagged_board_map(db):
         await create_section(db, section)
 
 
-def create_cursor_at_position(pos: Point):
-    """Cursor를 특정 위치에 생성하는 헬퍼"""
-    from data.cursor import Cursor
-    origin_create = Cursor.create
-
-    def create_cursor_effect(
-        id: str,
-        width: int = 0,
-        height: int = 0,
-        color: Color = Color.RED,
-        **_kwargs,
-    ):
-        return origin_create(
-            id,
-            width=width,
-            height=height,
-            position=pos,
-            color=color,
-        )
-
-    return create_cursor_effect
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)
@@ -268,8 +247,8 @@ async def test_ft003_business_rule_flagged_tile():
         # 타일이 열리지 않았는지 검증
 
         tile = await BoardHandler.fetch_tile(Point(1, 1))
-        assert tile.is_open == False, "깃발이 설치된 타일은 열리지 않아야 함"
-        assert tile.is_flag == True, "깃발이 여전히 설치되어 있어야 함"
+        assert not tile.is_open, "깃발이 설치된 타일은 열리지 않아야 함"
+        assert tile.is_flag, "깃발이 여전히 설치되어 있어야 함"
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)
@@ -352,7 +331,7 @@ async def test_ft003_business_rule_dead_cursor():
         # 타일이 열리지 않았는지 검증
 
         tile = await BoardHandler.fetch_tile(Point(1, 1))
-        assert tile.is_open == False, "죽은 커서는 타일을 열 수 없어야 함"
+        assert not tile.is_open, "죽은 커서는 타일을 열 수 없어야 함"
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)
@@ -378,7 +357,7 @@ async def test_ft003_state_change_tile_opened():
 
         # 상태 변화 전: closed 상태 확인
         tile_before = await BoardHandler.fetch_tile(Point(0, 1))
-        assert tile_before.is_open == False, "타일이 닫혀있어야 함"
+        assert not tile_before.is_open, "타일이 닫혀있어야 함"
 
         # 이전 event 소비
         cl_a.conn.send.await_args_list.clear()
@@ -395,7 +374,7 @@ async def test_ft003_state_change_tile_opened():
 
         # 상태 변화 후: opened 상태 확인
         tile_after = await BoardHandler.fetch_tile(Point(0, 1))
-        assert tile_after.is_open == True, "타일이 열려있어야 함"
+        assert tile_after.is_open, "타일이 열려있어야 함"
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)
@@ -440,7 +419,7 @@ async def test_ft003_state_change_explosion():
 
         # Cursor A 상태 확인 (explosion 전)
         cursor_a_before = await CursorHandler.get_by_id(CL_A)
-        assert cursor_a_before.is_alive == True, "커서가 살아있어야 함"
+        assert cursor_a_before.is_alive, "커서가 살아있어야 함"
 
         # 지뢰 타일 (1, 1) 열기
         cl_a.ws.send_json({
@@ -453,9 +432,9 @@ async def test_ft003_state_change_explosion():
 
         # Cursor A 상태 확인 (explosion 후)
         cursor_a_after = await CursorHandler.get_by_id(CL_A)
-        assert cursor_a_after.is_alive == False, "폭발 범위 내 커서는 죽어야 함"
+        assert not cursor_a_after.is_alive, "폭발 범위 내 커서는 죽어야 함"
         assert cursor_a_after.score == 0, "죽은 커서의 점수는 0이어야 함"
 
         # Cursor B는 폭발 범위 밖이므로 살아있어야 함
         cursor_b_after = await CursorHandler.get_by_id(CL_B)
-        assert cursor_b_after.is_alive == True, "폭발 범위 밖 커서는 살아있어야 함"
+        assert cursor_b_after.is_alive, "폭발 범위 밖 커서는 살아있어야 함"
