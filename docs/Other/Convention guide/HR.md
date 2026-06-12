@@ -20,6 +20,11 @@
 - obj를 외부에 내보낼 때와 저장할 때 모두 복사본을 사용한다. ([data](/docs/Glossary/dev/data.md)는 immutable snapshot)
 - Event publish는 Handler만 수행한다.
 
+## Event payload
+- payload에는 식별자와, 처리 시점의 fetch로는 복원할 수 없는 정보(변경 이전 snapshot)만 담는다.
+- 현재 상태는 Receiver가 처리 시점에 fetch한다. 과거 상태는 fetch로 복원할 수 없으므로 Emitter가 payload에 실어 보낸다.
+- 이 분업 덕에 Receiver는 이벤트의 전달 시점·순서에 둔감해진다. ([[ADR-004] 인메모리 우선 인프라 채택](/docs/ADR/%5BADR-004%5D%20인메모리%20우선%20인프라%20채택.md))
+
 ## 신뢰 경계
 - 클라이언트가 보낸 식별자를 신뢰하지 않는다. 발신자 id는 연결 계층이 단일 지점에서 주입한다.
 - 클라이언트 메시지의 형식 오류는 연결 종료가 아니라 경고 후 무시로 처리한다.

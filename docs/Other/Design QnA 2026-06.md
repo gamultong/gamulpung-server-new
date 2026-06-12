@@ -95,3 +95,7 @@
 
 반영: [[ADR-005] 데이터 정합성 수준 채택](/docs/ADR/%5BADR-005%5D%20데이터%20정합성%20수준%20채택.md) 결정 명확화 — 격리 기준은 예외 전파 차단이 아니라 추가 Event 미발행.
 
+**payload 설계 보충 — 과거 snapshot의 운반**
+> ZeroPayload에 Id 말고 변경 이전 snapshot 찍는 IdDataPayload도 킥인데, 이건 조금은 독창적인 거라.
+
+반영: [HR 구현 가이드](/docs/Other/Convention%20guide/HR.md)에 Event payload 설계 규칙 추가, [[ADR-004]](/docs/ADR/%5BADR-004%5D%20인메모리%20우선%20인프라%20채택.md) 근거 보강 — 현재는 fetch, 과거만 payload.
