@@ -68,4 +68,5 @@ def build_tiles(map_s: str) -> Tiles:
     counts = compute_adj_counts(lines, H, W)
     data = map_data_create(lines, counts, H, W)
 
-    return Tiles(data, H, W)
+    # width=열 수(W), height=행 수(H) — 정사각 맵에서는 차이가 없었음
+    return Tiles(data, W, H)
