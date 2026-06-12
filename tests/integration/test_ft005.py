@@ -240,3 +240,75 @@ async def test_ft005_cursor_state_on_window_change():
 
         # CURSORS_STATE 이벤트 수신 확인
         assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE, timeout=3.0)
+
+
+async def mine_board_map(db):
+    """
+    Closed mine board (X 주변 closed 타일에 number가 자동 계산됨):
+    y=3: # # # #
+    y=2: # X # #
+    y=1: # # # #
+    y=0: # # # #
+    """
+    map_str = """\
+####
+#X##
+####
+####
+"""
+    tiles = build_tiles(map_str)
+    sections = [Section(Point(0, 0), tiles.copy(), flag=SectionFlag.INTERACTIONAL)]
+    from handler.board.storage import create_section
+    for section in sections:
+        await create_section(db, section)
+
+
+@patch.object(BoardConfig, "LENGTH", new=4)
+@patch("server.initialize_board", new=mine_board_map)
+@pytest.mark.asyncio
+async def test_ft005_business_rule_closed_tile_info_is_masked():
+    """
+    비즈니스 규칙 검증 (RFC-006):
+    - 닫힌 타일의 mine·number 정보는 클라이언트로 전송되지 않아야 함
+    """
+    with PytestTCM(app).append_client(CL_A) as tcm:
+        cl_a = tcm.get_client(CL_A)
+
+        # Cursor를 (1, 1) 위치에 생성 후 시야를 1x1로 설정 → 지뢰 (1, 2) 포함
+        with patch("data.cursor.Cursor.create", side_effect=create_cursor_at_position(Point(1, 1))):
+            cl_a.ws.send_json({
+                "header": {"event": ClientEvent.CREATE_CURSOR.value},
+                "payload": {"width": 1, "height": 1, "color": Color.RED.value}
+            })
+            assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
+
+        cl_a.conn.send.await_args_list.clear()
+
+        cl_a.ws.send_json({
+            "header": {"event": ClientEvent.SET_WINDOW.value},
+            "payload": {"width": 1, "height": 1}
+        })
+
+        received = {}
+
+        def capture_tiles_state(msg):
+            if msg.event.event_name == ServerEvent.TILES_STATE and len(msg.event.payload.tiles_li) > 0:
+                received["data"] = msg.event.payload.tiles_li[0].data
+                return True
+            return False
+
+        assert_wait_call_if(
+            cl_a.conn.send,
+            capture_tiles_state,
+            timeout=3.0,
+            error_msg="TILES_STATE 이벤트를 받지 못함"
+        )
+
+        # 비트 구조는 RFC-006 참고: open(7) mine(6) flag(5) color(4-3) number(2-0)
+        opened = 0b10000000
+        mine_or_number = 0b01000111
+        for idx, b in enumerate(bytes.fromhex(received["data"])):
+            if b & opened:
+                continue
+            assert b & mine_or_number == 0, \
+                f"닫힌 타일의 mine·number가 전송됨 | idx:{idx}, byte:{b:08b}"
