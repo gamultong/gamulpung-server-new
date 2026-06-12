@@ -61,10 +61,7 @@ class Conn():
         except RuntimeError as e:
             # uvicorn이 던지는 그 에러인 경우만 잡아서 로그로 남기고 무시
             if "websocket.close" in str(e) or "response already completed" in str(e):
-                logger.warning(
-                    "Connection이 끊긴 뒤 send하려함(예외로 감지) : %s; err=%s",
-                    self, e,
-                )
+                logger.warning(f"Connection이 끊긴 뒤 send하려함(예외로 감지) : {self}; err={e}")
                 return
             # 다른 RuntimeError면 그대로 올림
             raise

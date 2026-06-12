@@ -5,6 +5,7 @@ from .parameter import Parameter
 from .profiler import LifecycleProfiler
 from core.lifecycle.metrics import LifecycleMetrics
 from typing import Any
+from loguru import logger
 
 
 class HLife(LifeCycle):
@@ -122,7 +123,6 @@ class HLife(LifeCycle):
 
     def close(self):
         """Lifecycle 종료 시 로깅"""
-        from loguru import logger
 
         # Events 로깅 처리
         event_names = []

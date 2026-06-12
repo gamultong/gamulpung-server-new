@@ -1,6 +1,7 @@
 from core.event import Event
 from core.broker import EventBroker
 from core.lifecycle import LifeCycle, RLife
+from loguru import logger
 
 from data.payload import IdDataPayload, ServerMessage, IdPayload
 from data.cursor import Cursor
@@ -19,7 +20,11 @@ SET_WINDOW_EVENT = Event[IdDataPayload[str, Cursor] | IdPayload[str]]
 async def set_window_receiver(event: SET_WINDOW_EVENT):
     id = event.payload.id
 
-    cursor = await CursorHandler.get_by_id(id)
+    try:
+        cursor = await CursorHandler.get_by_id(id)
+    except KeyError:
+        logger.warning(f"커서가 존재하지 않음 | id:{id}")
+        return
     window_range = cursor.get_window_range()
 
     # 타일 정보 조회 및 전송

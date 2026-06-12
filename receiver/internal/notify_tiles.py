@@ -9,6 +9,7 @@ from data.event import InternalEvent, ServerEvent
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler
 from handler.board import BoardHandler
+from loguru import logger
 
 NOTIFY_TILES_EVENT = Event[IdPayload[PointRange]]
 
@@ -16,7 +17,6 @@ NOTIFY_TILES_EVENT = Event[IdPayload[PointRange]]
 @EventBroker.add_receiver(InternalEvent.NOTIFY_TILES)
 @LifeCycle.with_async_lifecycle(factory=RLife.create_factory)
 async def notify_tiles_receiver(event: NOTIFY_TILES_EVENT):
-    from loguru import logger
 
     point_range = event.payload.id
     tiles = await BoardHandler.fetch(point_range)

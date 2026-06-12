@@ -124,7 +124,7 @@ class BoardHandler:
             await update_section(db, section)
 
         events = TileEmitter.get_events(old=old_tile, new=new_tile, point=point)
-        logger.debug(events)
+        logger.debug(f"open_tiles 발행 이벤트 | events:{events}")
 
         hlife.add_events(events)
         for event in events:
@@ -158,7 +158,7 @@ class BoardHandler:
             await update_section(db, section)
 
         events = TileEmitter.get_dismantle_events(point)
-        logger.debug(events)
+        logger.debug(f"dismantle_mine 발행 이벤트 | events:{events}")
 
         hlife.add_events(events)
         for event in events:

@@ -70,11 +70,7 @@ class BombScheduler:
             try:
                 await BombHandler.explode_bomb(bomb)
             except Exception:
-                logger.exception(
-                    "폭탄 폭발 처리 실패: cur_id=%s position=%s",
-                    bomb.cur_id,
-                    bomb.position,
-                )
+                logger.exception(f"폭탄 폭발 처리 실패 | cur_id:{bomb.cur_id}, position:{bomb.position}")
 
     @staticmethod
     def _log_task_result(done_task: asyncio.Task) -> None:
