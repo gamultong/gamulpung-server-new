@@ -8,7 +8,7 @@ from data.conn import Message
 from core.event import Event
 from handler.board import BoardHandler
 from handler.cursor import CursorHandler
-from tests.utils import PytestTCM, assert_wait_event, assert_wait_message, build_tiles
+from tests.utils import PytestTCM, assert_wait_event, assert_wait_message, build_tiles, create_cursor_at_position
 from unittest.mock import patch
 from config import BoardConfig
 from datetime import datetime, timedelta
@@ -58,27 +58,6 @@ async def flagged_board_map(db):
         await create_section(db, section)
 
 
-def create_cursor_at_position(pos: Point):
-    """Cursor를 특정 위치에 생성하는 헬퍼"""
-    from data.cursor import Cursor
-    origin_create = Cursor.create
-
-    def create_cursor_effect(
-        id: str,
-        width: int = 0,
-        height: int = 0,
-        color: Color = Color.RED,
-        **_kwargs,
-    ):
-        return origin_create(
-            id,
-            width=width,
-            height=height,
-            position=pos,
-            color=color,
-        )
-
-    return create_cursor_effect
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)
@@ -295,7 +274,7 @@ async def test_ft004_business_rule_dead_cursor():
 
         # 타일 상태 확인 - 깃발이 설치되지 않아야 함
         tile = await BoardHandler.fetch_tile(Point(1, 1))
-        assert tile.is_flag == False, "죽은 커서는 깃발을 설치할 수 없음"
+        assert not tile.is_flag, "죽은 커서는 깃발을 설치할 수 없음"
 
 
 @patch.object(BoardConfig, "LENGTH", new=4)
@@ -320,7 +299,7 @@ async def test_ft004_state_change_flag_installed():
 
         # Before: 깃발이 없는 상태 확인
         tile_before = await BoardHandler.fetch_tile(Point(1, 1))
-        assert tile_before.is_flag == False, "초기 상태에서 깃발이 없어야 함"
+        assert not tile_before.is_flag, "초기 상태에서 깃발이 없어야 함"
 
         # 이전 event 소비
         cl_a.conn.send.await_args_list.clear()
@@ -373,7 +352,7 @@ async def test_ft004_state_change_flag_removed():
 
         # Before: 깃발이 있는 상태 확인
         tile_before = await BoardHandler.fetch_tile(Point(1, 1))
-        assert tile_before.is_flag == True, "초기 상태에서 깃발이 있어야 함"
+        assert tile_before.is_flag, "초기 상태에서 깃발이 있어야 함"
 
         # 이전 event 소비
         cl_a.conn.send.await_args_list.clear()

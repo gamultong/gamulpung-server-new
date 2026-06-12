@@ -4,13 +4,15 @@
 """
 import pytest
 import asyncio
+import os
+import tempfile
 from unittest.mock import patch
 
 from server import app
 from data.event import ServerEvent, ClientEvent
 from data.board import Point, Section, SectionFlag
 from data.board.cursorboard import Color
-from tests.utils import PytestTCM, assert_wait_event, build_tiles
+from tests.utils import PytestTCM, assert_wait_event, build_tiles, create_cursor_at_position
 from config import BoardConfig
 from core.lifecycle import LifecycleProfiler
 
@@ -34,27 +36,6 @@ async def opened_board_map(db):
         await create_section(db, section)
 
 
-def create_cursor_at_position(pos: Point):
-    """Cursor를 특정 위치에 생성하는 헬퍼"""
-    from data.cursor import Cursor
-    origin_create = Cursor.create
-
-    def create_cursor_effect(
-        id: str,
-        width: int = 0,
-        height: int = 0,
-        color: Color = Color.RED,
-        **_kwargs,
-    ):
-        return origin_create(
-            id,
-            width=width,
-            height=height,
-            position=pos,
-            color=color,
-        )
-
-    return create_cursor_effect
 
 
 @patch.object(BoardConfig, "LENGTH", new=5)
@@ -131,9 +112,11 @@ async def test_lifecycle_profiler_move_scenario():
             print(f"{r.timestamp:>12.0f} | {phase:5} | {r.category:5} | {r.name:35} | {args_str}")
         print()
 
-        # JSON 저장
-        profiler.save("tests/profile/move_scenario.json")
-        print("Saved to: tests/profile/move_scenario.json")
+        # JSON 저장 (git 추적 파일을 변경하지 않도록 임시 경로 사용)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            save_path = os.path.join(tmp_dir, "move_scenario.json")
+            profiler.save(save_path)
+            assert os.path.exists(save_path)
 
         # Chrome Trace 형식 검증
         trace_events = profiler.to_trace_events()
