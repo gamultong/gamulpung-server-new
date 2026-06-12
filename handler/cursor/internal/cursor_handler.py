@@ -280,7 +280,6 @@ class CursorHandler:
 
     @classmethod
     async def get_cursor_by_watching_range(cls, range: PointRange):
-        from loguru import logger
 
         result = []
         for key, cursor in cls.cursor_dict.items():
