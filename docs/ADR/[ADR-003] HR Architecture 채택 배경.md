@@ -9,6 +9,4 @@ state 관리와 domain logic을 분리하는 Handler-Receiver 구조를 채택�
 ## 근거(요약)
 - 프로그램의 복잡성은 state에서 온다.
 - domain logic에서 state를 제거하면 로직이 단순해지고 추론이 쉬워진다.
-- Event 기반 단방향 흐름으로 발행 주체(Handler)와 소비 주체(Receiver)가 명확히 분리된다.
-
-원문 답변: [설계 문답 2026-06](/docs/Other/Design%20QnA%202026-06.md)
+- Event 기반 단방향 흐름으로 발행 주체(Handler)와 소비 주체(Receiver)가 명확히 분리된다. ([원문 답변](/docs/Other/Design%20QnA%202026-06.md))
