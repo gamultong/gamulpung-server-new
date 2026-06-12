@@ -14,7 +14,7 @@ from asyncio import sleep
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 
 # SENTRY_DSN이 있을 때만 Sentry 초기화
-if hasattr(SentryConfig, 'SENTRY_DSN') and SentryConfig.SENTRY_DSN:
+if SentryConfig.SENTRY_DSN:
     sentry_sdk.init(
         dsn=SentryConfig.SENTRY_DSN,
         # Add data like request headers and IP for users,
@@ -30,13 +30,10 @@ async def lifespan(app: FastAPI):
     logger.add("log.log")
 
     logger.debug("init start")
-    # TODO : is table 같은거 구현 S
     async with _get_db() as db:
-        try:
-            await set_table(db)
-            await set_cursor_table(db)
-        except:
-            pass
+        # 테이블 생성은 IF NOT EXISTS로 멱등하다
+        await set_table(db)
+        await set_cursor_table(db)
 
         await initialize_board(db)
     logger.debug("init end")
@@ -56,7 +53,7 @@ async def lifespan(app: FastAPI):
         await sleep(step)
         elapsed += step
     else:
-        raise "문제 있음"
+        raise RuntimeError(f"처리 중인 이벤트가 남아 종료 대기 {timeout}초를 초과함")
 
 app = FastAPI(lifespan=lifespan)
 
@@ -91,7 +88,7 @@ def health_check():
 
 @app.get("/sentry-debug")
 def div_zero():
-    error = 1 / 0
+    1 / 0
 
 
 @app.get("/metrics")
