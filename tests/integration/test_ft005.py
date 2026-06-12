@@ -274,7 +274,7 @@ async def test_ft005_business_rule_closed_tile_info_is_masked():
     with PytestTCM(app).append_client(CL_A) as tcm:
         cl_a = tcm.get_client(CL_A)
 
-        # Cursor를 (1, 1) 위치에 생성 후 시야를 1x1로 설정 → 지뢰 (1, 2) 포함
+        # Cursor를 (1, 1) 위치에 생성 (초기 시야 1x1)
         with patch("data.cursor.Cursor.create", side_effect=create_cursor_at_position(Point(1, 1))):
             cl_a.ws.send_json({
                 "header": {"event": ClientEvent.CREATE_CURSOR.value},
@@ -282,26 +282,31 @@ async def test_ft005_business_rule_closed_tile_info_is_masked():
             })
             assert_wait_event(cl_a.conn.send, ServerEvent.CURSORS_STATE)
 
-        cl_a.conn.send.await_args_list.clear()
-
+        # 시야를 2x2로 변경 → 지뢰 (1, 2)와 주변 number 타일 포함
+        # (생성 시와 같은 크기면 변경 없음으로 이벤트가 발행되지 않는다)
         cl_a.ws.send_json({
             "header": {"event": ClientEvent.SET_WINDOW.value},
-            "payload": {"width": 1, "height": 1}
+            "payload": {"width": 2, "height": 2}
         })
 
+        # 변경된 시야 range로 완전 매칭해, 생성 시점의 잔여 TILES_STATE와 구분한다
+        expected_range = PointRange(Point(-1, 3), Point(3, -1))
         received = {}
 
         def capture_tiles_state(msg):
-            if msg.event.event_name == ServerEvent.TILES_STATE and len(msg.event.payload.tiles_li) > 0:
-                received["data"] = msg.event.payload.tiles_li[0].data
-                return True
+            if msg.event.event_name != ServerEvent.TILES_STATE:
+                return False
+            for elem in msg.event.payload.tiles_li:
+                if elem.range == expected_range:
+                    received["data"] = elem.data
+                    return True
             return False
 
         assert_wait_call_if(
             cl_a.conn.send,
             capture_tiles_state,
             timeout=3.0,
-            error_msg="TILES_STATE 이벤트를 받지 못함"
+            error_msg="변경된 시야의 TILES_STATE 이벤트를 받지 못함"
         )
 
         # 비트 구조는 RFC-006 참고: open(7) mine(6) flag(5) color(4-3) number(2-0)
