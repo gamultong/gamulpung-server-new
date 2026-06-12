@@ -58,6 +58,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# receiver 등록 (import 부수효과) — app을 import하면 항상 등록되도록 보장한다
+import receiver  # noqa: E402, F401
+
 
 @app.websocket("/session")
 async def session(ws: WebSocket):

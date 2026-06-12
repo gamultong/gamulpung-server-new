@@ -12,12 +12,12 @@ from handler.connection import ConnectionHandler
 from handler.board import BoardHandler
 from handler.cursor_board import CursorBoardHandler
 
-SET_WINDOW_EVENT = Event[IdDataPayload[str, Cursor] | IdPayload[str]]
+WINDOW_SET_EVENT = Event[IdDataPayload[str, Cursor] | IdPayload[str]]
 
 
 @EventBroker.add_receiver(InternalEvent.WINDOW_SET)
 @LifeCycle.with_async_lifecycle(factory=RLife.create_factory)
-async def set_window_receiver(event: SET_WINDOW_EVENT):
+async def window_set_receiver(event: WINDOW_SET_EVENT):
     id = event.payload.id
 
     try:
