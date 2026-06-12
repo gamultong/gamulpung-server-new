@@ -6,6 +6,7 @@ Event 발행 규칙(어떤 상태 변화가 어떤 Event를 만드는가)을 Dat
 ## 규칙
 - Emitter는 obj의 data 모듈 하위 emitter sub-module에 정의한다.
 - Emitter는 obj의 old/new snapshot을 비교하여 Event 목록을 도출한다.
+- old를 함께 받는 이유는 상태 전이의 의미를 구분하기 위해서다. new 시점 단독으로는 같은 상태라도 어떤 변화의 결과인지 구분할 수 없다.
 - 발행 규칙은 데코레이터로 Emitter에 등록한다.
 - Emitter는 Event를 만들기만 한다. publish는 Handler가 수행한다. ([[RFC-002] HR Architecture](/docs/RFC/%5BRFC-002%5D%20HR%20Architecture.md)의 'Handler = Event 발행 주체' 규칙)
 
