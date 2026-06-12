@@ -1,14 +1,10 @@
 from data.board import PointRange, Tiles, Point, Tile, abs_to_sec, SectionFlag
 from data.board.emitter import TileEmitter
-from data.payload import IdDataPayload, IdPayload
-from data.event import InternalEvent
 
-from core.event import Event
 from core.broker import EventBroker
 from core.lifecycle import HLife, LifeCycle
-from handler.board.storage import _get_db, get_list_by_section_range, get_section, update_section
+from handler.board.storage import get_db, get_list_by_section_range, get_section, update_section
 
-from config import BoardConfig
 from .section_handling.upgrade_section import upgrade_interaction_section, upgrade_numbering_section
 from .section_handling.make_section import make_closed_section
 from loguru import logger
@@ -20,7 +16,7 @@ class BoardHandler:
     - fetch(PointRange) -> Tiles
 
     - open_tiles(Point)
-    - togle_flag(Point)
+    - toggle_flag(Point)
     """
 
     @classmethod
@@ -30,7 +26,7 @@ class BoardHandler:
             abs_to_sec(point_range.bottom_right)
         )
 
-        async with _get_db() as db:
+        async with get_db() as db:
             sections = await get_list_by_section_range(db, sec_pr)
 
         section_dict = {
@@ -67,14 +63,14 @@ class BoardHandler:
 
     @classmethod
     @LifeCycle.with_async_lifecycle(
-        factory=HLife.create_factory("BoardHandler", "togle_flag")
+        factory=HLife.create_factory("BoardHandler", "toggle_flag")
     )
-    async def togle_flag(cls, point: Point):
+    async def toggle_flag(cls, point: Point):
         hlife = HLife.get_lifecycle()
 
         sec_p = abs_to_sec(point)
 
-        async with _get_db() as db:
+        async with get_db() as db:
             section = await get_section(db, sec_p)
             # 섹션이 반드시 존재해야 함
             assert section
@@ -105,7 +101,7 @@ class BoardHandler:
 
         sec_p = abs_to_sec(point)
 
-        async with _get_db() as db:
+        async with get_db() as db:
             section = await get_section(db, sec_p)
             # 섹션이 반드시 존재해야 함
             assert section
@@ -128,7 +124,7 @@ class BoardHandler:
             await update_section(db, section)
 
         events = TileEmitter.get_events(old=old_tile, new=new_tile, point=point)
-        logger.debug(events)
+        logger.debug(f"open_tiles 발행 이벤트 | events:{events}")
 
         hlife.add_events(events)
         for event in events:
@@ -143,7 +139,7 @@ class BoardHandler:
 
         sec_p = abs_to_sec(point)
 
-        async with _get_db() as db:
+        async with get_db() as db:
             section = await get_section(db, sec_p)
             # 섹션이 반드시 존재해야 함
             assert section
@@ -162,7 +158,7 @@ class BoardHandler:
             await update_section(db, section)
 
         events = TileEmitter.get_dismantle_events(point)
-        logger.debug(events)
+        logger.debug(f"dismantle_mine 발행 이벤트 | events:{events}")
 
         hlife.add_events(events)
         for event in events:
@@ -172,7 +168,7 @@ class BoardHandler:
     async def fetch_tile(cls, point: Point) -> Tile:
         sec_p = abs_to_sec(point)
 
-        async with _get_db() as db:
+        async with get_db() as db:
             section = await get_section(db, sec_p)
         assert section
 
@@ -181,11 +177,14 @@ class BoardHandler:
 
     @classmethod
     async def fetch_section(cls, sec_point: Point):
-        async with _get_db() as db:
+        async with get_db() as db:
             section = await get_section(db, sec_point)
             assert section
 
             if section.flag == SectionFlag.CLOSED:
                 await upgrade_numbering_section(db, sec_point)
+                # 격상 결과(NUMBERING, 지뢰 숫자)를 반영한 최신 섹션을 반환한다
+                section = await get_section(db, sec_point)
+                assert section
 
         return section

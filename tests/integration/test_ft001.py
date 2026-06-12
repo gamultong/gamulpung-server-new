@@ -1,6 +1,4 @@
 import pytest
-import pytest_asyncio
-import asyncio
 from server import app
 from data.event import ServerEvent, ClientEvent
 from data.payload import ServerMessage
@@ -9,11 +7,8 @@ from data.board import Point
 from data.cursor_board import Color
 from core.event import Event
 from handler.cursor import CursorHandler
-from handler.connection import ConnectionHandler
 from tests.utils.internal.conn_mock import PytestTCM
 from tests.utils.internal.wait_call import assert_wait_event, assert_wait_message
-from config import BoardConfig
-from unittest.mock import patch
 
 CL_A = "TestClient_A"  # 송신자
 CL_B = "TestClient_B"  # 시야 내 수신자

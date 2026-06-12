@@ -26,6 +26,6 @@ dist/
 build/
 *.egg
 
-# Grafana MCP
-bin/mcp-grafana
+# 로컬 도구 바이너리 (Makefile 참고)
+bin/
 .env.grafana-mcp

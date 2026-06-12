@@ -24,7 +24,11 @@ async def dismantle_mine_receiver(event: DISMANTLE_MINE_EVENT):
 
     point = data.position
 
-    cursor = await CursorHandler.get_by_id(id)
+    try:
+        cursor = await CursorHandler.get_by_id(id)
+    except KeyError:
+        logger.warning(f"커서가 존재하지 않음 | id:{id}")
+        return
     if not cursor.is_alive:
         logger.warning(f"커서가 이미 사망함 | cursor:{cursor}")
         return
@@ -40,7 +44,7 @@ async def dismantle_mine_receiver(event: DISMANTLE_MINE_EVENT):
         logger.warning(f"열린 타일 지뢰 해체 시도 | cursor:{cursor}, tile:{tile}")
         return
 
-    await BoardHandler.togle_flag(point)
+    await BoardHandler.toggle_flag(point)
 
     if tile.is_mine:
         await BoardHandler.dismantle_mine(point)

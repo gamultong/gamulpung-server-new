@@ -4,7 +4,7 @@ from config import BoardConfig
 import tempfile
 import os
 from handler.board.storage import (
-    _get_db,
+    get_db,
     set_table,
     get_section,
     create_section,
@@ -58,7 +58,7 @@ class DB_TestCase(IsolatedAsyncioTestCase):
 
 class GetDB_TestCase(DB_TestCase):
     async def test_normal(self):
-        async with _get_db() as db:
+        async with get_db() as db:
             async with db.execute("SELECT 1") as cur:
                 row = await cur.fetchone()
 
@@ -68,7 +68,7 @@ class GetDB_TestCase(DB_TestCase):
 class TableSet_TestCase(DB_TestCase):
     async def test_normal(self):
         query = "SELECT name FROM sqlite_master WHERE type='table';"
-        async with _get_db() as db:
+        async with get_db() as db:
             await set_table(db)
 
             async with db.execute(query) as cur:
@@ -89,7 +89,7 @@ class Repo_TestCase(DB_TestCase):
         super().tearDown()
 
     async def asyncSetUp(self) -> None:
-        self.db_context = _get_db()
+        self.db_context = get_db()
         self.db = await self.db_context.__aenter__()
         await set_table(self.db)
 

@@ -6,7 +6,7 @@ from data.payload import IdDataPayload, IdPayload
 from data.bomb import InstalledBomb
 from data.board import PointRange
 from data.event import TriggerEvent, InternalEvent
-from handler.cursor_board.internal.cursor_board import CursorBoardHandler
+from handler.cursor_board import CursorBoardHandler
 
 
 DRAW_BOARD_EVENT = Event[IdDataPayload[str, InstalledBomb]]

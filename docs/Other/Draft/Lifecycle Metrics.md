@@ -89,4 +89,4 @@ lifecycle_active
 
 ## 관련 문서
 - [RFC-002 HR Architecture](/docs/RFC/[RFC-002]%20HR%20Architecture.md)
-- [Lifecycle Profiler](/docs/Draft/Lifecycle%20Profiler.md)
+- [Lifecycle Profiler](/docs/Other/Draft/Lifecycle%20Profiler.md)

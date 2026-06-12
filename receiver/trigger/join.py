@@ -1,5 +1,5 @@
 from core.event import Event
-from data.payload import IdPayload, ServerMessage, ClientMessage
+from data.payload import IdPayload, ServerMessage
 from data.event import TriggerEvent, ServerEvent
 from data.cursor import RankRange
 

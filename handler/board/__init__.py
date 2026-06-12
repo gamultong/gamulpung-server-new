@@ -1,2 +1,4 @@
 from .internal.board import BoardHandler
 from .internal.section_handling.init_board import initialize_board
+from .internal.section_handling.upgrade_section import upgrade_interaction_section
+from .internal.section_handling.make_cursor_section import make_cursor_section

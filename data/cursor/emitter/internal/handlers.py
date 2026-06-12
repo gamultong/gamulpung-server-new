@@ -13,14 +13,14 @@ from .emitter import CursorEmitter
 
 @CursorEmitter.add_by_created()
 def create_event(new: Cursor) -> Generator[Event, None, None]:
-    """Cursor 생성 시 NOTIFY_CURSORS, SETTED_WINDOW 이벤트 발행"""
+    """Cursor 생성 시 NOTIFY_CURSORS, WINDOW_SET 이벤트 발행"""
     yield Event(
         event_name=InternalEvent.NOTIFY_CURSORS,
         payload=IdPayload(id=new.id)
     )
 
     yield Event(
-        event_name=InternalEvent.SETTED_WINDOW,
+        event_name=InternalEvent.WINDOW_SET,
         payload=IdPayload(id=new.id)
     )
 
@@ -39,7 +39,7 @@ def notify_event(old: Cursor, new: Cursor) -> Generator[Event, None, None]:
 
 @CursorEmitter.add()
 def set_window_event(old: Cursor, new: Cursor) -> Generator[Event, None, None]:
-    """위치나 window 크기 변경 시 SETTED_WINDOW 이벤트 발행"""
+    """위치나 window 크기 변경 시 WINDOW_SET 이벤트 발행"""
     valid = True
 
     # 위치 변경 없음
@@ -53,6 +53,6 @@ def set_window_event(old: Cursor, new: Cursor) -> Generator[Event, None, None]:
         return
 
     yield Event(
-        event_name=InternalEvent.SETTED_WINDOW,
+        event_name=InternalEvent.WINDOW_SET,
         payload=IdDataPayload(id=new.id, data=old)
     )

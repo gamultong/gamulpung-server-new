@@ -4,13 +4,11 @@ from config import BoardConfig
 import tempfile
 import os
 from handler.board.storage import (
-    _get_db,
+    get_db,
     set_table,
     set_cursor_table,
 )
-from datetime import datetime
 
-from freezegun import freeze_time
 
 
 class UseDB_TestCase(IsolatedAsyncioTestCase):
@@ -33,7 +31,7 @@ class UseTable_TestCase(UseDB_TestCase):
     async def asyncSetUp(self) -> None:
         """Initialize database for tests"""
         await super().asyncSetUp()
-        self.db_context = _get_db()
+        self.db_context = get_db()
         self.db = await self.db_context.__aenter__()
         await set_table(self.db)
         await set_cursor_table(self.db)

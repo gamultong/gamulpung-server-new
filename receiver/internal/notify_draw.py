@@ -8,7 +8,7 @@ from data.event import InternalEvent, ServerEvent
 
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler
-from handler.cursor_board.internal.cursor_board import CursorBoardHandler
+from handler.cursor_board import CursorBoardHandler
 
 
 NOTIFY_DRAW_EVENT = Event[IdPayload[PointRange]]

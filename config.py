@@ -25,7 +25,3 @@ class SentryConfig:
     _sentry_dsn = os.getenv("SENTRY_DSN", "")
     SENTRY_DSN = _sentry_dsn
 
-
-class MetricsConfig:
-    # 메트릭 수집은 always-on (확장용 placeholder)
-    ENABLED = True

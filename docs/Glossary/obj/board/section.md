@@ -6,4 +6,4 @@
 - interaction : 상호작용 가능 상태
 
 ## 참조
-- [[RFC-005] Section 생성 및 numbering]([RFC-005]%20Section%20생성%20및%20numbering.md)
+- [[RFC-005] Section 생성 및 numbering](/docs/RFC/%5BRFC-005%5D%20Section%20생성%20및%20numbering.md)
