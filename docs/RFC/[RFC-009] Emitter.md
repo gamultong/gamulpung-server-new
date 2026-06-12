@@ -1,7 +1,7 @@
 # Emitter
 
 ## 목적
-Event 발행 규칙(어떤 상태 변화가 어떤 Event를 만드는가)을 Data Layer에서 중앙 관리한다. ([초안](/docs/Other/Draft/1단계-Event%20정의%20이동.md))
+Event 발행 규칙(어떤 상태 변화가 어떤 Event를 만드는가)을 Data Layer에서 중앙 관리한다. 상태 변경은 Handler의 일이지만 "변경이 무엇을 의미하는가"의 정의는 Data의 일이므로, Event 도출은 snapshot 비교로 자동화한다. ([초안](/docs/Other/Draft/1단계-Event%20정의%20이동.md), [설계 문답](/docs/Other/Design%20QnA%202026-06.md))
 
 ## 규칙
 - Emitter는 obj의 data 모듈 하위 emitter sub-module에 정의한다.

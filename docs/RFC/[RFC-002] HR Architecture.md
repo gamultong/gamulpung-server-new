@@ -1,7 +1,7 @@
 # HR Architecture
 
 ## 목적
-Event 기반 아키텍처를 통해 발행/소비 주체를 명확히 분리하고 단방향 Event Flow를 구축한다.
+Event 기반 아키텍처를 통해 발행/소비 주체를 명확히 분리하고 단방향 Event Flow를 구축한다. ([[ADR-003] HR Architecture 채택 배경](/docs/ADR/%5BADR-003%5D%20HR%20Architecture%20채택%20배경.md))
 
 ## 규칙
 - HR은 `Handler-Receiver` 패턴을 따른다.
