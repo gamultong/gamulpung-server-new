@@ -23,7 +23,7 @@ class CursorHandler:
     @LifeCycle.with_async_lifecycle(
         factory=HLife.create_factory("CursorHandler", "create")
     )
-    async def create(cls, cursor: Cursor):
+    async def create(cls, cursor: Cursor) -> None:
         hlife = HLife.get_lifecycle()
 
         new_cursor = cursor.copy()
@@ -38,12 +38,12 @@ class CursorHandler:
             await EventBroker.publish(event=event)
 
     @classmethod
-    async def delete(cls, id: str):
+    async def delete(cls, id: str) -> None:
         if id in cls.cursor_dict:
             del cls.cursor_dict[id]
 
     @classmethod
-    async def get_by_id(cls, id: str):
+    async def get_by_id(cls, id: str) -> Cursor:
         return cls.cursor_dict[id].copy()
 
     @classmethod
@@ -119,7 +119,7 @@ class CursorHandler:
     @LifeCycle.with_async_lifecycle(
         factory=HLife.create_factory("CursorHandler", "move")
     )
-    async def move(cls, cursor: Cursor, position: Point):
+    async def move(cls, cursor: Cursor, position: Point) -> None:
         hlife = HLife.get_lifecycle()
 
         old_cur = await cls.get_by_id(cursor.id)
@@ -155,7 +155,7 @@ class CursorHandler:
     @LifeCycle.with_async_lifecycle(
         factory=HLife.create_factory("CursorHandler", "death")
     )
-    async def death(cls, cursor: Cursor):
+    async def death(cls, cursor: Cursor) -> None:
         hlife = HLife.get_lifecycle()
 
         # old_cur get 없이 cursor 그냥 써도됨
@@ -188,7 +188,7 @@ class CursorHandler:
     @LifeCycle.with_async_lifecycle(
         factory=HLife.create_factory("CursorHandler", "increase_score")
     )
-    async def increase_score(cls, cursor: Cursor, score: int):
+    async def increase_score(cls, cursor: Cursor, score: int) -> None:
         hlife = HLife.get_lifecycle()
 
         old_cur = await cls.get_by_id(cursor.id)
@@ -212,7 +212,7 @@ class CursorHandler:
             await EventBroker.publish(event=event)
 
     @classmethod
-    async def get_cursor_by_rank_range(cls, rank_range: RankRange):
+    async def get_cursor_by_rank_range(cls, rank_range: RankRange) -> CursorRankRange:
         start = rank_range.start
         end = rank_range.end
 
@@ -233,7 +233,7 @@ class CursorHandler:
         )
 
     @classmethod
-    async def scoreboard_modify(cls, old_cur_range: CursorRankRange, new_cur_range: CursorRankRange):
+    async def scoreboard_modify(cls, old_cur_range: CursorRankRange, new_cur_range: CursorRankRange) -> None:
         old_cursors = old_cur_range.cursors
         new_cursors = new_cur_range.cursors
         if old_cursors != new_cursors:
@@ -251,7 +251,7 @@ class CursorHandler:
     @LifeCycle.with_async_lifecycle(
         factory=HLife.create_factory("CursorHandler", "set_window")
     )
-    async def set_window(cls, cursor: Cursor, width: int, height: int):
+    async def set_window(cls, cursor: Cursor, width: int, height: int) -> None:
         hlife = HLife.get_lifecycle()
 
         old_cur = await cls.get_by_id(cursor.id)
@@ -273,7 +273,7 @@ class CursorHandler:
     @LifeCycle.with_async_lifecycle(
         factory=HLife.create_factory("CursorHandler", "grant_item")
     )
-    async def grant_item(cls, cursor: Cursor, item_type: ItemType, amount: int):
+    async def grant_item(cls, cursor: Cursor, item_type: ItemType, amount: int) -> None:
         hlife = HLife.get_lifecycle()
 
         old_cur = await cls.get_by_id(cursor.id)
@@ -291,11 +291,11 @@ class CursorHandler:
             await EventBroker.publish(event=event)
 
     @classmethod
-    async def update(cls, cursor: Cursor):
+    async def update(cls, cursor: Cursor) -> None:
         cls.cursor_dict[cursor.id] = cursor.copy()
 
     @classmethod
-    async def get_cursor_by_watching_range(cls, range: PointRange):
+    async def get_cursor_by_watching_range(cls, range: PointRange) -> list[Cursor]:
 
         result = []
         for key, cursor in cls.cursor_dict.items():
@@ -312,7 +312,7 @@ class CursorHandler:
         return result
 
     @classmethod
-    async def get_cursor_in_range(cls, range: PointRange):
+    async def get_cursor_in_range(cls, range: PointRange) -> list[Cursor]:
         return [
             cursor.copy()
             for key, cursor in cls.cursor_dict.items()
