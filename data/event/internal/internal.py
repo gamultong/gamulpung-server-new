@@ -9,4 +9,4 @@ class InternalEvent(EventEnum):
     NOTIFY_EXPLOSION = auto()
     NOTIFY_SCOREBOARD = auto()
     NOTIFY_TILES = auto()
-    SETTED_WINDOW = auto()
+    WINDOW_SET = auto()

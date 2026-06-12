@@ -36,10 +36,10 @@ class Conn():
         await self.conn.close()
 
     async def receive(self) -> Message[Event[IdDataPayload]]:
-        row_json = await self.conn.receive_json()
-        logger.debug(f"[{self.id}]client-message row_json: \n{row_json}")
+        raw_json = await self.conn.receive_json()
+        logger.debug(f"[{self.id}]client-message raw_json: \n{raw_json}")
 
-        message = Message[Event].from_json(row_json)
+        message = Message[Event].from_json(raw_json)
         message.event.payload = IdDataPayload(id=self.id, data=message.event.payload)
 
         return message
@@ -47,8 +47,8 @@ class Conn():
     async def send(self, msg: Message):
         logger.debug(f"[{self.id}]server-message: \n{msg}")
 
-        row_json = msg.to_dict()
-        logger.debug(f"[{self.id}]server-message row: \n{row_json}")
+        raw_json = msg.to_dict()
+        logger.debug(f"[{self.id}]server-message raw: \n{raw_json}")
 
         if not (self.conn.application_state == WebSocketState.CONNECTED):
             # 커넥션이 종료되었는데도 타이밍 문제로 인해 커넥션을 가져왔을 수 있음.
@@ -57,7 +57,7 @@ class Conn():
 
         # comment : https://github.com/gamultong/gamulpung-server-new/pull/1#discussion_r2492845020
         try:
-            await self.conn.send_json(row_json)
+            await self.conn.send_json(raw_json)
         except RuntimeError as e:
             # uvicorn이 던지는 그 에러인 경우만 잡아서 로그로 남기고 무시
             if "websocket.close" in str(e) or "response already completed" in str(e):

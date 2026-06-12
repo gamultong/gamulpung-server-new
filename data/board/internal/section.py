@@ -34,9 +34,9 @@ class Section(DataObj):
     @property
     def range(self):
         """section의 범위"""
-        l = BoardConfig.LENGTH
-        top_left_point = Point(self.point.x * l, (self.point.y + 1) * l - 1)
-        bottom_right_point = Point((self.point.x + 1) * l - 1, self.point.y * l)
+        length = BoardConfig.LENGTH
+        top_left_point = Point(self.point.x * length, (self.point.y + 1) * length - 1)
+        bottom_right_point = Point((self.point.x + 1) * length - 1, self.point.y * length)
         return PointRange(
             top_left=top_left_point,
             bottom_right=bottom_right_point

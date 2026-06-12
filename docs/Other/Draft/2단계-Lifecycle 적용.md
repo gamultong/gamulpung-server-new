@@ -11,7 +11,7 @@ Handler와 Receiver의 실행을 추적하고 로깅하여 Observability를 확�
 ### 1. HLife (Handler Lifecycle) 적용
 
 Handler 메서드 실행 시 before/after snapshot 기록:
-- `BoardHandler.togle_flag()`
+- `BoardHandler.toggle_flag()`
 - `BoardHandler.open_tiles()`
 - `CursorHandler.create()`
 - `CursorHandler.move()`

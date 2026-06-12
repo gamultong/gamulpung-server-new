@@ -32,6 +32,6 @@ async def set_flag_receiver(event: SET_FLAG_EVENT):
         logger.warning(f"깃발 설치 가능 범위 밖으로 이동하려함 | cursor:{cursor}, point:{point}")
         return
 
-    await BoardHandler.togle_flag(point)
+    await BoardHandler.toggle_flag(point)
 
     await CursorHandler.increase_score(cursor, 10)
