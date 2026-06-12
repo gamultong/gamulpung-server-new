@@ -1,3 +1,4 @@
+# act 바이너리는 https://github.com/nektos/act 릴리스에서 받아 bin/에 둔다 (git 미추적)
 ACT = bin/act
 TYPE = dev
 
