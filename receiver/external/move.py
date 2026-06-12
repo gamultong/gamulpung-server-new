@@ -2,9 +2,8 @@ from core.event import Event
 from core.broker import EventBroker
 from core.lifecycle import LifeCycle, RLife
 
-from data.payload import IdDataPayload, ClientMessage, IdPayload
-from data.cursor import Cursor
-from data.event import ServerEvent, ClientEvent
+from data.payload import IdDataPayload, ClientMessage
+from data.event import ClientEvent
 
 from handler.cursor import CursorHandler
 from handler.board import BoardHandler

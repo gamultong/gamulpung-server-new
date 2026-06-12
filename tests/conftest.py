@@ -1,8 +1,6 @@
 """통합 테스트 공통 fixture"""
 import pytest
 import pytest_asyncio
-import aiosqlite
-from contextlib import asynccontextmanager
 from unittest.mock import patch
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler

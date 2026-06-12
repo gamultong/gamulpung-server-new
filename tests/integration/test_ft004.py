@@ -1,6 +1,4 @@
 import pytest
-import pytest_asyncio
-import asyncio
 from server import app
 from data.event import ServerEvent, ClientEvent
 from data.board import Point, Section, SectionFlag, PointRange, Tile, Tiles
@@ -10,12 +8,10 @@ from data.conn import Message
 from core.event import Event
 from handler.board import BoardHandler
 from handler.cursor import CursorHandler
-from handler.connection import ConnectionHandler
 from tests.utils import PytestTCM, assert_wait_event, assert_wait_message, build_tiles
 from unittest.mock import patch
 from config import BoardConfig
 from datetime import datetime, timedelta
-import time
 
 CL_A = "TestClient_A"
 

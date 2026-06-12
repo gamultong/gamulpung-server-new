@@ -1,14 +1,10 @@
 from data.board import PointRange, Tiles, Point, Tile, abs_to_sec, SectionFlag
 from data.board.emitter import TileEmitter
-from data.payload import IdDataPayload, IdPayload
-from data.event import InternalEvent
 
-from core.event import Event
 from core.broker import EventBroker
 from core.lifecycle import HLife, LifeCycle
 from handler.board.storage import _get_db, get_list_by_section_range, get_section, update_section
 
-from config import BoardConfig
 from .section_handling.upgrade_section import upgrade_interaction_section, upgrade_numbering_section
 from .section_handling.make_section import make_closed_section
 from loguru import logger

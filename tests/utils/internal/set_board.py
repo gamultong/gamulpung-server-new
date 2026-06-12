@@ -1,7 +1,6 @@
 from .use_db_tc import UseTable_TestCase
 from unittest.mock import patch, AsyncMock
-from handler.board.storage import DB
-from typing import Callable, Awaitable
+from typing import Callable
 
 
 # TODO: tcm에 편입

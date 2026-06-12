@@ -1,12 +1,10 @@
 import pytest
-import pytest_asyncio
 import asyncio
 from server import app
 from data.event import ServerEvent, ClientEvent
 from data.board import Point, Section, SectionFlag
 from data.board.cursorboard import Color
 from handler.cursor import CursorHandler
-from handler.connection import ConnectionHandler
 from tests.utils import PytestTCM, assert_wait_event, build_tiles
 from unittest.mock import patch
 from config import BoardConfig

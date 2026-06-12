@@ -1,21 +1,15 @@
 import pytest
-import pytest_asyncio
-import asyncio
 from server import app
 from data.event import ServerEvent, ClientEvent
 from data.payload import ServerMessage
 from data.conn import Message
-from data.board import Point
 from data.board.cursorboard import Color
 from data.cursor import Cursor
 from core.event import Event
 from handler.cursor import CursorHandler
-from handler.connection import ConnectionHandler
 from tests.utils import PytestTCM, assert_wait_event, assert_wait_message, assert_wait_call_if
-from unittest.mock import patch
 from datetime import datetime
 from freezegun import freeze_time
-import time
 
 CL_A = "TestClient_A"
 CL_B = "TestClient_B"

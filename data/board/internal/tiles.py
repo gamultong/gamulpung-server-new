@@ -1,8 +1,7 @@
 from __future__ import annotations
 from core.dataobj import DataObj
-from dataclasses import dataclass
 from enum import Enum
-from .point import Point, PointRange, get_overlap
+from .point import Point, PointRange
 from .tile import Tile
 from .cursor_tile import CursorTile, CURSOR_TILE_BYTES
 

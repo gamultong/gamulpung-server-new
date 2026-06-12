@@ -1,12 +1,10 @@
-from fastapi.websockets import WebSocket, WebSocketState, WebSocketDisconnect
-from websockets.exceptions import ConnectionClosed
+from fastapi.websockets import WebSocket, WebSocketState
 from data.conn import Message
 from data.payload import IdDataPayload
 from core.event import Event
 
 from dataclasses import dataclass
 from uuid import uuid4
-import json
 from loguru import logger
 
 """
