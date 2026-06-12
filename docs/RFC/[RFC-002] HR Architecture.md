@@ -9,7 +9,7 @@ Event 기반 아키텍처를 통해 발행/소비 주체를 명확히 분리하�
 - 3개 Layer로 구성된다: DataLayer, HandlerLayer, ReceiverLayer
 - Layer 의존관계: ReceiverLayer -> HandlerLayer -> DataLayer
 - Handler·Receiver의 실행 추적은 [[RFC-008] Lifecycle](/docs/RFC/%5BRFC-008%5D%20Lifecycle.md)을 따른다.
-- Handler·Receiver의 작성 규칙은 [[RFC-011] HR 구현 패턴](/docs/RFC/%5BRFC-011%5D%20HR%20구현%20패턴.md)을 따른다.
+- Handler·Receiver의 작성 규칙은 [HR 구현 가이드](/docs/Other/Convention%20guide/HR.md)를 따른다.
 
 ![Layer 의존관계](/docs/RFC/img/1-1.png)
 
