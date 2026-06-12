@@ -1,6 +1,7 @@
 from core.event import Event
 from data.payload import IdDataPayload, ServerMessage, ClientMessage
 from data.event import ServerEvent, ClientEvent
+from loguru import logger
 
 from core.broker import EventBroker
 from core.lifecycle import LifeCycle, RLife
@@ -28,7 +29,11 @@ async def chat_receiver(event: CHAT_EVENT):
     )
 
     # 발신자의 cursor 조회
-    sender_cursor = await CursorHandler.get_by_id(id)
+    try:
+        sender_cursor = await CursorHandler.get_by_id(id)
+    except KeyError:
+        logger.warning(f"커서가 존재하지 않음 | id:{id}")
+        return
 
     # 발신자의 시야 범위 내 커서들 조회
     cursors_in_view = await CursorHandler.get_cursors_by_cursor_window(sender_cursor)
