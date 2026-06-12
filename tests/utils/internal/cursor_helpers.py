@@ -1,5 +1,5 @@
 from data.board import Point
-from data.board.cursorboard import Color
+from data.cursor_board import Color
 from data.cursor import Cursor
 
 

@@ -11,7 +11,7 @@ from unittest.mock import patch
 from server import app
 from data.event import ServerEvent, ClientEvent
 from data.board import Point, Section, SectionFlag
-from data.board.cursorboard import Color
+from data.cursor_board import Color
 from tests.utils import PytestTCM, assert_wait_event, build_tiles, create_cursor_at_position
 from config import BoardConfig
 from core.lifecycle import LifecycleProfiler

@@ -3,7 +3,7 @@
     "name": "join_receiver",
     "cat": "RLife",
     "ph": "B",
-    "ts": 83939.98199608177,
+    "ts": 111039.34600032517,
     "pid": 1,
     "tid": 1,
     "args": {
@@ -14,7 +14,7 @@
     "name": "join_receiver",
     "cat": "RLife",
     "ph": "E",
-    "ts": 92152.39499462768,
+    "ts": 123087.78400074516,
     "pid": 1,
     "tid": 1
   },
@@ -22,7 +22,7 @@
     "name": "create_cursor_receiver",
     "cat": "RLife",
     "ph": "B",
-    "ts": 117713.19800755009,
+    "ts": 151180.91000022105,
     "pid": 1,
     "tid": 1,
     "args": {
@@ -33,18 +33,18 @@
     "name": "CursorHandler.create",
     "cat": "HLife",
     "ph": "B",
-    "ts": 127030.55900055915,
+    "ts": 156979.8440004888,
     "pid": 1,
     "tid": 1,
     "args": {
-      "caller_id": "2a7036d4-ae9e-47cd-bb4d-b5577b3f9493"
+      "caller_id": "8e8870aa-9990-47ab-81c0-b84854c29cee"
     }
   },
   {
     "name": "notify_cursors_receiver",
     "cat": "RLife",
     "ph": "B",
-    "ts": 130695.52701199427,
+    "ts": 165067.57600018318,
     "pid": 1,
     "tid": 1,
     "args": {
@@ -55,7 +55,7 @@
     "name": "notify_cursors_receiver",
     "cat": "RLife",
     "ph": "E",
-    "ts": 143768.82801298052,
+    "ts": 183579.16700006172,
     "pid": 1,
     "tid": 1
   },
@@ -63,7 +63,7 @@
     "name": "set_window_receiver",
     "cat": "RLife",
     "ph": "B",
-    "ts": 157412.0940058492,
+    "ts": 199923.9660008243,
     "pid": 1,
     "tid": 1,
     "args": {
@@ -74,18 +74,18 @@
     "name": "CursorBoardHandler.fetch",
     "cat": "HLife",
     "ph": "B",
-    "ts": 169185.7149999123,
+    "ts": 215959.59100068285,
     "pid": 1,
     "tid": 1,
     "args": {
-      "caller_id": "fcadaaf1-675c-4fcf-bd87-dafaf0c85a84"
+      "caller_id": "0ce9b4d5-2f88-44f6-a723-74bf71cd4b14"
     }
   },
   {
     "name": "CursorBoardHandler.fetch",
     "cat": "HLife",
     "ph": "E",
-    "ts": 171997.3199942615,
+    "ts": 219731.82000056113,
     "pid": 1,
     "tid": 1
   },
@@ -93,7 +93,7 @@
     "name": "set_window_receiver",
     "cat": "RLife",
     "ph": "E",
-    "ts": 190988.7189976871,
+    "ts": 248664.5340004543,
     "pid": 1,
     "tid": 1
   },
@@ -101,7 +101,7 @@
     "name": "CursorHandler.create",
     "cat": "HLife",
     "ph": "E",
-    "ts": 200983.98401751183,
+    "ts": 262385.45600062935,
     "pid": 1,
     "tid": 1,
     "args": {
@@ -115,7 +115,7 @@
     "name": "create_cursor_receiver",
     "cat": "RLife",
     "ph": "E",
-    "ts": 206225.83699878305,
+    "ts": 268189.44700062275,
     "pid": 1,
     "tid": 1
   },
@@ -123,7 +123,7 @@
     "name": "move_receiver",
     "cat": "RLife",
     "ph": "B",
-    "ts": 228520.39302233607,
+    "ts": 296116.4060006922,
     "pid": 1,
     "tid": 1,
     "args": {
@@ -134,18 +134,18 @@
     "name": "CursorHandler.move",
     "cat": "HLife",
     "ph": "B",
-    "ts": 231228.64399920218,
+    "ts": 299563.9990003838,
     "pid": 1,
     "tid": 1,
     "args": {
-      "caller_id": "5a816555-38f5-456e-a872-5eae111a0690"
+      "caller_id": "99a662e6-1a34-428a-aa79-ed7c10460d29"
     }
   },
   {
     "name": "notify_scoreboard_receiver",
     "cat": "RLife",
     "ph": "B",
-    "ts": 235911.64802201092,
+    "ts": 305989.46400004934,
     "pid": 1,
     "tid": 1,
     "args": {
@@ -156,7 +156,7 @@
     "name": "notify_scoreboard_receiver",
     "cat": "RLife",
     "ph": "E",
-    "ts": 236080.90801280923,
+    "ts": 306287.3970002329,
     "pid": 1,
     "tid": 1
   },
@@ -164,7 +164,7 @@
     "name": "notify_cursors_receiver",
     "cat": "RLife",
     "ph": "B",
-    "ts": 248573.1470223982,
+    "ts": 323697.81300076284,
     "pid": 1,
     "tid": 1,
     "args": {
@@ -175,7 +175,7 @@
     "name": "notify_cursors_receiver",
     "cat": "RLife",
     "ph": "E",
-    "ts": 261689.09401167184,
+    "ts": 335244.6090002559,
     "pid": 1,
     "tid": 1
   },
@@ -183,7 +183,7 @@
     "name": "set_window_receiver",
     "cat": "RLife",
     "ph": "B",
-    "ts": 275061.0140210483,
+    "ts": 351385.0490007826,
     "pid": 1,
     "tid": 1,
     "args": {
@@ -194,18 +194,18 @@
     "name": "CursorBoardHandler.fetch",
     "cat": "HLife",
     "ph": "B",
-    "ts": 286054.9580072984,
+    "ts": 363753.99799999286,
     "pid": 1,
     "tid": 1,
     "args": {
-      "caller_id": "88cdf452-f36d-4ba3-821f-1e7686412d82"
+      "caller_id": "f80588a9-8920-425e-85c1-d34b42be4444"
     }
   },
   {
     "name": "CursorBoardHandler.fetch",
     "cat": "HLife",
     "ph": "E",
-    "ts": 289632.80402240343,
+    "ts": 366250.0340005863,
     "pid": 1,
     "tid": 1
   },
@@ -213,7 +213,7 @@
     "name": "set_window_receiver",
     "cat": "RLife",
     "ph": "E",
-    "ts": 313237.7389993053,
+    "ts": 371611.65900033666,
     "pid": 1,
     "tid": 1
   },
@@ -221,7 +221,7 @@
     "name": "CursorHandler.move",
     "cat": "HLife",
     "ph": "E",
-    "ts": 323769.3050177768,
+    "ts": 382327.5620006825,
     "pid": 1,
     "tid": 1,
     "args": {
@@ -235,26 +235,7 @@
     "name": "move_receiver",
     "cat": "RLife",
     "ph": "E",
-    "ts": 329188.13699507155,
-    "pid": 1,
-    "tid": 1
-  },
-  {
-    "name": "quit_receiver",
-    "cat": "RLife",
-    "ph": "B",
-    "ts": 349465.0670036208,
-    "pid": 1,
-    "tid": 1,
-    "args": {
-      "event": "QUIT"
-    }
-  },
-  {
-    "name": "quit_receiver",
-    "cat": "RLife",
-    "ph": "E",
-    "ts": 349563.66100232117,
+    "ts": 386937.11800078745,
     "pid": 1,
     "tid": 1
   }

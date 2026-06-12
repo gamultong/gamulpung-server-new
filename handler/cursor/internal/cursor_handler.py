@@ -6,7 +6,6 @@ from core.broker import EventBroker
 from core.lifecycle import HLife, LifeCycle
 
 from data.cursor import Cursor, CursorRankRange, RankRange, ItemType
-from data.board.cursorboard import Color
 from data.cursor.emitter import CursorEmitter
 from data.payload import IdDataPayload
 from data.board import is_overlap, PointRange, Point, Tiles, TileKind, CursorTile
@@ -29,9 +28,6 @@ class CursorHandler:
 
         new_cursor = cursor.copy()
 
-        if await cls.is_color_taken(new_cursor.color):
-            raise ValueError(f"이미 사용 중인 color 입니다: {int(new_cursor.color)}")
-
         cls.cursor_dict[cursor.id] = new_cursor
 
         hlife.set_snapshot(before=None, after=new_cursor)
@@ -49,6 +45,30 @@ class CursorHandler:
     @classmethod
     async def get_by_id(cls, id: str):
         return cls.cursor_dict[id].copy()
+
+    @classmethod
+    async def to_my_tiles_data(cls, cursor_tiles: Tiles, owner_id: str) -> str:
+        assert cursor_tiles.tile_kind == TileKind.CURSOR
+
+        tile_bytes = len(CursorTile.create(None).data)
+        tile_count = cursor_tiles.width * cursor_tiles.height
+        assert len(cursor_tiles.data) == tile_count * tile_bytes
+
+        my_tiles_data = bytearray(tile_count)
+
+        for idx in range(tile_count):
+            start = idx * tile_bytes
+            end = start + tile_bytes
+            tile = CursorTile.from_bytes(bytes(cursor_tiles.data[start:end]))
+            user_id = tile.user_id
+
+            if user_id is None:
+                continue
+
+            if user_id == owner_id:
+                my_tiles_data[idx] = 1
+
+        return my_tiles_data.hex()
 
     @classmethod
     async def to_colored_tiles_data(cls, cursor_tiles: Tiles) -> str:
@@ -79,15 +99,11 @@ class CursorHandler:
             except KeyError:
                 continue
 
-            color = int(cursor.color)
-            color_cache[user_id] = color
-            colored_tiles_data[idx] = color
+            color_value = int(cursor.color)
+            color_cache[user_id] = color_value
+            colored_tiles_data[idx] = color_value
 
         return colored_tiles_data.hex()
-
-    @classmethod
-    async def is_color_taken(cls, color: Color) -> bool:
-        return any(cursor.color == color for cursor in cls.cursor_dict.values())
 
     @classmethod
     async def get_cursors_by_cursor_window(cls, cursor: Cursor) -> list[Cursor]:

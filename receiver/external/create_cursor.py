@@ -6,7 +6,7 @@ from data.payload import IdDataPayload, ClientMessage, ServerMessage
 from data.cursor import Cursor
 from data.event import ServerEvent, ClientEvent
 from data.board import Point
-from data.board.cursorboard import Color
+from data.cursor_board import Color
 
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler
@@ -33,10 +33,6 @@ async def create_cursor_receiver(event: CREATE_CURSOR_EVENT):
         color = Color(data.color)
     except ValueError:
         logger.warning(f"유효하지 않은 color 값: id={id}, color={data.color}")
-        return
-
-    if await CursorHandler.is_color_taken(color):
-        logger.warning(f"중복 color 사용 시도: id={id}, color={color.value}")
         return
 
     # 클라이언트가 제공한 window 크기와 color로 커서 생성

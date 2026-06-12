@@ -2,7 +2,7 @@ import pytest
 from server import app
 from data.event import ServerEvent, ClientEvent
 from data.board import Point, Section, SectionFlag, PointRange, Tile, Tiles
-from data.board.cursorboard import Color
+from data.cursor_board import Color
 from data.payload import ServerMessage
 from data.conn import Message
 from core.event import Event

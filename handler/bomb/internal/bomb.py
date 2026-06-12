@@ -30,6 +30,10 @@ class BombHandler:
         )
         await enqueue_installed_bomb(installed_bomb)
 
+        installed_events = BombEmitter.get_installed_events(installed_bomb)
+        for event in installed_events:
+            await EventBroker.publish(event=event)
+
     @classmethod
     @LifeCycle.with_async_lifecycle(
         factory=HLife.create_factory("BombHandler", "explode_bomb")

@@ -34,14 +34,14 @@ class EventNaming_TestCase(unittest.TestCase):
     def test_server_event_members(self):
         self.assertEnumHasNames(
             ServerEvent,
-            ["CHAT", "CURSORS_STATE", "COLORED_TILES_STATE", "EXPLOSION", "SCOREBOARD_STATE", "TILES_STATE", "MY_CURSOR", "QUIT_CURSOR"],
+            ["CHAT", "CURSORS_STATE", "COLORED_TILES_STATE", "BOMB_POSITION", "EXPLOSION", "SCOREBOARD_STATE", "TILES_STATE", "MY_CURSOR", "QUIT_CURSOR"],
         )
         self.assertEnumValuesUnique(ServerEvent)
 
     def test_internal_event_members(self):
         self.assertEnumHasNames(
             InternalEvent,
-            ["NOTIFY_CURSORS", "NOTIFY_DRAW", "NOTIFY_EXPLOSION", "NOTIFY_SCOREBOARD", "NOTIFY_TILES", "WINDOW_SET"],
+            ["NOTIFY_CURSORS", "NOTIFY_DRAW", "NOTIFY_EXPLOSION", "NOTIFY_SCOREBOARD", "NOTIFY_TILES", "WINDOW_SET", "INSTALLED_BOMB"],
         )
         self.assertEnumValuesUnique(InternalEvent)
 
@@ -55,6 +55,7 @@ class EventNaming_TestCase(unittest.TestCase):
         self.assertEqual(ServerEvent.CURSORS_STATE.value, "CURSORS-STATE")
         self.assertEqual(InternalEvent.NOTIFY_SCOREBOARD.value, "NOTIFY-SCOREBOARD")
         self.assertEqual(ServerEvent.COLORED_TILES_STATE.value, "COLORED-TILES-STATE")
+        self.assertEqual(ServerEvent.BOMB_POSITION.value, "BOMB-POSITION")
         self.assertEqual(InternalEvent.NOTIFY_DRAW.value, "NOTIFY-DRAW")
 
     def test_scope_is_accumulated(self):
