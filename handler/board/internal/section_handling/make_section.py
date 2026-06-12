@@ -61,10 +61,12 @@ def make_closed_section(point: Point):
 
 def make_section(point: Point):
     length = BoardConfig.LENGTH
-    m = (length**2)/BoardConfig.MINE_RATIO
+    # 기대 지뢰 수: 전체 타일 수 * 지뢰 비율
+    expected = (length**2) * BoardConfig.MINE_RATIO
 
     tiles, count = rand_tiles()
-    while m/2 <= count <= m*2:
+    # 지뢰 수가 기대치의 절반~2배를 벗어나면 다시 생성한다
+    while not (expected/2 <= count <= expected*2):
         tiles, count = rand_tiles()
 
     return Section(point, tiles)

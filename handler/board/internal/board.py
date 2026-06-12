@@ -183,5 +183,8 @@ class BoardHandler:
 
             if section.flag == SectionFlag.CLOSED:
                 await upgrade_numbering_section(db, sec_point)
+                # 격상 결과(NUMBERING, 지뢰 숫자)를 반영한 최신 섹션을 반환한다
+                section = await get_section(db, sec_point)
+                assert section
 
         return section
