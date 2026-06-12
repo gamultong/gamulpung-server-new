@@ -27,11 +27,11 @@ async def window_set_receiver(event: WINDOW_SET_EVENT):
         return
     window_range = cursor.get_window_range()
 
-    # 타일 정보 조회 및 전송
+    # 타일 정보 조회 및 전송 (닫힌 타일의 mine·number는 클라이언트에 노출하지 않는다)
     tiles = await BoardHandler.fetch(window_range)
 
     elem = ServerMessage.TilesState.Elem(
-        data=tiles.to_str(),
+        data=tiles.hide_info().to_str(),
         range=window_range
     )
 

@@ -29,8 +29,9 @@ async def notify_tiles_receiver(event: NOTIFY_TILES_EVENT):
         f"cursor_ids={[c.id for c in cursors]}"
     )
 
+    # 닫힌 타일의 mine·number는 클라이언트에 노출하지 않는다
     elem = ServerMessage.TilesState.Elem(
-        data=tiles.to_str(),
+        data=tiles.hide_info().to_str(),
         range=point_range
     )
 

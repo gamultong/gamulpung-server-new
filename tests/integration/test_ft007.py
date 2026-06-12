@@ -145,7 +145,8 @@ async def test_ft007_dismantle_mine_scenario():
         })
 
         # 깃발 해제로 인한 (1,1) 닫힌 타일 TILES_STATE 1회 무시
-        ignore_tile_state(cl_a.conn.send, Point(1, 1), flag=False, opened=False, mine=True)
+        # 닫힌 타일은 마스킹되어 mine 비트가 전송되지 않는다 (RFC-006)
+        ignore_tile_state(cl_a.conn.send, Point(1, 1), flag=False, opened=False, mine=False)
 
         assert_wait_call_if(
             cl_a.conn.send,
@@ -202,7 +203,8 @@ async def test_ft007_grant_bomb_on_dismantle_mine():
             "payload": {"position": {"x": 1, "y": 1}}
         })
 
-        ignore_tile_state(cl_a.conn.send, Point(1, 1), flag=False, opened=False, mine=True)
+        # 닫힌 타일은 마스킹되어 mine 비트가 전송되지 않는다 (RFC-006)
+        ignore_tile_state(cl_a.conn.send, Point(1, 1), flag=False, opened=False, mine=False)
 
         assert_wait_call_if(
             cl_a.conn.send,
