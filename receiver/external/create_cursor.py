@@ -10,7 +10,6 @@ from data.cursor_board import Color
 
 from handler.cursor import CursorHandler
 from handler.connection import ConnectionHandler
-from utils.stats import record_stat_event
 from loguru import logger
 
 CREATE_CURSOR_EVENT = Event[IdDataPayload[str, ClientMessage.CreateCursor]]
@@ -56,14 +55,3 @@ async def create_cursor_receiver(event: CREATE_CURSOR_EVENT):
 
     # 핸들러에 저장 (CursorHandler.create가 자동으로 NOTIFY_CURSORS를 통해 CURSORS_STATE 발행)
     await CursorHandler.create(cursor)
-    await record_stat_event(
-        "CREATE_CURSOR",
-        actor_id=id,
-        point=cursor.position,
-        value=1,
-        payload={
-            "width": data.width,
-            "height": data.height,
-            "color": int(color),
-        },
-    )

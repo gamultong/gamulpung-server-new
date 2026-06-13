@@ -6,7 +6,6 @@ from core.broker import EventBroker
 from core.lifecycle import LifeCycle, RLife
 from handler.board import BoardHandler
 from handler.cursor import CursorHandler
-from utils.stats import record_stat_event
 from loguru import logger
 
 SET_FLAG_EVENT = Event[IdDataPayload[str, ClientMessage.SetFlag]]
@@ -32,10 +31,3 @@ async def set_flag_receiver(event: SET_FLAG_EVENT):
     await BoardHandler.togle_flag(point)
 
     await CursorHandler.increase_score(cursor, 10)
-    await record_stat_event(
-        "SET_FLAG",
-        actor_id=id,
-        point=point,
-        value=1,
-        payload={"score_delta": 10},
-    )

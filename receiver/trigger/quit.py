@@ -6,7 +6,6 @@ from core.broker import EventBroker
 from core.lifecycle import LifeCycle, RLife
 from handler.connection import ConnectionHandler
 from handler.cursor import CursorHandler
-from utils.stats import record_stat_event
 
 QUIT = Event[IdPayload[str]]
 
@@ -15,15 +14,6 @@ QUIT = Event[IdPayload[str]]
 @LifeCycle.with_async_lifecycle(factory=RLife.create_factory)
 async def quit_receiver(event: QUIT):
     id = event.payload.id
-
-    point = None
-    had_cursor = False
-    try:
-        cursor = await CursorHandler.get_by_id(id)
-        point = cursor.position
-        had_cursor = True
-    except KeyError:
-        pass
 
     await CursorHandler.delete(id)
 
@@ -35,13 +25,3 @@ async def quit_receiver(event: QUIT):
     )
 
     await ConnectionHandler.broadcast(_event)
-    await record_stat_event(
-        "QUIT",
-        actor_id=id,
-        point=point,
-        value=1,
-        payload={
-            "connection_count": len(ConnectionHandler.conn_dict),
-            "had_cursor": had_cursor,
-        },
-    )

@@ -7,7 +7,6 @@ from core.broker import EventBroker
 from core.lifecycle import LifeCycle, RLife
 from handler.connection import ConnectionHandler
 from handler.cursor import CursorHandler
-from utils.stats import record_stat_event
 
 JOIN = Event[IdPayload[str]]
 
@@ -36,12 +35,4 @@ async def join_receiver(event: JOIN):
     await ConnectionHandler.multicast(
         target_ids=[id],
         event=_event
-    )
-    await record_stat_event(
-        "JOIN",
-        actor_id=id,
-        value=1,
-        payload={
-            "connection_count": len(ConnectionHandler.conn_dict),
-        },
     )

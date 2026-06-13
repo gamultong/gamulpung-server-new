@@ -10,4 +10,5 @@ from .internal.rlife import RLife
 from .internal.parameter import Parameter
 from .internal.caller import Caller
 from .internal.profiler import LifecycleProfiler
+from .internal.sink import add_lifecycle_sink, remove_lifecycle_sink, emit_lifecycle
 from .metrics import LifecycleMetrics

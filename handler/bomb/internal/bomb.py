@@ -10,7 +10,6 @@ from loguru import logger
 import asyncio
 from datetime import datetime, timedelta
 from config import BombConfig
-from utils.stats import record_stat_event
 
 
 class BombHandler:
@@ -68,13 +67,3 @@ class BombHandler:
         hlife.add_events(draw_events + explosion_events)
         for event in explosion_events:
             await EventBroker.publish(event=event)
-        await record_stat_event(
-            "EXPLOSION",
-            actor_id=installed_bomb.cur_id,
-            point=point,
-            value=installed_bomb.explosion_range,
-            payload={
-                "explosion_range": installed_bomb.explosion_range,
-                "active_at": installed_bomb.active_at.isoformat(),
-            },
-        )

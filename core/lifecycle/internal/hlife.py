@@ -124,6 +124,7 @@ class HLife(LifeCycle):
     def close(self):
         """Lifecycle 종료 시 로깅"""
         from loguru import logger
+        from .sink import emit_lifecycle
 
         # Events 로깅 처리
         event_names = []
@@ -134,4 +135,5 @@ class HLife(LifeCycle):
                 else:
                     event_names.append(str(e))
 
+        emit_lifecycle(self)
         logger.debug(f"{self}")

@@ -3,32 +3,89 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 import json
-import sqlite3
 from typing import Any
 
+from handler.board.storage import (
+    _get_db,
+    get_latest_join_times,
+    get_previous_connection_payloads,
+    get_recent_app_logs,
+    get_recent_stat_events,
+    get_stat_event_observed_range,
+    get_stat_events_since,
+    get_total_stat_event_count,
+)
 
-def get_dashboard(
-    db_path: str,
-    *,
-    range_value: str = "24h",
-    bucket: str = "1m",
-    limit: int = 50,
+DEFAULT_RANGE_VALUE = "all"
+DEFAULT_BUCKET = "1m"
+DEFAULT_LIMIT = 50
+MIN_LIMIT = 1
+MAX_LIMIT = 200
+PREVIOUS_CONNECTION_LOOKBACK_LIMIT = 20
+TOP_PLAYERS_LIMIT = 20
+TOP_TILES_LIMIT = 20
+ALL_EVENTS_SINCE = "0001-01-01T00:00:00.000000Z"
+ALL_RANGE_VALUE = "all"
+
+MINUTE_BUCKET = "1m"
+FIVE_MINUTE_BUCKET = "5m"
+FIVE_MINUTE_BUCKET_SIZE = 5
+HOUR_BUCKET = "1h"
+DEFAULT_RANGE_AMOUNT = 24
+MINUTES_UNIT = "m"
+DAYS_UNIT = "d"
+HOURS_UNIT = "h"
+
+JOIN_EVENT = "JOIN"
+QUIT_EVENT = "QUIT"
+CREATE_CURSOR_EVENT = "CREATE_CURSOR"
+MOVE_EVENT = "MOVE"
+OPEN_TILE_EVENT = "OPEN_TILE"
+SET_FLAG_EVENT = "SET_FLAG"
+EXPLOSION_EVENT = "EXPLOSION"
+DEBUG_LEVEL = "DEBUG"
+SCORE_CHANGE_EVENT = "SCORE_CHANGE"
+TILE_HEATMAP_EVENT_TYPES = {MOVE_EVENT}
+
+
+async def get_dashboard(
+    range_value: str = DEFAULT_RANGE_VALUE,
+    bucket: str = DEFAULT_BUCKET,
+    limit: int = DEFAULT_LIMIT,
     active_cursors: list[dict[str, Any]] | None = None,
     current_connections: int | None = None,
     uptime: dict[str, Any] | None = None,
 ):
     now = datetime.now(timezone.utc)
-    since_dt = _since_datetime(range_value, now)
-    since = _format_z(since_dt)
-    limit = max(1, min(limit, 200))
+    limit = max(MIN_LIMIT, min(limit, MAX_LIMIT))
 
-    with sqlite3.connect(db_path) as db:
-        db.row_factory = sqlite3.Row
-        stat_events = _fetch_stat_events(db, since)
-        previous_connection_count = _fetch_previous_connection_count(db, since)
-        recent_events = _fetch_recent_events(db, limit)
-        recent_logs = _fetch_recent_logs(db, limit)
-        active_cursors = _with_connection_times(db, active_cursors or [], now)
+    async with _get_db() as db:
+        total_stat_events = await get_total_stat_event_count(db)
+        observed_range = await get_stat_event_observed_range(db)
+        since_dt = _since_datetime(range_value, now, observed_range)
+        since = _format_z(since_dt)
+        stat_events = [_stat_event(row) for row in await get_stat_events_since(db, since)]
+        if _is_all_range(range_value):
+            all_stat_events = stat_events
+        else:
+            all_stat_events = [
+                _stat_event(row)
+                for row in await get_stat_events_since(db, ALL_EVENTS_SINCE)
+            ]
+        previous_connection_count = _previous_connection_count(
+            await get_previous_connection_payloads(
+                db,
+                since,
+                PREVIOUS_CONNECTION_LOOKBACK_LIMIT,
+            )
+        )
+        recent_events = [_stat_event(row) for row in await get_recent_stat_events(db, limit)]
+        recent_logs = [_app_log(row) for row in await get_recent_app_logs(db, limit)]
+        active_cursors = _with_connection_times(
+            await get_latest_join_times(db),
+            active_cursors or [],
+            now,
+        )
 
     event_counts = Counter(event["event_type"] for event in stat_events)
     if current_connections is None:
@@ -36,23 +93,44 @@ def get_dashboard(
 
     summary = {
         "total_events": len(stat_events),
-        "joins": event_counts.get("JOIN", 0),
-        "quits": event_counts.get("QUIT", 0),
+        "joins": event_counts.get(JOIN_EVENT, 0),
+        "quits": event_counts.get(QUIT_EVENT, 0),
         "current_connections": current_connections,
         "active_cursors": len(active_cursors),
-        "created_cursors": event_counts.get("CREATE_CURSOR", 0),
-        "moves": event_counts.get("MOVE", 0),
-        "opened_tiles": event_counts.get("OPEN_TILE", 0),
-        "flags": event_counts.get("SET_FLAG", 0),
-        "explosions": event_counts.get("EXPLOSION", 0),
-        "debug_logs": sum(1 for log in recent_logs if log["level"] == "DEBUG"),
+        "created_cursors": event_counts.get(CREATE_CURSOR_EVENT, 0),
+        "moves": event_counts.get(MOVE_EVENT, 0),
+        "opened_tiles": event_counts.get(OPEN_TILE_EVENT, 0),
+        "flags": event_counts.get(SET_FLAG_EVENT, 0),
+        "explosions": event_counts.get(EXPLOSION_EVENT, 0),
+        "debug_logs": sum(1 for log in recent_logs if log["level"] == DEBUG_LEVEL),
     }
+    runtime = {
+        "current_connections": current_connections,
+        "active_cursors": len(active_cursors),
+        "process_uptime_seconds": (uptime or {}).get("uptime_seconds", 0),
+        "started_at": (uptime or {}).get("started_at"),
+    }
+    stored = _stored_summary(
+        observed_range,
+        total_events=total_stat_events,
+        now=now,
+    )
+    tile_stats = _tile_stats(stat_events)
+    tile_heatmap_stats = _tile_stats(
+        [
+            event
+            for event in stat_events
+            if event["event_type"] in TILE_HEATMAP_EVENT_TYPES
+        ]
+    )
 
     return {
         "server_time": datetime.now(timezone.utc).isoformat(),
         "range": range_value,
         "bucket": bucket,
         "summary": summary,
+        "runtime": runtime,
+        "stored": stored,
         "uptime": uptime or {},
         "event_counts": _event_counts(event_counts),
         "activity": _activity(stat_events, bucket),
@@ -64,45 +142,36 @@ def get_dashboard(
         ),
         "players": _players(stat_events),
         "colors": _colors(stat_events),
-        "tiles": _tiles(stat_events),
+        "tiles": _tiles(tile_stats),
+        "tile_heatmap": tile_heatmap_stats,
         "active_cursors": active_cursors,
+        "last_known_cursors": _last_known_cursors(all_stat_events, now),
         "recent_events": recent_events,
         "recent_logs": recent_logs,
     }
 
 
-def _fetch_stat_events(db: sqlite3.Connection, since: str):
-    if not _table_exists(db, "stat_event"):
-        return []
-
-    rows = db.execute(
-        """
-        SELECT id, added_at, event_type, actor_id, tile_id, x, y, value, payload_json
-        FROM stat_event
-        WHERE added_at >= ?
-        ORDER BY id ASC
-        """,
-        (since,),
-    ).fetchall()
-    return [_stat_event(row) for row in rows]
+def _stored_summary(row, *, total_events: int, now: datetime):
+    first_seen_at = row["first_seen_at"] if row is not None else None
+    last_seen_at = row["last_seen_at"] if row is not None else None
+    return {
+        "total_events": total_events,
+        "first_seen_at": first_seen_at,
+        "last_seen_at": last_seen_at,
+        "observed_seconds": _observed_seconds(first_seen_at, now),
+    }
 
 
-def _fetch_previous_connection_count(db: sqlite3.Connection, since: str):
-    if not _table_exists(db, "stat_event"):
+def _observed_seconds(first_seen_at: str | None, now: datetime):
+    if first_seen_at is None:
         return 0
+    return max(
+        0,
+        int((now - _parse_added_at(first_seen_at).astimezone(timezone.utc)).total_seconds()),
+    )
 
-    rows = db.execute(
-        """
-        SELECT payload_json
-        FROM stat_event
-        WHERE added_at < ?
-          AND event_type IN ('JOIN', 'QUIT')
-        ORDER BY id DESC
-        LIMIT 20
-        """,
-        (since,),
-    ).fetchall()
 
+def _previous_connection_count(rows):
     for row in rows:
         connection_count = _json(row["payload_json"]).get("connection_count")
         if isinstance(connection_count, int):
@@ -110,66 +179,13 @@ def _fetch_previous_connection_count(db: sqlite3.Connection, since: str):
     return 0
 
 
-def _fetch_recent_events(db: sqlite3.Connection, limit: int):
-    if not _table_exists(db, "stat_event"):
-        return []
-
-    rows = db.execute(
-        """
-        SELECT id, added_at, event_type, actor_id, tile_id, x, y, value, payload_json
-        FROM stat_event
-        ORDER BY id DESC
-        LIMIT ?
-        """,
-        (limit,),
-    ).fetchall()
-    return [_stat_event(row) for row in rows]
-
-
-def _fetch_recent_logs(db: sqlite3.Connection, limit: int):
-    if not _table_exists(db, "app_log"):
-        return []
-
-    rows = db.execute(
-        """
-        SELECT id, added_at, level, module, function_name, line, message, context_json
-        FROM app_log
-        ORDER BY id DESC
-        LIMIT ?
-        """,
-        (limit,),
-    ).fetchall()
-    return [
-        {
-            "id": row["id"],
-            "added_at": row["added_at"],
-            "level": row["level"],
-            "module": row["module"],
-            "function_name": row["function_name"],
-            "line": row["line"],
-            "message": row["message"],
-            "context": _json(row["context_json"]),
-        }
-        for row in rows
-    ]
-
-
 def _with_connection_times(
-    db: sqlite3.Connection,
+    join_rows,
     active_cursors: list[dict[str, Any]],
     now: datetime,
 ):
     if not active_cursors:
         return []
-    if not _table_exists(db, "stat_event"):
-        return [
-            {
-                **cursor,
-                "connected_at": None,
-                "session_seconds": 0,
-            }
-            for cursor in active_cursors
-        ]
 
     actor_ids = [
         cursor["cursor_id"]
@@ -186,20 +202,11 @@ def _with_connection_times(
             for cursor in active_cursors
         ]
 
-    placeholders = ",".join("?" for _ in actor_ids)
-    rows = db.execute(
-        f"""
-        SELECT actor_id, MAX(added_at) AS connected_at
-        FROM stat_event
-        WHERE event_type = 'JOIN'
-          AND actor_id IN ({placeholders})
-        GROUP BY actor_id
-        """,
-        actor_ids,
-    ).fetchall()
+    actor_id_set = set(actor_ids)
     connected_at_by_actor = {
         row["actor_id"]: row["connected_at"]
-        for row in rows
+        for row in join_rows
+        if row["actor_id"] in actor_id_set
     }
 
     result = []
@@ -215,15 +222,20 @@ def _with_connection_times(
     return result
 
 
-def _table_exists(db: sqlite3.Connection, table_name: str):
-    row = db.execute(
-        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
-        (table_name,),
-    ).fetchone()
-    return row is not None
+def _app_log(row):
+    return {
+        "id": row["id"],
+        "added_at": row["added_at"],
+        "level": row["level"],
+        "module": row["module"],
+        "function_name": row["function_name"],
+        "line": row["line"],
+        "message": row["message"],
+        "context": _json(row["context_json"]),
+    }
 
 
-def _stat_event(row: sqlite3.Row):
+def _stat_event(row):
     return {
         "id": row["id"],
         "added_at": row["added_at"],
@@ -246,16 +258,26 @@ def _json(value: str | None):
         return {}
 
 
-def _since_datetime(range_value: str, now: datetime):
-    amount = int(range_value[:-1]) if range_value[:-1].isdigit() else 24
-    unit = range_value[-1:] if range_value else "h"
-    if unit == "m":
+def _since_datetime(range_value: str, now: datetime, observed_range=None):
+    if _is_all_range(range_value):
+        first_seen_at = observed_range["first_seen_at"] if observed_range is not None else None
+        if first_seen_at is not None:
+            return _parse_added_at(first_seen_at).astimezone(timezone.utc)
+        return now
+
+    amount = int(range_value[:-1]) if range_value[:-1].isdigit() else DEFAULT_RANGE_AMOUNT
+    unit = range_value[-1:] if range_value else HOURS_UNIT
+    if unit == MINUTES_UNIT:
         delta = timedelta(minutes=amount)
-    elif unit == "d":
+    elif unit == DAYS_UNIT:
         delta = timedelta(days=amount)
     else:
         delta = timedelta(hours=amount)
     return now - delta
+
+
+def _is_all_range(range_value: str):
+    return range_value.lower() == ALL_RANGE_VALUE
 
 
 def _format_z(value: datetime):
@@ -271,12 +293,86 @@ def _event_counts(counter: Counter[str]):
 
 def _current_connections(events: list[dict[str, Any]]):
     for event in reversed(events):
-        if event["event_type"] not in {"JOIN", "QUIT"}:
+        if event["event_type"] not in {JOIN_EVENT, QUIT_EVENT}:
             continue
         connection_count = event["payload"].get("connection_count")
         if isinstance(connection_count, int):
             return connection_count
     return 0
+
+
+def _last_known_cursors(events: list[dict[str, Any]], now: datetime):
+    cursors: dict[str, dict[str, Any]] = {}
+    for event in events:
+        actor_id = event["actor_id"]
+        if actor_id is None:
+            continue
+
+        cursor = cursors.setdefault(
+            actor_id,
+            {
+                "connection_id": actor_id,
+                "cursor_id": actor_id,
+                "connected_at": None,
+                "session_seconds": 0,
+                "color": None,
+                "tile_id": None,
+                "x": None,
+                "y": None,
+                "score": 0,
+                "is_alive": True,
+                "active_at": None,
+                "last_event_at": None,
+                "is_connected": False,
+                "window": {
+                    "width": None,
+                    "height": None,
+                },
+            },
+        )
+        _apply_last_known_event(cursor, event)
+
+    result = []
+    for cursor in cursors.values():
+        if not cursor["is_connected"]:
+            continue
+        cursor["session_seconds"] = _session_seconds(cursor["connected_at"], now)
+        result.append(cursor)
+
+    return sorted(
+        result,
+        key=lambda cursor: cursor["last_event_at"] or "",
+        reverse=True,
+    )
+
+
+def _apply_last_known_event(cursor: dict[str, Any], event: dict[str, Any]):
+    event_type = event["event_type"]
+    cursor["last_event_at"] = event["added_at"]
+    cursor["active_at"] = event["added_at"]
+
+    if event_type == JOIN_EVENT:
+        cursor["connected_at"] = event["added_at"]
+        cursor["is_connected"] = True
+    elif event_type == QUIT_EVENT:
+        cursor["is_connected"] = False
+
+    if event_type == CREATE_CURSOR_EVENT:
+        cursor["color"] = event["payload"].get("color")
+        cursor["window"] = {
+            "width": event["payload"].get("width"),
+            "height": event["payload"].get("height"),
+        }
+
+    if event["tile_id"] is not None:
+        cursor["tile_id"] = event["tile_id"]
+    if event["x"] is not None:
+        cursor["x"] = event["x"]
+    if event["y"] is not None:
+        cursor["y"] = event["y"]
+
+    if event_type == SCORE_CHANGE_EVENT and isinstance(event["value"], int):
+        cursor["score"] += event["value"]
 
 
 def _activity(events: list[dict[str, Any]], bucket: str):
@@ -288,13 +384,13 @@ def _activity(events: list[dict[str, Any]], bucket: str):
     return [
         {
             "bucket_start": key,
-            "join": counter.get("JOIN", 0),
-            "quit": counter.get("QUIT", 0),
-            "move": counter.get("MOVE", 0),
-            "create_cursor": counter.get("CREATE_CURSOR", 0),
-            "open_tile": counter.get("OPEN_TILE", 0),
-            "set_flag": counter.get("SET_FLAG", 0),
-            "explosion": counter.get("EXPLOSION", 0),
+            "join": counter.get(JOIN_EVENT, 0),
+            "quit": counter.get(QUIT_EVENT, 0),
+            "move": counter.get(MOVE_EVENT, 0),
+            "create_cursor": counter.get(CREATE_CURSOR_EVENT, 0),
+            "open_tile": counter.get(OPEN_TILE_EVENT, 0),
+            "set_flag": counter.get(SET_FLAG_EVENT, 0),
+            "explosion": counter.get(EXPLOSION_EVENT, 0),
         }
         for key, counter in sorted(buckets.items())
     ]
@@ -313,7 +409,7 @@ def _hourly_connections(
     connection_events = [
         event
         for event in events
-        if event["event_type"] in {"JOIN", "QUIT"}
+        if event["event_type"] in {JOIN_EVENT, QUIT_EVENT}
     ]
     current_connections = initial_connections
     result = []
@@ -334,9 +430,9 @@ def _hourly_connections(
             if event_dt < since_dt:
                 continue
 
-            if event["event_type"] == "JOIN":
+            if event["event_type"] == JOIN_EVENT:
                 joins += 1
-            elif event["event_type"] == "QUIT":
+            elif event["event_type"] == QUIT_EVENT:
                 quits += 1
 
             connection_count = event["payload"].get("connection_count")
@@ -360,10 +456,10 @@ def _hourly_connections(
 
 def _bucket_start(value: str, bucket: str):
     dt = _parse_added_at(value)
-    if bucket == "1h":
+    if bucket == HOUR_BUCKET:
         dt = dt.replace(minute=0, second=0, microsecond=0)
-    elif bucket == "5m":
-        minute = dt.minute - (dt.minute % 5)
+    elif bucket == FIVE_MINUTE_BUCKET:
+        minute = dt.minute - (dt.minute % FIVE_MINUTE_BUCKET_SIZE)
         dt = dt.replace(minute=minute, second=0, microsecond=0)
     else:
         dt = dt.replace(second=0, microsecond=0)
@@ -403,20 +499,24 @@ def _players(events: list[dict[str, Any]]):
             },
         )
         player["event_count"] += 1
-        player["move_count"] += 1 if event["event_type"] == "MOVE" else 0
-        player["join_count"] += 1 if event["event_type"] == "JOIN" else 0
-        player["quit_count"] += 1 if event["event_type"] == "QUIT" else 0
+        player["move_count"] += 1 if event["event_type"] == MOVE_EVENT else 0
+        player["join_count"] += 1 if event["event_type"] == JOIN_EVENT else 0
+        player["quit_count"] += 1 if event["event_type"] == QUIT_EVENT else 0
         player["last_event_at"] = event["added_at"]
         if event["tile_id"] is not None:
             player["last_tile_id"] = event["tile_id"]
 
-    return sorted(players.values(), key=lambda player: player["event_count"], reverse=True)[:20]
+    return sorted(
+        players.values(),
+        key=lambda player: player["event_count"],
+        reverse=True,
+    )[:TOP_PLAYERS_LIMIT]
 
 
 def _colors(events: list[dict[str, Any]]):
     counter: Counter[str] = Counter()
     for event in events:
-        if event["event_type"] != "CREATE_CURSOR":
+        if event["event_type"] != CREATE_CURSOR_EVENT:
             continue
         color = event["payload"].get("color")
         if color is not None:
@@ -428,7 +528,11 @@ def _colors(events: list[dict[str, Any]]):
     ]
 
 
-def _tiles(events: list[dict[str, Any]]):
+def _tiles(tile_stats: list[dict[str, Any]]):
+    return tile_stats[:TOP_TILES_LIMIT]
+
+
+def _tile_stats(events: list[dict[str, Any]]):
     tiles: dict[str, dict[str, Any]] = {}
     for event in events:
         tile_id = event["tile_id"]
@@ -449,4 +553,8 @@ def _tiles(events: list[dict[str, Any]]):
         tile["last_event_type"] = event["event_type"]
         tile["last_event_at"] = event["added_at"]
 
-    return sorted(tiles.values(), key=lambda tile: tile["count"], reverse=True)[:20]
+    return sorted(
+        tiles.values(),
+        key=lambda tile: tile["count"],
+        reverse=True,
+    )

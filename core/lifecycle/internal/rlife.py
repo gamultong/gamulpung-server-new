@@ -109,5 +109,7 @@ class RLife(LifeCycle):
 
     def close(self):
         """Lifecycle 종료 시 로깅"""
+        from .sink import emit_lifecycle
 
+        emit_lifecycle(self)
         logger.debug(self)

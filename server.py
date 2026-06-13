@@ -5,6 +5,7 @@ from fastapi import FastAPI, WebSocket, Response, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from websockets.exceptions import ConnectionClosed
 from core.broker import EventBroker
+from core.lifecycle import add_lifecycle_sink, remove_lifecycle_sink
 from handler.connection import ConnectionHandler, Conn
 from handler.board import initialize_board
 from handler.bomb import start_bomb_scheduler, stop_bomb_scheduler
@@ -19,12 +20,19 @@ from handler.board.storage import (
 )
 import sentry_sdk
 from config import BoardConfig, SentryConfig
-from asyncio import sleep
 from datetime import datetime, timezone
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from utils.logging import AppLogDbSink
+from utils.stats import record_lifecycle
 
 SERVER_STARTED_AT: datetime | None = None
+DB_LOG_BUFFER_SIZE = 100
+BROKER_IDLE_TIMEOUT_SECONDS = 10
+DEFAULT_STATS_RANGE = "all"
+DEFAULT_STATS_BUCKET = "1m"
+DEFAULT_STATS_LIMIT = 50
+DEFAULT_HOST = "0.0.0.0"
+DEFAULT_PORT = 8000
 
 # SENTRY_DSN이 있을 때만 Sentry 초기화
 if hasattr(SentryConfig, 'SENTRY_DSN') and SentryConfig.SENTRY_DSN:
@@ -54,12 +62,13 @@ async def lifespan(app: FastAPI):
             pass
 
     file_log_sink_id = logger.add("log.log")
-    db_log_sink = AppLogDbSink(BoardConfig.DB_PATH, buffer_size=100)
+    db_log_sink = AppLogDbSink(BoardConfig.DB_PATH, buffer_size=DB_LOG_BUFFER_SIZE)
     db_log_sink_id = logger.add(
         db_log_sink,
         level="DEBUG",
         enqueue=True,
     )
+    lifecycle_sink = add_lifecycle_sink(record_lifecycle)
 
     logger.debug("init start")
     async with _get_db() as db:
@@ -72,17 +81,9 @@ async def lifespan(app: FastAPI):
     # teardown
     await stop_bomb_scheduler()
 
-    elapsed = 0
-    step = 0.1
-    timeout = 10
-    while elapsed < timeout:
-        if EventBroker.is_end():
-            break
-        await sleep(step)
-        elapsed += step
-    else:
-        raise "문제 있음"
+    await EventBroker.wait_until_idle(timeout=BROKER_IDLE_TIMEOUT_SECONDS)
 
+    remove_lifecycle_sink(lifecycle_sink)
     logger.remove(db_log_sink_id)
     db_log_sink.stop()
     logger.remove(file_log_sink_id)
@@ -140,9 +141,12 @@ def metrics():
 
 
 @app.get("/stats/dashboard")
-def stats_dashboard(range: str = "24h", bucket: str = "1m", limit: int = 50):
-    return get_dashboard(
-        BoardConfig.DB_PATH,
+async def stats_dashboard(
+    range: str = DEFAULT_STATS_RANGE,
+    bucket: str = DEFAULT_STATS_BUCKET,
+    limit: int = DEFAULT_STATS_LIMIT,
+):
+    return await get_dashboard(
         range_value=range,
         bucket=bucket,
         limit=limit,
@@ -204,4 +208,4 @@ def _ensure_aware(value: datetime):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=DEFAULT_HOST, port=DEFAULT_PORT)

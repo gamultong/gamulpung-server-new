@@ -9,7 +9,6 @@ from data.event import ClientEvent
 
 from handler.board import BoardHandler
 from handler.cursor import CursorHandler
-from utils.stats import record_stat_event
 
 from receiver.utils import chaining
 
@@ -41,25 +40,11 @@ async def open_tiles_receiver(event: OPEN_TILES_EVENT):
         return
     if tile.is_mine:
         await BoardHandler.open_tiles(point)
-        await record_stat_event(
-            "OPEN_TILE",
-            actor_id=id,
-            point=point,
-            value=1,
-            payload={"is_mine": True},
-        )
         return
 
     chaining_points = await chaining(point)
     for p in chaining_points:
         await BoardHandler.open_tiles(p)
         await CursorHandler.increase_score(cursor, 100)
-        await record_stat_event(
-            "OPEN_TILE",
-            actor_id=id,
-            point=p,
-            value=1,
-            payload={"is_mine": False, "score_delta": 100},
-        )
     # await BoardHandler.open_tiles(point)
     # await CursorHandler.increase_score(cursor, 100)

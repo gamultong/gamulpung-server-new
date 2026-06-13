@@ -21,6 +21,8 @@ class Receiver:
 
 class EventBroker:
     event_dict: dict[str, list[Receiver]] = {}
+    _idle_event: asyncio.Event | None = None
+    _idle_loop: asyncio.AbstractEventLoop | None = None
 
     @staticmethod
     def add_receiver(event_name: str):
@@ -49,10 +51,12 @@ class EventBroker:
         async def counter(receiver, event):
             global EVENT_COUNT
             EVENT_COUNT += 1
+            EventBroker._mark_running()
             try:
                 await receiver(event)
             finally:
                 EVENT_COUNT -= 1
+                EventBroker._mark_done()
 
         for receiver in receivers:
             coroutines.append(counter(receiver, event))
@@ -65,3 +69,29 @@ class EventBroker:
             return True
         else:
             return False
+
+    @staticmethod
+    async def wait_until_idle(timeout: float | None = None):
+        event = EventBroker._get_idle_event()
+        await asyncio.wait_for(event.wait(), timeout=timeout)
+
+    @staticmethod
+    def _get_idle_event():
+        loop = asyncio.get_running_loop()
+        if EventBroker._idle_event is None or EventBroker._idle_loop is not loop:
+            EventBroker._idle_event = asyncio.Event()
+            EventBroker._idle_loop = loop
+            if EventBroker.is_end():
+                EventBroker._idle_event.set()
+        return EventBroker._idle_event
+
+    @staticmethod
+    def _mark_running():
+        event = EventBroker._get_idle_event()
+        event.clear()
+
+    @staticmethod
+    def _mark_done():
+        if EventBroker.is_end():
+            event = EventBroker._get_idle_event()
+            event.set()
