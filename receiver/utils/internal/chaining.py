@@ -11,7 +11,6 @@ async def chaining(point: Point):
     sections: dict[Point, Section] = {}
 
     queue = deque([point])
-    is_mine = False
 
     c = 10
 

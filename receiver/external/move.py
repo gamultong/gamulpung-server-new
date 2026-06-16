@@ -2,9 +2,8 @@ from core.event import Event
 from core.broker import EventBroker
 from core.lifecycle import LifeCycle, RLife
 
-from data.payload import IdDataPayload, ClientMessage, IdPayload
-from data.cursor import Cursor
-from data.event import ServerEvent, ClientEvent
+from data.payload import IdDataPayload, ClientMessage
+from data.event import ClientEvent
 
 from handler.cursor import CursorHandler
 from handler.board import BoardHandler
@@ -20,7 +19,11 @@ async def move_receiver(event: MOVE_EVENT):
     data = event.payload.data
     point = data.position
 
-    cursor = await CursorHandler.get_by_id(id)
+    try:
+        cursor = await CursorHandler.get_by_id(id)
+    except KeyError:
+        logger.warning(f"커서가 존재하지 않음 | id:{id}")
+        return
     if not cursor.is_alive:
         logger.warning(f"커서가 이미 사망함 | cursor:{cursor}")
         return

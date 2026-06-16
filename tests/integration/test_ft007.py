@@ -12,7 +12,7 @@ from data.cursor_board import Color
 
 from handler.board import BoardHandler
 from handler.cursor import CursorHandler
-from tests.utils import PytestTCM, assert_wait_event, assert_wait_call_if, build_tiles
+from tests.utils import PytestTCM, assert_wait_event, assert_wait_call_if, build_tiles, create_cursor_at_position
 
 CL_A = "TestClient_A"
 
@@ -20,27 +20,6 @@ CL_A = "TestClient_A"
 # -------------------------
 # Helpers
 # -------------------------
-def create_cursor_at_position(pos: Point):
-    """Cursor를 특정 위치에 생성하는 헬퍼"""
-    from data.cursor import Cursor
-    origin_create = Cursor.create
-
-    def create_cursor_effect(
-        id: str,
-        width: int = 0,
-        height: int = 0,
-        color: Color = Color.RED,
-        **_kwargs,
-    ):
-        return origin_create(
-            id,
-            width=width,
-            height=height,
-            position=pos,
-            color=color,
-        )
-
-    return create_cursor_effect
 
 
 FLAG_BIT = 0b00100000
@@ -166,7 +145,8 @@ async def test_ft007_dismantle_mine_scenario():
         })
 
         # 깃발 해제로 인한 (1,1) 닫힌 타일 TILES_STATE 1회 무시
-        ignore_tile_state(cl_a.conn.send, Point(1, 1), flag=False, opened=False, mine=True)
+        # 닫힌 타일은 마스킹되어 mine 비트가 전송되지 않는다 (RFC-006)
+        ignore_tile_state(cl_a.conn.send, Point(1, 1), flag=False, opened=False, mine=False)
 
         assert_wait_call_if(
             cl_a.conn.send,
@@ -223,7 +203,8 @@ async def test_ft007_grant_bomb_on_dismantle_mine():
             "payload": {"position": {"x": 1, "y": 1}}
         })
 
-        ignore_tile_state(cl_a.conn.send, Point(1, 1), flag=False, opened=False, mine=True)
+        # 닫힌 타일은 마스킹되어 mine 비트가 전송되지 않는다 (RFC-006)
+        ignore_tile_state(cl_a.conn.send, Point(1, 1), flag=False, opened=False, mine=False)
 
         assert_wait_call_if(
             cl_a.conn.send,

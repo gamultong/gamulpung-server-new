@@ -6,6 +6,7 @@ Tile 정보를 비트 단위로 효율적으로 표현한다.
 ## 규칙
 - Tile 정보는 비트 마스킹으로 표현한다.
 - 비트 구조는 아래 이미지를 따른다.
+- 닫힌(closed) tile의 mine·number 정보는 클라이언트 전송 전에 제거(hide)한다. ([설계 문답](/docs/Other/Design%20QnA%202026-06.md))
 
 ![비트 구조](/docs/RFC/img/6-1.png)
 

@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import time
 from typing import Callable, TYPE_CHECKING
-from unittest.mock import AsyncMock, _Call
+from unittest.mock import AsyncMock
 from data.conn import Message
 from core.event import Event
 
@@ -41,8 +43,8 @@ def assert_wait_call_if(
         time.sleep(step)
         elapsed += step
 
-    print(mock.await_args_list)
     msg = error_msg or f"predicate를 만족하는 call을 {timeout}초 동안 받지 못함"
+    msg += f"\n수신된 call 목록: {mock.await_args_list}"
     raise AssertionError(msg)
 
 
@@ -72,21 +74,7 @@ def assert_wait_message(mock: AsyncMock, message: Message[Event], timeout: float
     )
 
 
-def assert_wait_call(mock: AsyncMock, call: _Call, timeout=1.5, step=0.01):
-    """
-    [Legacy] mock call 객체로 검증 (하위 호환성 유지)
-
-    새 코드에서는 assert_wait_message 사용 권장
-    """
-    return assert_wait_call_if(
-        mock,
-        lambda msg: call([msg]) == call,
-        timeout=timeout,
-        error_msg=f"TimeOut : {call}이 {timeout}초 동안 호출되지 않음"
-    )
-
-
-def assert_wait_event(mock: AsyncMock, event_name: "ServerEvent", timeout: float = 1.5):
+def assert_wait_event(mock: AsyncMock, event_name: ServerEvent, timeout: float = 1.5):
     """
     특정 ServerEvent가 수신되었는지 확인 (payload 무관)
 

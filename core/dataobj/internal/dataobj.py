@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, Field
-from typing import Any, ClassVar, Literal
+from types import UnionType
+from typing import Any, ClassVar, Literal, Union, get_args, get_origin, get_type_hints
 from typing_extensions import dataclass_transform
 
 DATACLASS_OPTION = Literal[
@@ -85,15 +86,27 @@ class DataObj:
         }
 
     @classmethod
-    def from_dict(cls, dict: dict):
-        def parse(key):
-            type = cls.__annotations__[key]
-            if hasattr(type, "from_dict"):
-                return type.from_dict(dict[key])
-            return dict[key]
+    def from_dict(cls, raw: dict):
+        # raw __annotations__는 `from __future__ import annotations` 모듈에서
+        # 문자열이 되고 상속 필드도 누락되므로 get_type_hints로 해석한다
+        hints = get_type_hints(cls)
+
+        def parse(field_type: Any, value: Any) -> Any:
+            origin = get_origin(field_type)
+            if origin is list and isinstance(value, list):
+                (item_type,) = get_args(field_type)
+                return [parse(item_type, v) for v in value]
+            if origin in (Union, UnionType):
+                args = [a for a in get_args(field_type) if a is not type(None)]
+                if value is None or len(args) != 1:
+                    return value
+                return parse(args[0], value)
+            if hasattr(field_type, "from_dict") and isinstance(value, dict):
+                return field_type.from_dict(value)
+            return value
 
         return cls(**{
-            key: parse(key)
+            key: parse(hints[key], raw[key])
             for key in cls.__dataclass_fields__.keys()
         })
 

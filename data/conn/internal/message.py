@@ -10,8 +10,6 @@ from .exceptions import (
     InvalidEvent_Exception
 )
 
-from data.event import ClientEvent
-from json import loads
 
 EVENT_TYPE = TypeVar("EVENT_TYPE", bound=Event)
 
@@ -66,7 +64,7 @@ def get_payload_by_event_name(event_name: EventEnum) -> Type[ClientMessage.Base]
             return ClientMessage.DismantleMine
         case ClientEvent.INSTALL_BOMB:
             return ClientMessage.InstallBomb
-    raise
+    raise InvalidEvent_Exception(event_name)
 
 
 class Message(Generic[EVENT_TYPE], DataObj):

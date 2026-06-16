@@ -25,7 +25,7 @@ def get_sql(path: str):
 
 
 @asynccontextmanager
-async def _get_db():
+async def get_db():
     db = await aiosqlite.connect(BoardConfig.DB_PATH)
     db.row_factory = aiosqlite.Row
     try:
@@ -37,7 +37,7 @@ async def _get_db():
 # async def get_db(func):
 #     @wraps(func)
 #     async def wrapper(*args, **kwargs):
-#         async with _get_db() as db:
+#         async with get_db() as db:
 #             return await func(db, *args, **kwargs)
 #     return wrapper
 

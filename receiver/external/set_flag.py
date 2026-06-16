@@ -1,6 +1,6 @@
 from core.event import Event
 from data.payload import IdDataPayload, ClientMessage
-from data.event import ServerEvent, ClientEvent
+from data.event import ClientEvent
 
 from core.broker import EventBroker
 from core.lifecycle import LifeCycle, RLife
@@ -18,7 +18,11 @@ async def set_flag_receiver(event: SET_FLAG_EVENT):
     data = event.payload.data
     point = data.position
 
-    cursor = await CursorHandler.get_by_id(id)
+    try:
+        cursor = await CursorHandler.get_by_id(id)
+    except KeyError:
+        logger.warning(f"커서가 존재하지 않음 | id:{id}")
+        return
     if not cursor.is_alive:
         logger.warning(f"커서가 이미 사망함 | cursor:{cursor}")
         return
@@ -28,6 +32,6 @@ async def set_flag_receiver(event: SET_FLAG_EVENT):
         logger.warning(f"깃발 설치 가능 범위 밖으로 이동하려함 | cursor:{cursor}, point:{point}")
         return
 
-    await BoardHandler.togle_flag(point)
+    await BoardHandler.toggle_flag(point)
 
     await CursorHandler.increase_score(cursor, 10)

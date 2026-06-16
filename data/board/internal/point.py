@@ -1,6 +1,5 @@
 from __future__ import annotations
 from core.dataobj import DataObj
-from dataclasses import dataclass
 
 
 class Point(DataObj):

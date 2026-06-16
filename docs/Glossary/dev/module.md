@@ -1,1 +1,1 @@
-프로젝트에서 관리되는 소스파일 단위. ([[RFC-003] Module]([RFC-003]%20Module.md))
+프로젝트에서 관리되는 소스파일 단위. ([[RFC-003] Module](/docs/RFC/%5BRFC-003%5D%20Module.md))

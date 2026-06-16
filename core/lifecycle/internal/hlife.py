@@ -1,11 +1,12 @@
 from __future__ import annotations
-from .lifecycle import LifeCycle, _lifecycle_var
+from .lifecycle import LifeCycle
 from .caller import Caller
 from .parameter import Parameter
 from .profiler import LifecycleProfiler
+from .sink import emit_lifecycle
 from core.lifecycle.metrics import LifecycleMetrics
-from functools import wraps
 from typing import Any
+from loguru import logger
 
 
 class HLife(LifeCycle):
@@ -123,8 +124,6 @@ class HLife(LifeCycle):
 
     def close(self):
         """Lifecycle 종료 시 로깅"""
-        from loguru import logger
-        from .sink import emit_lifecycle
 
         # Events 로깅 처리
         event_names = []

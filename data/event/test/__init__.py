@@ -1,1 +1,0 @@
-from .test_event_naming import EventNaming_TestCase

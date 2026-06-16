@@ -11,7 +11,7 @@ from data.board import Point
 from data.cursor import Cursor, Items, ItemType
 from data.cursor_board import Color
 from handler.board.storage import (
-    _get_db,
+    get_db,
     get_app_log_by_message,
     get_record_table_names,
     get_stat_event_observed_range,
@@ -81,7 +81,7 @@ class RecordDB_TestCase(IsolatedAsyncioTestCase):
         os.remove(self.db_path)
 
     async def asyncSetUp(self) -> None:
-        self.db_context = _get_db()
+        self.db_context = get_db()
         self.db = await self.db_context.__aenter__()
         await set_app_log_table(self.db)
         await set_stat_event_table(self.db)

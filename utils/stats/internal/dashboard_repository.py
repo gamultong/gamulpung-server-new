@@ -6,7 +6,7 @@ import json
 from typing import Any
 
 from handler.board.storage import (
-    _get_db,
+    get_db,
     get_latest_join_times,
     get_previous_connection_payloads,
     get_recent_app_logs,
@@ -59,7 +59,7 @@ async def get_dashboard(
     now = datetime.now(timezone.utc)
     limit = max(MIN_LIMIT, min(limit, MAX_LIMIT))
 
-    async with _get_db() as db:
+    async with get_db() as db:
         total_stat_events = await get_total_stat_event_count(db)
         observed_range = await get_stat_event_observed_range(db)
         since_dt = _since_datetime(range_value, now, observed_range)

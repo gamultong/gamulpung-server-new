@@ -1,5 +1,7 @@
 # 2단계 - Lifecycle 적용
 
+> 반영 완료 — 공식 스펙은 [[RFC-008]](/docs/RFC/%5BRFC-008%5D%20Lifecycle.md) 참고
+
 ## 목적
 
 Handler와 Receiver의 실행을 추적하고 로깅하여 Observability를 확보한다.
@@ -11,7 +13,7 @@ Handler와 Receiver의 실행을 추적하고 로깅하여 Observability를 확�
 ### 1. HLife (Handler Lifecycle) 적용
 
 Handler 메서드 실행 시 before/after snapshot 기록:
-- `BoardHandler.togle_flag()`
+- `BoardHandler.toggle_flag()`
 - `BoardHandler.open_tiles()`
 - `CursorHandler.create()`
 - `CursorHandler.move()`

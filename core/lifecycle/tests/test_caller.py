@@ -1,6 +1,5 @@
 """Caller 테스트"""
 
-import pytest
 from core.lifecycle import Caller, RLife, HLife, LifeCycle
 
 

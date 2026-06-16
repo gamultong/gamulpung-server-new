@@ -1,8 +1,7 @@
 from __future__ import annotations
 from core.dataobj import DataObj
-from dataclasses import dataclass
 from enum import Enum
-from .point import Point, PointRange, get_overlap
+from .point import Point, PointRange
 from .tile import Tile
 from .cursor_tile import CursorTile, CURSOR_TILE_BYTES
 
@@ -78,9 +77,9 @@ class Tiles(DataObj):
             x_end = row_start + point_range.bottom_right.x + 1
             start = x_start * tile_bytes
             end = x_end * tile_bytes
-            law = self.data[start:end]
+            raw = self.data[start:end]
 
-            data += law
+            data += raw
 
         return Tiles(
             data=data,
@@ -100,25 +99,30 @@ class Tiles(DataObj):
     def to_str(self):
         return self.data.hex()
 
-    def hide_info(self):
-        # 불변 객체 반환으로 변경 필요
+    def hide_info(self) -> Tiles:
         """
-        타일들의 mine, number 정보를 제거한다.
-        타일의 상태가 CLOSED일 때만 해당한다.
-
-        주의: Tiles 데이터가 변형된다.
+        mine, number 정보를 제거한 새 Tiles를 반환한다.
+        타일의 상태가 CLOSED일 때만 해당한다. 원본은 변형하지 않는다.
         """
         if self.tile_kind == TileKind.CURSOR:
-            return
+            return self.copy()
+
         opened = 0b10000000
         mask = 0b10111000
-        for idx in range(len(self.data)):
-            b = self.data[idx]
+        data = bytearray(self.data)
+        for idx in range(len(data)):
+            b = data[idx]
             if b & opened:
                 continue
 
-            b &= mask
-            self.data[idx] = b
+            data[idx] = b & mask
+
+        return Tiles(
+            data=data,
+            width=self.width,
+            height=self.height,
+            tile_kind=self.tile_kind
+        )
 
     def h_append(self, *values: Tiles):
         """가로 병합"""
@@ -181,10 +185,11 @@ class Tiles(DataObj):
         return bytes([tile.data])
 
     def to_dict(self):
-        self.hide_info()
-        res = super().to_dict()
+        masked = self.hide_info()
+        res = DataObj.to_dict(masked)
 
-        res["data"] = self.to_str()
+        res["data"] = masked.to_str()
+        return res
 
     def __eq__(self, value: Tiles) -> bool:
         r = self.to_str() == value.to_str()

@@ -10,6 +10,7 @@ from .conn import Conn
 
 from data.conn import Message
 from data.payload import IdPayload
+from loguru import logger
 from data.event import TriggerEvent
 
 from typing import ClassVar
@@ -50,7 +51,6 @@ class ConnectionHandler:
 
     @classmethod
     async def multicast(cls, target_ids: list[str], event: Event):
-        from loguru import logger
 
         snapshot = list(cls.conn_dict.items())
 

@@ -1,15 +1,8 @@
-from unittest.mock import patch
 from tests.utils import TestCase
-from config import BoardConfig
-import tempfile
-import os
 
 from data.board import SectionFlag
 from handler.board import initialize_board
 from handler.board.storage import (
-    _get_db,
-    set_table,
-    set_cursor_table,
     get_section,
     get_list_by_section_range,
     get_cursor_list_by_section_range
