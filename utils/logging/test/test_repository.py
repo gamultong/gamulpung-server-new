@@ -10,8 +10,9 @@ from core.lifecycle import HLife, Parameter
 from data.board import Point
 from data.cursor import Cursor, Items, ItemType
 from data.cursor_board import Color
-from handler.board.storage import (
-    get_db,
+from handler.board.storage import get_db
+from utils.logging import (
+    AppLogDbSink,
     get_app_log_by_message,
     get_record_table_names,
     get_stat_event_observed_range,
@@ -21,7 +22,6 @@ from handler.board.storage import (
     set_app_log_table,
     set_stat_event_table,
 )
-from utils.logging import AppLogDbSink
 from utils.stats import get_dashboard, record_lifecycle, record_stat_event
 from utils.stats.internal.dashboard_repository import TOP_TILES_LIMIT
 

@@ -7,7 +7,7 @@ from loguru import logger
 
 from config import BoardConfig
 from data.board import Point
-from handler.board.storage import insert_stat_event_sync
+from utils.logging import insert_stat_event_sync
 
 DEFAULT_INSERT_TIMEOUT_SECONDS = 0.05
 LOCKED_INSERT_TIMEOUT_SECONDS = 1.0

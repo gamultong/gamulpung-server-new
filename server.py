@@ -14,16 +14,14 @@ from handler.cursor import CursorHandler
 from utils.stats import get_dashboard
 from handler.board.storage import (
     get_db,
-    set_app_log_table,
     set_cursor_table,
-    set_stat_event_table,
     set_table,
 )
 import sentry_sdk
 from config import BoardConfig, SentryConfig
 from datetime import datetime, timezone
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
-from utils.logging import AppLogDbSink
+from utils.logging import AppLogDbSink, set_app_log_table, set_stat_event_table
 from utils.stats import record_lifecycle
 
 SERVER_STARTED_AT: datetime | None = None

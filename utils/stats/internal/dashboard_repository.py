@@ -5,8 +5,8 @@ from datetime import datetime, timedelta, timezone
 import json
 from typing import Any
 
-from handler.board.storage import (
-    get_db,
+from handler.board.storage import get_db
+from utils.logging import (
     get_latest_join_times,
     get_previous_connection_payloads,
     get_recent_app_logs,

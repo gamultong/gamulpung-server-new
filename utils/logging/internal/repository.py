@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from enum import Enum
-from functools import cache
 import json
 import os
 from pathlib import Path
@@ -12,8 +11,9 @@ from typing import Any
 import aiosqlite
 
 from core.dataobj import DataObj
+from utils.sql import get_sql
 
-SQL_PATH = os.path.join(os.path.dirname(__file__), "sql", "log") + os.sep
+SQL_PATH = os.path.join(os.path.dirname(__file__), "sql") + os.sep
 
 APP_LOG_TABLE_SET = "app_log_table.sql"
 APP_LOG_INSERT = "app_log_insert.sql"
@@ -34,13 +34,6 @@ TABLE_EXISTS = "table_exists.sql"
 DB = aiosqlite.Connection
 
 
-@cache
-def get_sql(path: str):
-    with open(f"{SQL_PATH}{path}", "r", encoding="utf-8") as f:
-        query = f.read()
-    return query
-
-
 def to_json(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, default=_json_default)
 
@@ -58,12 +51,12 @@ def _json_default(value: Any):
 
 
 async def set_app_log_table(db: DB):
-    await db.executescript(get_sql(APP_LOG_TABLE_SET))
+    await db.executescript(get_sql(SQL_PATH, APP_LOG_TABLE_SET))
     await db.commit()
 
 
 async def set_stat_event_table(db: DB):
-    await db.executescript(get_sql(STAT_EVENT_TABLE_SET))
+    await db.executescript(get_sql(SQL_PATH, STAT_EVENT_TABLE_SET))
     await db.commit()
 
 
@@ -78,7 +71,7 @@ async def insert_app_log(
     context: dict[str, Any] | None = None,
 ):
     await db.execute(
-        get_sql(APP_LOG_INSERT),
+        get_sql(SQL_PATH, APP_LOG_INSERT),
         (
             level,
             module,
@@ -103,7 +96,7 @@ async def insert_stat_event(
     payload: dict[str, Any] | None = None,
 ):
     await db.execute(
-        get_sql(STAT_EVENT_INSERT),
+        get_sql(SQL_PATH, STAT_EVENT_INSERT),
         (
             event_type,
             actor_id,
@@ -118,7 +111,7 @@ async def insert_stat_event(
 
 
 async def get_record_table_names(db: DB):
-    async with db.execute(get_sql(RECORD_TABLE_NAMES)) as cur:
+    async with db.execute(get_sql(SQL_PATH, RECORD_TABLE_NAMES)) as cur:
         rows = await cur.fetchall()
     return [row["name"] for row in rows]
 
@@ -126,28 +119,28 @@ async def get_record_table_names(db: DB):
 async def get_app_log_by_message(db: DB, message: str):
     if not await table_exists(db, "app_log"):
         return None
-    async with db.execute(get_sql(APP_LOG_GET_BY_MESSAGE), (message,)) as cur:
+    async with db.execute(get_sql(SQL_PATH, APP_LOG_GET_BY_MESSAGE), (message,)) as cur:
         return await cur.fetchone()
 
 
 async def get_stat_event_by_type(db: DB, event_type: str):
     if not await table_exists(db, "stat_event"):
         return None
-    async with db.execute(get_sql(STAT_EVENT_GET_BY_TYPE), (event_type,)) as cur:
+    async with db.execute(get_sql(SQL_PATH, STAT_EVENT_GET_BY_TYPE), (event_type,)) as cur:
         return await cur.fetchone()
 
 
 async def get_stat_events_since(db: DB, since: str):
     if not await table_exists(db, "stat_event"):
         return []
-    async with db.execute(get_sql(STAT_EVENT_SINCE), (since,)) as cur:
+    async with db.execute(get_sql(SQL_PATH, STAT_EVENT_SINCE), (since,)) as cur:
         return await cur.fetchall()
 
 
 async def get_total_stat_event_count(db: DB):
     if not await table_exists(db, "stat_event"):
         return 0
-    async with db.execute(get_sql(STAT_EVENT_TOTAL_COUNT)) as cur:
+    async with db.execute(get_sql(SQL_PATH, STAT_EVENT_TOTAL_COUNT)) as cur:
         row = await cur.fetchone()
     return row["count"] if row is not None else 0
 
@@ -155,40 +148,40 @@ async def get_total_stat_event_count(db: DB):
 async def get_stat_event_observed_range(db: DB):
     if not await table_exists(db, "stat_event"):
         return None
-    async with db.execute(get_sql(STAT_EVENT_OBSERVED_RANGE)) as cur:
+    async with db.execute(get_sql(SQL_PATH, STAT_EVENT_OBSERVED_RANGE)) as cur:
         return await cur.fetchone()
 
 
 async def get_previous_connection_payloads(db: DB, since: str, limit: int):
     if not await table_exists(db, "stat_event"):
         return []
-    async with db.execute(get_sql(STAT_EVENT_CONNECTION_BEFORE), (since, limit)) as cur:
+    async with db.execute(get_sql(SQL_PATH, STAT_EVENT_CONNECTION_BEFORE), (since, limit)) as cur:
         return await cur.fetchall()
 
 
 async def get_recent_stat_events(db: DB, limit: int):
     if not await table_exists(db, "stat_event"):
         return []
-    async with db.execute(get_sql(STAT_EVENT_RECENT), (limit,)) as cur:
+    async with db.execute(get_sql(SQL_PATH, STAT_EVENT_RECENT), (limit,)) as cur:
         return await cur.fetchall()
 
 
 async def get_recent_app_logs(db: DB, limit: int):
     if not await table_exists(db, "app_log"):
         return []
-    async with db.execute(get_sql(APP_LOG_RECENT), (limit,)) as cur:
+    async with db.execute(get_sql(SQL_PATH, APP_LOG_RECENT), (limit,)) as cur:
         return await cur.fetchall()
 
 
 async def get_latest_join_times(db: DB):
     if not await table_exists(db, "stat_event"):
         return []
-    async with db.execute(get_sql(STAT_EVENT_JOIN_LATEST)) as cur:
+    async with db.execute(get_sql(SQL_PATH, STAT_EVENT_JOIN_LATEST)) as cur:
         return await cur.fetchall()
 
 
 async def table_exists(db: DB, table_name: str):
-    async with db.execute(get_sql(TABLE_EXISTS), (table_name,)) as cur:
+    async with db.execute(get_sql(SQL_PATH, TABLE_EXISTS), (table_name,)) as cur:
         row = await cur.fetchone()
     return row is not None
 
@@ -217,9 +210,9 @@ def insert_stat_event_sync(
             to_json(payload or {}),
         )
         try:
-            db.execute(get_sql(STAT_EVENT_INSERT), params)
+            db.execute(get_sql(SQL_PATH, STAT_EVENT_INSERT), params)
         except sqlite3.OperationalError as e:
             if "no such table" not in str(e):
                 raise
-            db.executescript(get_sql(STAT_EVENT_TABLE_SET))
-            db.execute(get_sql(STAT_EVENT_INSERT), params)
+            db.executescript(get_sql(SQL_PATH, STAT_EVENT_TABLE_SET))
+            db.execute(get_sql(SQL_PATH, STAT_EVENT_INSERT), params)
