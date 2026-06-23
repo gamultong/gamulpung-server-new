@@ -4,13 +4,13 @@ import asyncio
 from collections.abc import Callable
 from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
-from typing import Any
 
 from loguru import logger
 
 from data.board import Point
 from handler.board.storage import DB
 from utils.logging import insert_stat_event
+from utils.logging.internal.repository import JsonObject
 
 DBContextFactory = Callable[[], AbstractAsyncContextManager[DB]]
 
@@ -23,7 +23,7 @@ class StatEventRecord:
     x: int | None
     y: int | None
     value: int | None
-    payload: dict[str, Any] | None
+    payload: JsonObject | None
 
 
 _stat_event_queue: asyncio.Queue[StatEventRecord | None] | None = None
@@ -75,7 +75,7 @@ async def record_stat_event(
     actor_id: str | None = None,
     point: Point | None = None,
     value: int | None = None,
-    payload: dict[str, Any] | None = None,
+    payload: JsonObject | None = None,
 ) -> None:
     await _insert(db, _record(event_type, actor_id=actor_id, point=point, value=value, payload=payload))
 
@@ -86,7 +86,7 @@ def enqueue_stat_event(
     actor_id: str | None = None,
     point: Point | None = None,
     value: int | None = None,
-    payload: dict[str, Any] | None = None,
+    payload: JsonObject | None = None,
 ) -> None:
     queue = _stat_event_queue
     if queue is None:
@@ -121,7 +121,7 @@ def _record(
     actor_id: str | None,
     point: Point | None,
     value: int | None,
-    payload: dict[str, Any] | None,
+    payload: JsonObject | None,
 ) -> StatEventRecord:
     return StatEventRecord(
         event_type=event_type,

@@ -13,9 +13,10 @@ from data.bomb import InstalledBomb
 from data.cursor import Cursor
 from data.event import ClientEvent, TriggerEvent
 from data.payload import ClientMessage, IdDataPayload, IdPayload
+from utils.logging.internal.repository import JsonObject
 from utils.stats.internal.event_recorder import enqueue_stat_event
 
-StatPayload: TypeAlias = dict[str, object]
+StatPayload: TypeAlias = JsonObject
 
 EVENT_VALUE = 1
 NO_DELTA = 0
