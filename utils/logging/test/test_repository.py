@@ -6,10 +6,13 @@ from unittest.mock import patch
 from loguru import logger
 
 from config import BoardConfig
-from core.lifecycle import HLife, Parameter
+from core.event import Event
+from core.lifecycle import Caller, HLife, Parameter, RLife
 from data.board import Point
 from data.cursor import Cursor, Items, ItemType
 from data.cursor_board import Color
+from data.event import ClientEvent
+from data.payload import ClientMessage, IdDataPayload
 from handler.board.storage import get_db
 from utils.logging import (
     AppLogDbSink,
@@ -22,7 +25,14 @@ from utils.logging import (
     set_app_log_table,
     set_stat_event_table,
 )
-from utils.stats import get_dashboard, record_lifecycle, record_stat_event
+from utils.stats import (
+    drain_stat_event_queue,
+    get_dashboard,
+    record_lifecycle,
+    record_stat_event,
+    start_stat_event_worker,
+    stop_stat_event_worker,
+)
 from utils.stats.internal.dashboard_repository import TOP_TILES_LIMIT
 
 APP_LOG_TABLE = "app_log"
@@ -56,6 +66,7 @@ EVENT_VALUE = 1
 JOIN_EVENT = "JOIN"
 QUIT_EVENT = "QUIT"
 CREATE_CURSOR_EVENT = "CREATE_CURSOR"
+SET_FLAG_EVENT = "SET_FLAG"
 GRANT_ITEM_EVENT = "GRANT_ITEM"
 GRANT_ITEM_AMOUNT = 1
 GRANT_ITEM_PAYLOAD_JSON = f'"after_items": {{"bomb": {GRANT_ITEM_AMOUNT}}}'
@@ -85,8 +96,10 @@ class RecordDB_TestCase(IsolatedAsyncioTestCase):
         self.db = await self.db_context.__aenter__()
         await set_app_log_table(self.db)
         await set_stat_event_table(self.db)
+        await start_stat_event_worker()
 
     async def asyncTearDown(self) -> None:
+        await stop_stat_event_worker()
         await self.db_context.__aexit__(None, None, None)
 
 
@@ -195,6 +208,7 @@ class LifecycleRecorder_TestCase(RecordDB_TestCase):
         hlife.caller_id = "receiver-caller"
 
         record_lifecycle(hlife)
+        await drain_stat_event_queue()
 
         row = await get_stat_event_by_type(self.db, SCORE_CHANGE_EVENT)
 
@@ -216,6 +230,7 @@ class LifecycleRecorder_TestCase(RecordDB_TestCase):
         hlife.caller_id = "receiver-caller"
 
         record_lifecycle(hlife)
+        await drain_stat_event_queue()
 
         row = await get_stat_event_by_type(self.db, GRANT_ITEM_EVENT)
 
@@ -224,6 +239,35 @@ class LifecycleRecorder_TestCase(RecordDB_TestCase):
         self.assertEqual(row["tile_id"], MOVE_TILE_ID)
         self.assertEqual(row["value"], GRANT_ITEM_AMOUNT)
         self.assertIn(GRANT_ITEM_PAYLOAD_JSON, row["payload_json"])
+
+    async def test_record_rlife_records_set_flag(self):
+        event = Event(
+            event_name=ClientEvent.SET_FLAG,
+            payload=IdDataPayload(
+                id=PLAYER_ID,
+                data=ClientMessage.SetFlag(position=MOVE_POINT),
+            ),
+        )
+        rlife = RLife.create(receiver_name="set_flag_receiver", event=event)
+        caller = Caller.create(rlife)
+        caller.register_hlife(
+            HLife.create(
+                handler_name="BoardHandler",
+                method_name="toggle_flag",
+                params=Parameter(args=(MOVE_POINT,), kwargs={}),
+            )
+        )
+        rlife.caller = caller
+
+        record_lifecycle(rlife)
+        await drain_stat_event_queue()
+
+        row = await get_stat_event_by_type(self.db, SET_FLAG_EVENT)
+
+        self.assertEqual(row["event_type"], SET_FLAG_EVENT)
+        self.assertEqual(row["actor_id"], PLAYER_ID)
+        self.assertEqual(row["tile_id"], MOVE_TILE_ID)
+        self.assertEqual(row["value"], EVENT_VALUE)
 
 
 class DashboardRepository_TestCase(RecordDB_TestCase):

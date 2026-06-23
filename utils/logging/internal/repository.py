@@ -4,8 +4,6 @@ from datetime import date, datetime
 from enum import Enum
 import json
 import os
-from pathlib import Path
-import sqlite3
 from typing import Any
 
 import aiosqlite
@@ -184,35 +182,3 @@ async def table_exists(db: DB, table_name: str):
     async with db.execute(get_sql(SQL_PATH, TABLE_EXISTS), (table_name,)) as cur:
         row = await cur.fetchone()
     return row is not None
-
-
-def insert_stat_event_sync(
-    db_path: str,
-    *,
-    event_type: str,
-    actor_id: str | None = None,
-    tile_id: str | None = None,
-    x: int | None = None,
-    y: int | None = None,
-    value: int | None = None,
-    payload: dict[str, Any] | None = None,
-    timeout: float = 5,
-):
-    Path(db_path).parent.mkdir(parents=True, exist_ok=True)
-    with sqlite3.connect(db_path, timeout=timeout) as db:
-        params = (
-            event_type,
-            actor_id,
-            tile_id,
-            x,
-            y,
-            value,
-            to_json(payload or {}),
-        )
-        try:
-            db.execute(get_sql(SQL_PATH, STAT_EVENT_INSERT), params)
-        except sqlite3.OperationalError as e:
-            if "no such table" not in str(e):
-                raise
-            db.executescript(get_sql(SQL_PATH, STAT_EVENT_TABLE_SET))
-            db.execute(get_sql(SQL_PATH, STAT_EVENT_INSERT), params)

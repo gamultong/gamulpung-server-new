@@ -1,6 +1,7 @@
 from loguru import logger
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
+import os
 from fastapi import WebSocket, Response, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from websockets.exceptions import ConnectionClosed
@@ -22,7 +23,7 @@ from config import BoardConfig, SentryConfig
 from datetime import datetime, timezone
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from utils.logging import AppLogDbSink, set_app_log_table, set_stat_event_table
-from utils.stats import record_lifecycle
+from utils.stats import record_lifecycle, start_stat_event_worker, stop_stat_event_worker
 
 SERVER_STARTED_AT: datetime | None = None
 DB_LOG_BUFFER_SIZE = 100
@@ -31,7 +32,6 @@ DEFAULT_STATS_RANGE = "all"
 DEFAULT_STATS_BUCKET = "1m"
 DEFAULT_STATS_LIMIT = 50
 DEFAULT_HOST = "0.0.0.0"
-DEFAULT_PORT = 8000
 
 # SENTRY_DSN이 있을 때만 Sentry 초기화
 if SentryConfig.SENTRY_DSN:
@@ -67,6 +67,7 @@ async def lifespan(app: FastAPI):
         level="DEBUG",
         enqueue=True,
     )
+    await start_stat_event_worker()
     lifecycle_sink = add_lifecycle_sink(record_lifecycle)
 
     logger.debug("init end")
@@ -80,6 +81,7 @@ async def lifespan(app: FastAPI):
     await EventBroker.wait_until_idle(timeout=BROKER_IDLE_TIMEOUT_SECONDS)
 
     remove_lifecycle_sink(lifecycle_sink)
+    await stop_stat_event_worker()
     logger.remove(db_log_sink_id)
     db_log_sink.stop()
     logger.remove(file_log_sink_id)
@@ -210,6 +212,16 @@ def _ensure_aware(value: datetime):
     return value.astimezone(timezone.utc)
 
 
+def _required_port() -> int:
+    port = os.getenv("PORT")
+    if not port:
+        raise RuntimeError("PORT is required")
+    try:
+        return int(port)
+    except ValueError as e:
+        raise RuntimeError("PORT must be an integer") from e
+
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host=DEFAULT_HOST, port=DEFAULT_PORT)
+    uvicorn.run(app, host=DEFAULT_HOST, port=_required_port())

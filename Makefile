@@ -1,8 +1,25 @@
 # act 바이너리는 https://github.com/nektos/act 릴리스에서 받아 bin/에 둔다 (git 미추적)
+ENV_FILE := .env
+
+ifeq ($(wildcard $(ENV_FILE)),)
+$(error $(ENV_FILE) file is required)
+endif
+
+PORT_DEFINED_IN_ENV := $(shell awk -F= '/^[[:space:]]*(export[[:space:]]+)?PORT[[:space:]]*=/ { print "1"; exit }' $(ENV_FILE))
+ifeq ($(PORT_DEFINED_IN_ENV),)
+$(error PORT is required in $(ENV_FILE))
+endif
+
+include $(ENV_FILE)
+export
+
+ifeq ($(strip $(PORT)),)
+$(error PORT is required in $(ENV_FILE))
+endif
+
 ACT = bin/act
 TYPE = dev
 HOST ?= 0.0.0.0
-PORT ?= 8000
 
 .PHONY: dev run check-port up deploy act-ci act-cd-dev act-cd-prod test-all profile branch-clear
 

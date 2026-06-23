@@ -9,6 +9,10 @@ from pathlib import Path
 from typing import Any
 
 from core.dataobj import DataObj
+from utils.sql import get_sql
+
+SQL_PATH = Path(__file__).with_name("sql")
+APP_LOG_INSERT = "app_log_insert.sql"
 
 
 class AppLogDbSink:
@@ -61,16 +65,7 @@ class AppLogDbSink:
             try:
                 db = self._get_db()
                 db.executemany(
-                    """
-                    INSERT INTO app_log (
-                        level,
-                        module,
-                        function_name,
-                        line,
-                        message,
-                        context_json
-                    ) VALUES (?, ?, ?, ?, ?, ?)
-                    """,
+                    get_sql(SQL_PATH, APP_LOG_INSERT),
                     records,
                 )
                 db.commit()

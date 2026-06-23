@@ -12,7 +12,6 @@ from .internal.repository import (
     get_total_stat_event_count,
     insert_app_log,
     insert_stat_event,
-    insert_stat_event_sync,
     set_app_log_table,
     set_stat_event_table,
 )

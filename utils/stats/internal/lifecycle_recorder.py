@@ -1,23 +1,22 @@
-from __future__ import annotations
-
-import sqlite3
 from typing import Any
 
+from loguru import logger
+
 from data.board import Point
-from utils.stats.internal.event_recorder import record_stat_event_sync
+from utils.stats.internal.event_recorder import enqueue_stat_event
 
 
-def record_lifecycle(lifecycle: Any):
+def record_lifecycle(lifecycle: Any) -> None:
     try:
         if lifecycle.__class__.__name__ == "RLife":
             _record_rlife(lifecycle)
         elif lifecycle.__class__.__name__ == "HLife":
             _record_hlife(lifecycle, actor_id=None)
-    except (AttributeError, sqlite3.Error):
-        pass
+    except AttributeError as e:
+        logger.warning(f"lifecycle 통계 기록 실패 | lifecycle:{lifecycle.__class__.__name__} error:{e}")
 
 
-def _record_rlife(rlife: Any):
+def _record_rlife(rlife: Any) -> None:
     event_type = _event_name(rlife.event)
     actor_id = _actor_id(rlife.event)
     point = _event_point(rlife.event)
@@ -62,7 +61,7 @@ def _record_rlife(rlife: Any):
         return
 
     if event_type == "SET-FLAG":
-        toggled = _first_hlife(hlives, "BoardHandler", "togle_flag")
+        toggled = _first_hlife(hlives, "BoardHandler", "toggle_flag")
         if toggled is not None:
             _record(
                 "SET_FLAG",
@@ -119,7 +118,7 @@ def _record_rlife(rlife: Any):
             )
 
 
-def _record_hlife(hlife: Any, *, actor_id: str | None):
+def _record_hlife(hlife: Any, *, actor_id: str | None) -> None:
     if hlife.handler_name == "BombHandler" and hlife.method_name == "explode_bomb":
         installed_bomb = _first_arg(hlife)
         point = getattr(installed_bomb, "position", None)
@@ -183,8 +182,8 @@ def _record(
     point: Point | None = None,
     value: int | None = None,
     payload: dict[str, Any] | None = None,
-):
-    record_stat_event_sync(
+) -> None:
+    enqueue_stat_event(
         event_type,
         actor_id=actor_id,
         point=point,
@@ -193,33 +192,33 @@ def _record(
     )
 
 
-def _event_name(event: Any):
+def _event_name(event: Any) -> str | None:
     if event is None:
         return None
     event_name = getattr(event, "event_name", None)
     return getattr(event_name, "value", event_name)
 
 
-def _actor_id(event: Any):
+def _actor_id(event: Any) -> str | None:
     return getattr(getattr(event, "payload", None), "id", None)
 
 
-def _event_point(event: Any):
+def _event_point(event: Any) -> Point | None:
     data = getattr(getattr(event, "payload", None), "data", None)
     return getattr(data, "position", None)
 
 
-def _connection_payload():
+def _connection_payload() -> dict[str, Any]:
     from handler.connection import ConnectionHandler
 
     return {"connection_count": len(ConnectionHandler.conn_dict)}
 
 
-def _first_hlife(hlives: list[Any], handler_name: str, method_name: str):
+def _first_hlife(hlives: list[Any], handler_name: str, method_name: str) -> Any | None:
     return next(iter(_find_hlives(hlives, handler_name, method_name)), None)
 
 
-def _find_hlives(hlives: list[Any], handler_name: str, method_name: str):
+def _find_hlives(hlives: list[Any], handler_name: str, method_name: str) -> list[Any]:
     return [
         hlife
         for hlife in hlives
@@ -227,34 +226,34 @@ def _find_hlives(hlives: list[Any], handler_name: str, method_name: str):
     ]
 
 
-def _first_arg(hlife: Any):
+def _first_arg(hlife: Any) -> Any | None:
     if hlife.params.args:
         return hlife.params.args[0]
     return None
 
 
-def _first_point_arg(hlife: Any):
+def _first_point_arg(hlife: Any) -> Point | None:
     arg = _first_arg(hlife)
     if isinstance(arg, Point):
         return arg
     return None
 
 
-def _score_delta(hlives: list[Any]):
+def _score_delta(hlives: list[Any]) -> int:
     return sum(
         _score_delta_from_hlife(hlife)
         for hlife in _find_hlives(hlives, "CursorHandler", "increase_score")
     )
 
 
-def _score_deltas(hlives: list[Any]):
+def _score_deltas(hlives: list[Any]) -> list[int]:
     return [
         _score_delta_from_hlife(hlife)
         for hlife in _find_hlives(hlives, "CursorHandler", "increase_score")
     ]
 
 
-def _score_delta_from_hlife(hlife: Any):
+def _score_delta_from_hlife(hlife: Any) -> int:
     before = hlife.before_snapshot
     after = hlife.after_snapshot
     if before is None or after is None:
@@ -262,14 +261,14 @@ def _score_delta_from_hlife(hlife: Any):
     return after.score - before.score
 
 
-def _item_delta(hlives: list[Any]):
+def _item_delta(hlives: list[Any]) -> int:
     return sum(
         _item_amount_from_hlife(hlife)
         for hlife in _find_hlives(hlives, "CursorHandler", "grant_item")
     )
 
 
-def _item_amount_from_hlife(hlife: Any):
+def _item_amount_from_hlife(hlife: Any) -> int:
     if len(hlife.params.args) < 3:
         return 0
     amount = hlife.params.args[2]
@@ -278,19 +277,19 @@ def _item_amount_from_hlife(hlife: Any):
     return 0
 
 
-def _is_mine(hlife: Any):
+def _is_mine(hlife: Any) -> bool | None:
     after = hlife.after_snapshot
     return getattr(after, "is_mine", None)
 
 
-def _int_or_none(value: Any):
+def _int_or_none(value: Any) -> int | None:
     try:
         return int(value)
     except (TypeError, ValueError):
         return None
 
 
-def _iso_or_none(value: Any):
+def _iso_or_none(value: Any) -> str | None:
     if value is None:
         return None
     if hasattr(value, "isoformat"):
