@@ -1,6 +1,15 @@
 # act 바이너리는 https://github.com/nektos/act 릴리스에서 받아 bin/에 둔다 (git 미추적)
 ENV_FILE := .env
+RUNTIME_TARGETS := dev run check-port
+REQUESTED_TARGETS := $(if $(MAKECMDGOALS),$(MAKECMDGOALS),dev)
+NEEDS_RUNTIME_ENV := $(filter $(RUNTIME_TARGETS),$(REQUESTED_TARGETS))
 
+ifneq ($(wildcard $(ENV_FILE)),)
+include $(ENV_FILE)
+export
+endif
+
+ifneq ($(NEEDS_RUNTIME_ENV),)
 ifeq ($(wildcard $(ENV_FILE)),)
 $(error $(ENV_FILE) file is required)
 endif
@@ -10,11 +19,9 @@ ifeq ($(PORT_DEFINED_IN_ENV),)
 $(error PORT is required in $(ENV_FILE))
 endif
 
-include $(ENV_FILE)
-export
-
 ifeq ($(strip $(PORT)),)
 $(error PORT is required in $(ENV_FILE))
+endif
 endif
 
 ACT = bin/act
