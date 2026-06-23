@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 import json
 from typing import Any
 
-from handler.board.storage import get_db
+from handler.board.storage import DB
 from utils.logging import (
     get_latest_join_times,
     get_previous_connection_payloads,
@@ -49,6 +49,7 @@ TILE_HEATMAP_EVENT_TYPES = {MOVE_EVENT}
 
 
 async def get_dashboard(
+    db: DB,
     range_value: str = DEFAULT_RANGE_VALUE,
     bucket: str = DEFAULT_BUCKET,
     limit: int = DEFAULT_LIMIT,
@@ -59,33 +60,32 @@ async def get_dashboard(
     now = datetime.now(timezone.utc)
     limit = max(MIN_LIMIT, min(limit, MAX_LIMIT))
 
-    async with get_db() as db:
-        total_stat_events = await get_total_stat_event_count(db)
-        observed_range = await get_stat_event_observed_range(db)
-        since_dt = _since_datetime(range_value, now, observed_range)
-        since = _format_z(since_dt)
-        stat_events = [_stat_event(row) for row in await get_stat_events_since(db, since)]
-        if _is_all_range(range_value):
-            all_stat_events = stat_events
-        else:
-            all_stat_events = [
-                _stat_event(row)
-                for row in await get_stat_events_since(db, ALL_EVENTS_SINCE)
-            ]
-        previous_connection_count = _previous_connection_count(
-            await get_previous_connection_payloads(
-                db,
-                since,
-                PREVIOUS_CONNECTION_LOOKBACK_LIMIT,
-            )
+    total_stat_events = await get_total_stat_event_count(db)
+    observed_range = await get_stat_event_observed_range(db)
+    since_dt = _since_datetime(range_value, now, observed_range)
+    since = _format_z(since_dt)
+    stat_events = [_stat_event(row) for row in await get_stat_events_since(db, since)]
+    if _is_all_range(range_value):
+        all_stat_events = stat_events
+    else:
+        all_stat_events = [
+            _stat_event(row)
+            for row in await get_stat_events_since(db, ALL_EVENTS_SINCE)
+        ]
+    previous_connection_count = _previous_connection_count(
+        await get_previous_connection_payloads(
+            db,
+            since,
+            PREVIOUS_CONNECTION_LOOKBACK_LIMIT,
         )
-        recent_events = [_stat_event(row) for row in await get_recent_stat_events(db, limit)]
-        recent_logs = [_app_log(row) for row in await get_recent_app_logs(db, limit)]
-        active_cursors = _with_connection_times(
-            await get_latest_join_times(db),
-            active_cursors or [],
-            now,
-        )
+    )
+    recent_events = [_stat_event(row) for row in await get_recent_stat_events(db, limit)]
+    recent_logs = [_app_log(row) for row in await get_recent_app_logs(db, limit)]
+    active_cursors = _with_connection_times(
+        await get_latest_join_times(db),
+        active_cursors or [],
+        now,
+    )
 
     event_counts = Counter(event["event_type"] for event in stat_events)
     if current_connections is None:

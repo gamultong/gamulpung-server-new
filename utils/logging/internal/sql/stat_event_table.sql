@@ -1,3 +1,5 @@
+-- Purpose: Create the stat event table used for gameplay and lifecycle analytics.
+-- Structure: Initialized from server lifespan through utils.logging.internal.repository.set_stat_event_table(); written by stats event recorder.
 CREATE TABLE IF NOT EXISTS stat_event (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     added_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),

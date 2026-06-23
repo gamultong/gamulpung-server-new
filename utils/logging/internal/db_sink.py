@@ -13,6 +13,17 @@ from utils.sql import get_sql
 
 SQL_PATH = Path(__file__).with_name("sql")
 APP_LOG_INSERT = "app_log_insert.sql"
+LOG_RECORD_LEVEL = "level"
+LOG_RECORD_MODULE = "module"
+LOG_RECORD_FUNCTION = "function"
+LOG_RECORD_LINE = "line"
+LOG_RECORD_MESSAGE = "message"
+LOG_RECORD_NAME = "name"
+LOG_RECORD_FILE = "file"
+LOG_RECORD_PROCESS = "process"
+LOG_RECORD_THREAD = "thread"
+LOG_RECORD_EXTRA = "extra"
+LOG_RECORD_EXCEPTION = "exception"
 
 
 class AppLogDbSink:
@@ -43,11 +54,11 @@ class AppLogDbSink:
     def _insert(self, record: dict[str, Any]):
         self._buffer.append(
             (
-                record["level"].name,
-                record.get("module"),
-                record.get("function"),
-                record.get("line"),
-                record.get("message", ""),
+                record[LOG_RECORD_LEVEL].name,
+                record.get(LOG_RECORD_MODULE),
+                record.get(LOG_RECORD_FUNCTION),
+                record.get(LOG_RECORD_LINE),
+                record.get(LOG_RECORD_MESSAGE, ""),
                 _to_json(_context(record)),
             )
         )
@@ -95,16 +106,16 @@ class AppLogDbSink:
 
 
 def _context(record: dict[str, Any]) -> dict[str, Any]:
-    exception = record.get("exception")
+    exception = record.get(LOG_RECORD_EXCEPTION)
     context = {
-        "name": record.get("name"),
-        "file": str(record.get("file")),
-        "process": str(record.get("process")),
-        "thread": str(record.get("thread")),
-        "extra": record.get("extra") or {},
+        LOG_RECORD_NAME: record.get(LOG_RECORD_NAME),
+        LOG_RECORD_FILE: str(record.get(LOG_RECORD_FILE)),
+        LOG_RECORD_PROCESS: str(record.get(LOG_RECORD_PROCESS)),
+        LOG_RECORD_THREAD: str(record.get(LOG_RECORD_THREAD)),
+        LOG_RECORD_EXTRA: record.get(LOG_RECORD_EXTRA) or {},
     }
     if exception:
-        context["exception"] = str(exception)
+        context[LOG_RECORD_EXCEPTION] = str(exception)
     return context
 
 
@@ -112,7 +123,7 @@ def _to_json(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, default=_json_default)
 
 
-def _json_default(value: Any):
+def _json_default(value: Any) -> dict[str, Any] | str | list[Any]:
     if isinstance(value, DataObj):
         return value.to_dict()
     if isinstance(value, Enum):

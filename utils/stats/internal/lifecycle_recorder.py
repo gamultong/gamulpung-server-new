@@ -1,190 +1,281 @@
-from typing import Any
+from __future__ import annotations
+
+from datetime import date, datetime
+from enum import StrEnum
+from typing import TypeAlias
 
 from loguru import logger
 
-from data.board import Point
+from core.event import Event, Payload
+from core.lifecycle import HLife, LifeCycle, RLife
+from data.board import Point, Tile
+from data.bomb import InstalledBomb
+from data.cursor import Cursor
+from data.event import ClientEvent, TriggerEvent
+from data.payload import ClientMessage, IdDataPayload, IdPayload
 from utils.stats.internal.event_recorder import enqueue_stat_event
 
+StatPayload: TypeAlias = dict[str, object]
 
-def record_lifecycle(lifecycle: Any) -> None:
+EVENT_VALUE = 1
+NO_DELTA = 0
+GRANT_ITEM_AMOUNT_INDEX = 2
+GRANT_ITEM_MIN_ARGS = GRANT_ITEM_AMOUNT_INDEX + 1
+
+POSITION_MESSAGE_TYPES = (
+    ClientMessage.Move,
+    ClientMessage.OpenTiles,
+    ClientMessage.SetFlag,
+    ClientMessage.DismantleMine,
+    ClientMessage.InstallBomb,
+)
+
+
+class HandlerName(StrEnum):
+    CURSOR = "CursorHandler"
+    BOARD = "BoardHandler"
+    BOMB = "BombHandler"
+
+
+class CursorMethod(StrEnum):
+    CREATE = "create"
+    DELETE = "delete"
+    MOVE = "move"
+    DEATH = "death"
+    INCREASE_SCORE = "increase_score"
+    GRANT_ITEM = "grant_item"
+
+
+class BoardMethod(StrEnum):
+    TOGGLE_FLAG = "toggle_flag"
+    OPEN_TILES = "open_tiles"
+    DISMANTLE_MINE = "dismantle_mine"
+
+
+class BombMethod(StrEnum):
+    EXPLODE_BOMB = "explode_bomb"
+
+
+HandlerMethod: TypeAlias = CursorMethod | BoardMethod | BombMethod
+
+
+class StatEventType(StrEnum):
+    JOIN = "JOIN"
+    QUIT = "QUIT"
+    CREATE_CURSOR = "CREATE_CURSOR"
+    MOVE = "MOVE"
+    SET_FLAG = "SET_FLAG"
+    OPEN_TILE = "OPEN_TILE"
+    DISMANTLE_MINE = "DISMANTLE_MINE"
+    INSTALL_BOMB = "INSTALL_BOMB"
+    EXPLOSION = "EXPLOSION"
+    DEATH = "DEATH"
+    SCORE_CHANGE = "SCORE_CHANGE"
+    GRANT_ITEM = "GRANT_ITEM"
+
+
+class PayloadKey(StrEnum):
+    ACTIVE_AT = "active_at"
+    AFTER_ITEMS = "after_items"
+    AFTER_SCORE = "after_score"
+    BEFORE_ITEMS = "before_items"
+    BEFORE_SCORE = "before_score"
+    COLOR = "color"
+    CONNECTION_COUNT = "connection_count"
+    EXPLOSION_RANGE = "explosion_range"
+    HAD_CURSOR = "had_cursor"
+    HEIGHT = "height"
+    IS_MINE = "is_mine"
+    ITEM_DELTA = "item_delta"
+    REVIVE_AT = "revive_at"
+    SCORE_DELTA = "score_delta"
+    SOURCE = "source"
+    WIDTH = "width"
+
+
+def record_lifecycle(lifecycle: LifeCycle) -> None:
     try:
-        if lifecycle.__class__.__name__ == "RLife":
+        if isinstance(lifecycle, RLife):
             _record_rlife(lifecycle)
-        elif lifecycle.__class__.__name__ == "HLife":
+        elif isinstance(lifecycle, HLife):
             _record_hlife(lifecycle, actor_id=None)
     except AttributeError as e:
-        logger.warning(f"lifecycle 통계 기록 실패 | lifecycle:{lifecycle.__class__.__name__} error:{e}")
+        logger.warning(f"lifecycle 통계 기록 실패 | lifecycle:{type(lifecycle).__name__} error:{e}")
 
 
-def _record_rlife(rlife: Any) -> None:
+def _record_rlife(rlife: RLife) -> None:
     event_type = _event_name(rlife.event)
     actor_id = _actor_id(rlife.event)
     point = _event_point(rlife.event)
-    hlives = list(rlife.caller.hlives) if rlife.caller else []
+    hlives = _caller_hlives(rlife)
 
-    if event_type == "JOIN":
-        _record("JOIN", actor_id=actor_id, value=1, payload=_connection_payload())
+    if event_type == TriggerEvent.JOIN.value:
+        _record(StatEventType.JOIN, actor_id=actor_id, value=EVENT_VALUE, payload=_connection_payload())
         return
 
-    if event_type == "QUIT":
-        deleted = _first_hlife(hlives, "CursorHandler", "delete")
-        deleted_cursor = deleted.before_snapshot if deleted else None
+    if event_type == TriggerEvent.QUIT.value:
+        deleted = _first_hlife(hlives, HandlerName.CURSOR, CursorMethod.DELETE)
+        deleted_cursor = _cursor_or_none(deleted.before_snapshot if deleted else None)
         _record(
-            "QUIT",
+            StatEventType.QUIT,
             actor_id=actor_id,
-            point=getattr(deleted_cursor, "position", point),
-            value=1,
-            payload={**_connection_payload(), "had_cursor": deleted_cursor is not None},
-        )
-        return
-
-    if event_type == "CREATE-CURSOR":
-        created = _first_hlife(hlives, "CursorHandler", "create")
-        cursor = created.after_snapshot if created else None
-        _record(
-            "CREATE_CURSOR",
-            actor_id=actor_id,
-            point=getattr(cursor, "position", point),
-            value=1,
+            point=deleted_cursor.position if deleted_cursor else point,
+            value=EVENT_VALUE,
             payload={
-                "width": getattr(cursor, "width", None),
-                "height": getattr(cursor, "height", None),
-                "color": _int_or_none(getattr(cursor, "color", None)),
+                **_connection_payload(),
+                PayloadKey.HAD_CURSOR.value: deleted_cursor is not None,
             },
         )
         return
 
-    if event_type == "MOVE":
-        moved = _first_hlife(hlives, "CursorHandler", "move")
-        if moved is not None:
-            _record("MOVE", actor_id=actor_id, point=point, value=1)
+    if event_type == ClientEvent.CREATE_CURSOR.value:
+        created = _first_hlife(hlives, HandlerName.CURSOR, CursorMethod.CREATE)
+        cursor = _cursor_or_none(created.after_snapshot if created else None)
+        _record(
+            StatEventType.CREATE_CURSOR,
+            actor_id=actor_id,
+            point=cursor.position if cursor else point,
+            value=EVENT_VALUE,
+            payload={
+                PayloadKey.WIDTH.value: cursor.width if cursor else None,
+                PayloadKey.HEIGHT.value: cursor.height if cursor else None,
+                PayloadKey.COLOR.value: int(cursor.color) if cursor else None,
+            },
+        )
         return
 
-    if event_type == "SET-FLAG":
-        toggled = _first_hlife(hlives, "BoardHandler", "toggle_flag")
+    if event_type == ClientEvent.MOVE.value:
+        moved = _first_hlife(hlives, HandlerName.CURSOR, CursorMethod.MOVE)
+        if moved is not None:
+            _record(StatEventType.MOVE, actor_id=actor_id, point=point, value=EVENT_VALUE)
+        return
+
+    if event_type == ClientEvent.SET_FLAG.value:
+        toggled = _first_hlife(hlives, HandlerName.BOARD, BoardMethod.TOGGLE_FLAG)
         if toggled is not None:
             _record(
-                "SET_FLAG",
+                StatEventType.SET_FLAG,
                 actor_id=actor_id,
                 point=point,
-                value=1,
-                payload={"score_delta": _score_delta(hlives)},
+                value=EVENT_VALUE,
+                payload={PayloadKey.SCORE_DELTA.value: _score_delta(hlives)},
             )
         return
 
-    if event_type == "OPEN-TILES":
+    if event_type == ClientEvent.OPEN_TILES.value:
         score_deltas = _score_deltas(hlives)
-        for index, hlife in enumerate(_find_hlives(hlives, "BoardHandler", "open_tiles")):
+        for index, hlife in enumerate(_find_hlives(hlives, HandlerName.BOARD, BoardMethod.OPEN_TILES)):
             _record(
-                "OPEN_TILE",
+                StatEventType.OPEN_TILE,
                 actor_id=actor_id,
                 point=_first_point_arg(hlife) or point,
-                value=1,
+                value=EVENT_VALUE,
                 payload={
-                    "is_mine": _is_mine(hlife),
-                    "score_delta": score_deltas[index] if index < len(score_deltas) else 0,
+                    PayloadKey.IS_MINE.value: _is_mine(hlife),
+                    PayloadKey.SCORE_DELTA.value: score_deltas[index] if index < len(score_deltas) else NO_DELTA,
                 },
             )
         return
 
-    if event_type == "DISMANTLE-MINE":
-        dismantled = _first_hlife(hlives, "BoardHandler", "dismantle_mine")
+    if event_type == ClientEvent.DISMANTLE_MINE.value:
+        dismantled = _first_hlife(hlives, HandlerName.BOARD, BoardMethod.DISMANTLE_MINE)
         if dismantled is not None:
             _record(
-                "DISMANTLE_MINE",
+                StatEventType.DISMANTLE_MINE,
                 actor_id=actor_id,
                 point=point,
-                value=1,
-                payload={"item_delta": _item_delta(hlives)},
+                value=EVENT_VALUE,
+                payload={PayloadKey.ITEM_DELTA.value: _item_delta(hlives)},
             )
-        for hlife in _find_hlives(hlives, "BoardHandler", "open_tiles"):
+        for hlife in _find_hlives(hlives, HandlerName.BOARD, BoardMethod.OPEN_TILES):
             _record(
-                "OPEN_TILE",
+                StatEventType.OPEN_TILE,
                 actor_id=actor_id,
                 point=_first_point_arg(hlife) or point,
-                value=1,
-                payload={"source": "DISMANTLE_MINE", "is_mine": _is_mine(hlife)},
+                value=EVENT_VALUE,
+                payload={
+                    PayloadKey.SOURCE.value: StatEventType.DISMANTLE_MINE.value,
+                    PayloadKey.IS_MINE.value: _is_mine(hlife),
+                },
             )
         return
 
-    if event_type == "INSTALL-BOMB":
-        if _item_delta(hlives) < 0:
-            _record(
-                "INSTALL_BOMB",
-                actor_id=actor_id,
-                point=point,
-                value=1,
-                payload={"item_delta": _item_delta(hlives)},
-            )
-
-
-def _record_hlife(hlife: Any, *, actor_id: str | None) -> None:
-    if hlife.handler_name == "BombHandler" and hlife.method_name == "explode_bomb":
-        installed_bomb = _first_arg(hlife)
-        point = getattr(installed_bomb, "position", None)
+    if event_type == ClientEvent.INSTALL_BOMB.value and _item_delta(hlives) < NO_DELTA:
         _record(
-            "EXPLOSION",
-            actor_id=getattr(installed_bomb, "cur_id", actor_id),
+            StatEventType.INSTALL_BOMB,
+            actor_id=actor_id,
             point=point,
-            value=getattr(installed_bomb, "explosion_range", None),
+            value=EVENT_VALUE,
+            payload={PayloadKey.ITEM_DELTA.value: _item_delta(hlives)},
+        )
+
+
+def _record_hlife(hlife: HLife, *, actor_id: str | None) -> None:
+    if _is_target_hlife(hlife, HandlerName.BOMB, BombMethod.EXPLODE_BOMB):
+        installed_bomb = _installed_bomb_or_none(_first_arg(hlife))
+        _record(
+            StatEventType.EXPLOSION,
+            actor_id=installed_bomb.cur_id if installed_bomb else actor_id,
+            point=installed_bomb.position if installed_bomb else None,
+            value=installed_bomb.explosion_range if installed_bomb else None,
             payload={
-                "explosion_range": getattr(installed_bomb, "explosion_range", None),
-                "active_at": _iso_or_none(getattr(installed_bomb, "active_at", None)),
+                PayloadKey.EXPLOSION_RANGE.value: installed_bomb.explosion_range if installed_bomb else None,
+                PayloadKey.ACTIVE_AT.value: _iso_or_none(installed_bomb.active_at if installed_bomb else None),
             },
         )
         return
 
-    if hlife.handler_name == "CursorHandler" and hlife.method_name == "death":
-        cursor = hlife.after_snapshot
+    if _is_target_hlife(hlife, HandlerName.CURSOR, CursorMethod.DEATH):
+        cursor = _cursor_or_none(hlife.after_snapshot)
         _record(
-            "DEATH",
-            actor_id=getattr(cursor, "id", actor_id),
-            point=getattr(cursor, "position", None),
-            value=1,
-            payload={"revive_at": _iso_or_none(getattr(cursor, "active_at", None))},
+            StatEventType.DEATH,
+            actor_id=cursor.id if cursor else actor_id,
+            point=cursor.position if cursor else None,
+            value=EVENT_VALUE,
+            payload={PayloadKey.REVIVE_AT.value: _iso_or_none(cursor.active_at if cursor else None)},
         )
         return
 
-    if hlife.handler_name == "CursorHandler" and hlife.method_name == "increase_score":
-        cursor = hlife.after_snapshot
+    if _is_target_hlife(hlife, HandlerName.CURSOR, CursorMethod.INCREASE_SCORE):
+        before = _cursor_or_none(hlife.before_snapshot)
+        cursor = _cursor_or_none(hlife.after_snapshot)
         _record(
-            "SCORE_CHANGE",
-            actor_id=getattr(cursor, "id", actor_id),
-            point=getattr(cursor, "position", None),
+            StatEventType.SCORE_CHANGE,
+            actor_id=cursor.id if cursor else actor_id,
+            point=cursor.position if cursor else None,
             value=_score_delta_from_hlife(hlife),
             payload={
-                "before_score": getattr(hlife.before_snapshot, "score", None),
-                "after_score": getattr(cursor, "score", None),
+                PayloadKey.BEFORE_SCORE.value: before.score if before else None,
+                PayloadKey.AFTER_SCORE.value: cursor.score if cursor else None,
             },
         )
         return
 
-    if hlife.handler_name == "CursorHandler" and hlife.method_name == "grant_item":
-        cursor = hlife.after_snapshot
-        before = hlife.before_snapshot
+    if _is_target_hlife(hlife, HandlerName.CURSOR, CursorMethod.GRANT_ITEM):
+        before = _cursor_or_none(hlife.before_snapshot)
+        cursor = _cursor_or_none(hlife.after_snapshot)
         _record(
-            "GRANT_ITEM",
-            actor_id=getattr(cursor, "id", actor_id),
-            point=getattr(cursor, "position", None),
+            StatEventType.GRANT_ITEM,
+            actor_id=cursor.id if cursor else actor_id,
+            point=cursor.position if cursor else None,
             value=_item_amount_from_hlife(hlife),
             payload={
-                "before_items": before.items.to_dict() if before else {},
-                "after_items": cursor.items.to_dict() if cursor else {},
+                PayloadKey.BEFORE_ITEMS.value: before.items.to_dict() if before else {},
+                PayloadKey.AFTER_ITEMS.value: cursor.items.to_dict() if cursor else {},
             },
         )
-        return
 
 
 def _record(
-    event_type: str,
+    event_type: StatEventType,
     *,
     actor_id: str | None = None,
     point: Point | None = None,
     value: int | None = None,
-    payload: dict[str, Any] | None = None,
+    payload: StatPayload | None = None,
 ) -> None:
     enqueue_stat_event(
-        event_type,
+        event_type.value,
         actor_id=actor_id,
         point=point,
         value=value,
@@ -192,106 +283,137 @@ def _record(
     )
 
 
-def _event_name(event: Any) -> str | None:
+def _event_name(event: Event[Payload] | None) -> str | None:
     if event is None:
         return None
-    event_name = getattr(event, "event_name", None)
-    return getattr(event_name, "value", event_name)
+    return event.event_name.value
 
 
-def _actor_id(event: Any) -> str | None:
-    return getattr(getattr(event, "payload", None), "id", None)
+def _actor_id(event: Event[Payload] | None) -> str | None:
+    if event is None:
+        return None
+    payload = event.payload
+    if isinstance(payload, (IdPayload, IdDataPayload)):
+        return str(payload.id)
+    return None
 
 
-def _event_point(event: Any) -> Point | None:
-    data = getattr(getattr(event, "payload", None), "data", None)
-    return getattr(data, "position", None)
+def _event_point(event: Event[Payload] | None) -> Point | None:
+    if event is None or not isinstance(event.payload, IdDataPayload):
+        return None
+    data = event.payload.data
+    if isinstance(data, POSITION_MESSAGE_TYPES):
+        return data.position
+    return None
 
 
-def _connection_payload() -> dict[str, Any]:
+def _connection_payload() -> StatPayload:
     from handler.connection import ConnectionHandler
 
-    return {"connection_count": len(ConnectionHandler.conn_dict)}
+    return {PayloadKey.CONNECTION_COUNT.value: len(ConnectionHandler.conn_dict)}
 
 
-def _first_hlife(hlives: list[Any], handler_name: str, method_name: str) -> Any | None:
+def _caller_hlives(rlife: RLife) -> list[HLife]:
+    if rlife.caller is None:
+        return []
+    return [hlife for hlife in rlife.caller.hlives if isinstance(hlife, HLife)]
+
+
+def _first_hlife(hlives: list[HLife], handler_name: HandlerName, method_name: HandlerMethod) -> HLife | None:
     return next(iter(_find_hlives(hlives, handler_name, method_name)), None)
 
 
-def _find_hlives(hlives: list[Any], handler_name: str, method_name: str) -> list[Any]:
+def _find_hlives(hlives: list[HLife], handler_name: HandlerName, method_name: HandlerMethod) -> list[HLife]:
     return [
         hlife
         for hlife in hlives
-        if hlife.handler_name == handler_name and hlife.method_name == method_name
+        if _is_target_hlife(hlife, handler_name, method_name)
     ]
 
 
-def _first_arg(hlife: Any) -> Any | None:
+def _is_target_hlife(hlife: HLife, handler_name: HandlerName, method_name: HandlerMethod) -> bool:
+    return hlife.handler_name == handler_name and hlife.method_name == method_name
+
+
+def _first_arg(hlife: HLife) -> object | None:
     if hlife.params.args:
         return hlife.params.args[0]
     return None
 
 
-def _first_point_arg(hlife: Any) -> Point | None:
+def _first_point_arg(hlife: HLife) -> Point | None:
     arg = _first_arg(hlife)
     if isinstance(arg, Point):
         return arg
     return None
 
 
-def _score_delta(hlives: list[Any]) -> int:
+def _score_delta(hlives: list[HLife]) -> int:
     return sum(
         _score_delta_from_hlife(hlife)
-        for hlife in _find_hlives(hlives, "CursorHandler", "increase_score")
+        for hlife in _find_hlives(hlives, HandlerName.CURSOR, CursorMethod.INCREASE_SCORE)
     )
 
 
-def _score_deltas(hlives: list[Any]) -> list[int]:
+def _score_deltas(hlives: list[HLife]) -> list[int]:
     return [
         _score_delta_from_hlife(hlife)
-        for hlife in _find_hlives(hlives, "CursorHandler", "increase_score")
+        for hlife in _find_hlives(hlives, HandlerName.CURSOR, CursorMethod.INCREASE_SCORE)
     ]
 
 
-def _score_delta_from_hlife(hlife: Any) -> int:
-    before = hlife.before_snapshot
-    after = hlife.after_snapshot
+def _score_delta_from_hlife(hlife: HLife) -> int:
+    before = _cursor_or_none(hlife.before_snapshot)
+    after = _cursor_or_none(hlife.after_snapshot)
     if before is None or after is None:
-        return 0
+        return NO_DELTA
     return after.score - before.score
 
 
-def _item_delta(hlives: list[Any]) -> int:
+def _item_delta(hlives: list[HLife]) -> int:
     return sum(
         _item_amount_from_hlife(hlife)
-        for hlife in _find_hlives(hlives, "CursorHandler", "grant_item")
+        for hlife in _find_hlives(hlives, HandlerName.CURSOR, CursorMethod.GRANT_ITEM)
     )
 
 
-def _item_amount_from_hlife(hlife: Any) -> int:
-    if len(hlife.params.args) < 3:
-        return 0
-    amount = hlife.params.args[2]
+def _item_amount_from_hlife(hlife: HLife) -> int:
+    if len(hlife.params.args) < GRANT_ITEM_MIN_ARGS:
+        return NO_DELTA
+    amount = hlife.params.args[GRANT_ITEM_AMOUNT_INDEX]
     if isinstance(amount, int):
         return amount
-    return 0
+    return NO_DELTA
 
 
-def _is_mine(hlife: Any) -> bool | None:
-    after = hlife.after_snapshot
-    return getattr(after, "is_mine", None)
-
-
-def _int_or_none(value: Any) -> int | None:
-    try:
-        return int(value)
-    except (TypeError, ValueError):
+def _is_mine(hlife: HLife) -> bool | None:
+    tile = _tile_or_none(hlife.after_snapshot)
+    if tile is None:
         return None
+    return tile.is_mine
 
 
-def _iso_or_none(value: Any) -> str | None:
+def _cursor_or_none(value: object | None) -> Cursor | None:
+    if isinstance(value, Cursor):
+        return value
+    return None
+
+
+def _tile_or_none(value: object | None) -> Tile | None:
+    if isinstance(value, Tile):
+        return value
+    return None
+
+
+def _installed_bomb_or_none(value: object | None) -> InstalledBomb | None:
+    if isinstance(value, InstalledBomb):
+        return value
+    return None
+
+
+def _iso_or_none(value: object | None) -> str | None:
     if value is None:
         return None
-    if hasattr(value, "isoformat"):
+    if isinstance(value, datetime | date):
         return value.isoformat()
     return str(value)

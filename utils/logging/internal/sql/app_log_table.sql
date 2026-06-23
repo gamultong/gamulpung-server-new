@@ -1,3 +1,5 @@
+-- Purpose: Create the application log table used for Loguru records.
+-- Structure: Initialized from server lifespan through utils.logging.internal.repository.set_app_log_table().
 CREATE TABLE IF NOT EXISTS app_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     added_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),

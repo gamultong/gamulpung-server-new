@@ -96,7 +96,7 @@ class RecordDB_TestCase(IsolatedAsyncioTestCase):
         self.db = await self.db_context.__aenter__()
         await set_app_log_table(self.db)
         await set_stat_event_table(self.db)
-        await start_stat_event_worker()
+        await start_stat_event_worker(get_db)
 
     async def asyncTearDown(self) -> None:
         await stop_stat_event_worker()
@@ -166,6 +166,7 @@ class StatEventRepo_TestCase(RecordDB_TestCase):
 
     async def test_record_stat_event(self):
         await record_stat_event(
+            self.db,
             MOVE_EVENT,
             actor_id=PLAYER_ID,
             point=MOVE_POINT,
@@ -295,7 +296,7 @@ class DashboardRepository_TestCase(RecordDB_TestCase):
             payload={},
         )
 
-        dashboard = await get_dashboard()
+        dashboard = await get_dashboard(self.db)
 
         self.assertEqual(len(dashboard["tiles"]), TOP_TILES_LIMIT)
         self.assertEqual(len(dashboard["tile_heatmap"]), HEATMAP_TILE_COUNT)
@@ -347,7 +348,7 @@ class DashboardRepository_TestCase(RecordDB_TestCase):
             payload={"score_delta": SCORE_DELTA},
         )
 
-        dashboard = await get_dashboard()
+        dashboard = await get_dashboard(self.db)
         cursor = dashboard["last_known_cursors"][0]
 
         self.assertEqual(dashboard["stored"]["total_events"], 4)
@@ -374,7 +375,7 @@ class DashboardRepository_TestCase(RecordDB_TestCase):
             payload={"connection_count": 0},
         )
 
-        dashboard = await get_dashboard()
+        dashboard = await get_dashboard(self.db)
 
         self.assertEqual(dashboard["stored"]["total_events"], 2)
         self.assertEqual(dashboard["last_known_cursors"], [])

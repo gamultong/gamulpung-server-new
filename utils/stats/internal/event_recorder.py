@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
+from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
 from typing import Any
 
 from loguru import logger
 
 from data.board import Point
-from handler.board.storage import get_db
+from handler.board.storage import DB
 from utils.logging import insert_stat_event
+
+DBContextFactory = Callable[[], AbstractAsyncContextManager[DB]]
 
 
 @dataclass(frozen=True)
@@ -24,6 +28,7 @@ class StatEventRecord:
 
 _stat_event_queue: asyncio.Queue[StatEventRecord | None] | None = None
 _stat_event_worker: asyncio.Task[None] | None = None
+_stat_event_db_factory: DBContextFactory | None = None
 
 
 def tile_id(point: Point | None) -> str | None:
@@ -32,18 +37,19 @@ def tile_id(point: Point | None) -> str | None:
     return f"tile:{point.x}:{point.y}"
 
 
-async def start_stat_event_worker() -> None:
-    global _stat_event_queue, _stat_event_worker
+async def start_stat_event_worker(db_factory: DBContextFactory) -> None:
+    global _stat_event_db_factory, _stat_event_queue, _stat_event_worker
 
     if _stat_event_worker is not None and not _stat_event_worker.done():
         return
 
+    _stat_event_db_factory = db_factory
     _stat_event_queue = asyncio.Queue()
     _stat_event_worker = asyncio.create_task(_run_stat_event_worker())
 
 
 async def stop_stat_event_worker() -> None:
-    global _stat_event_queue, _stat_event_worker
+    global _stat_event_db_factory, _stat_event_queue, _stat_event_worker
 
     queue = _stat_event_queue
     worker = _stat_event_worker
@@ -52,6 +58,7 @@ async def stop_stat_event_worker() -> None:
 
     await queue.put(None)
     await worker
+    _stat_event_db_factory = None
     _stat_event_queue = None
     _stat_event_worker = None
 
@@ -62,6 +69,7 @@ async def drain_stat_event_queue() -> None:
 
 
 async def record_stat_event(
+    db: DB,
     event_type: str,
     *,
     actor_id: str | None = None,
@@ -69,7 +77,7 @@ async def record_stat_event(
     value: int | None = None,
     payload: dict[str, Any] | None = None,
 ) -> None:
-    await _insert(_record(event_type, actor_id=actor_id, point=point, value=value, payload=payload))
+    await _insert(db, _record(event_type, actor_id=actor_id, point=point, value=value, payload=payload))
 
 
 def enqueue_stat_event(
@@ -90,7 +98,8 @@ def enqueue_stat_event(
 
 async def _run_stat_event_worker() -> None:
     queue = _stat_event_queue
-    if queue is None:
+    db_factory = _stat_event_db_factory
+    if queue is None or db_factory is None:
         return
 
     while True:
@@ -98,7 +107,8 @@ async def _run_stat_event_worker() -> None:
         try:
             if record is None:
                 return
-            await _insert(record)
+            async with db_factory() as db:
+                await _insert(db, record)
         except Exception as e:
             logger.warning(f"stat_event 기록 실패 | event_type:{getattr(record, 'event_type', None)} error:{e}")
         finally:
@@ -124,15 +134,14 @@ def _record(
     )
 
 
-async def _insert(record: StatEventRecord) -> None:
-    async with get_db() as db:
-        await insert_stat_event(
-            db,
-            event_type=record.event_type,
-            actor_id=record.actor_id,
-            tile_id=record.tile_id,
-            x=record.x,
-            y=record.y,
-            value=record.value,
-            payload=record.payload,
-        )
+async def _insert(db: DB, record: StatEventRecord) -> None:
+    await insert_stat_event(
+        db,
+        event_type=record.event_type,
+        actor_id=record.actor_id,
+        tile_id=record.tile_id,
+        x=record.x,
+        y=record.y,
+        value=record.value,
+        payload=record.payload,
+    )

@@ -67,7 +67,7 @@ async def lifespan(app: FastAPI):
         level="DEBUG",
         enqueue=True,
     )
-    await start_stat_event_worker()
+    await start_stat_event_worker(get_db)
     lifecycle_sink = add_lifecycle_sink(record_lifecycle)
 
     logger.debug("init end")
@@ -152,14 +152,16 @@ async def stats_dashboard(
     bucket: str = DEFAULT_STATS_BUCKET,
     limit: int = DEFAULT_STATS_LIMIT,
 ):
-    return await get_dashboard(
-        range_value=range,
-        bucket=bucket,
-        limit=limit,
-        active_cursors=_active_cursors(),
-        current_connections=len(ConnectionHandler.conn_dict),
-        uptime=_uptime(),
-    )
+    async with get_db() as db:
+        return await get_dashboard(
+            db,
+            range_value=range,
+            bucket=bucket,
+            limit=limit,
+            active_cursors=_active_cursors(),
+            current_connections=len(ConnectionHandler.conn_dict),
+            uptime=_uptime(),
+        )
 
 
 def _active_cursors():
