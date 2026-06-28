@@ -19,14 +19,13 @@ from handler.board.storage import (
     set_table,
 )
 import sentry_sdk
-from config import BoardConfig, SentryConfig
+from config import SentryConfig
 from datetime import datetime, timezone
 from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 from utils.logging import AppLogDbSink, set_app_log_table, set_stat_event_table
 from utils.stats import record_lifecycle, start_stat_event_worker, stop_stat_event_worker
 
 SERVER_STARTED_AT: datetime | None = None
-DB_LOG_BUFFER_SIZE = 100
 BROKER_IDLE_TIMEOUT_SECONDS = 10
 DEFAULT_STATS_RANGE = "all"
 DEFAULT_STATS_BUCKET = "1m"
@@ -61,7 +60,8 @@ async def lifespan(app: FastAPI):
         await initialize_board(db)
 
     file_log_sink_id = logger.add("log.log")
-    db_log_sink = AppLogDbSink(BoardConfig.DB_PATH, buffer_size=DB_LOG_BUFFER_SIZE)
+    db_log_sink = AppLogDbSink()
+    await db_log_sink.start(get_db)
     db_log_sink_id = logger.add(
         db_log_sink,
         level="DEBUG",
@@ -83,7 +83,7 @@ async def lifespan(app: FastAPI):
     remove_lifecycle_sink(lifecycle_sink)
     await stop_stat_event_worker()
     logger.remove(db_log_sink_id)
-    db_log_sink.stop()
+    await db_log_sink.stop()
     logger.remove(file_log_sink_id)
 
 app = FastAPI(lifespan=lifespan)

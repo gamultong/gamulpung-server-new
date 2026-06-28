@@ -72,6 +72,9 @@ class EventBroker:
 
     @staticmethod
     async def wait_until_idle(timeout: float | None = None):
+        # 셧다운 근거: publish 중인 receiver가 남아 있으면 그 부수효과(stat/log 기록 등)가
+        # 누락된다. teardown에서 이 메서드로 in-flight 이벤트가 모두 끝날 때까지 대기한 뒤
+        # 워커/DB를 정리하려고 idle 추적(_mark_running/_mark_done)을 둔다.
         event = EventBroker._get_idle_event()
         await asyncio.wait_for(event.wait(), timeout=timeout)
 

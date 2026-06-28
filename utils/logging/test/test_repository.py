@@ -112,11 +112,14 @@ class RecordTable_TestCase(RecordDB_TestCase):
 
 class AppLogRepo_TestCase(RecordDB_TestCase):
     async def test_insert(self):
-        sink_id = logger.add(AppLogDbSink(self.db_path), level=LOG_LEVEL)
+        sink = AppLogDbSink()
+        await sink.start(get_db)
+        sink_id = logger.add(sink, level=LOG_LEVEL)
         try:
             logger.bind(**{LOG_EXTRA_KEY: LOG_EXTRA_VALUE}).info(LOG_MESSAGE)
         finally:
             logger.remove(sink_id)
+            await sink.stop()
 
         row = await get_app_log_by_message(self.db, LOG_MESSAGE)
 

@@ -31,7 +31,8 @@ TABLE_EXISTS = "table_exists.sql"
 
 DB = aiosqlite.Connection
 Row = aiosqlite.Row
-JsonValue: TypeAlias = None | bool | int | float | str | list["JsonValue"] | dict[str, "JsonValue"]
+# JSON 직렬화 가능한 값. 재귀 별칭은 힌팅 이득 대비 복잡해 object로 둔다.
+JsonValue: TypeAlias = object
 JsonObject: TypeAlias = dict[str, JsonValue]
 
 

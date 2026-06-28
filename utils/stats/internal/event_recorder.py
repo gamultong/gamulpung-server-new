@@ -15,7 +15,7 @@ from utils.logging.internal.repository import JsonObject
 DBContextFactory = Callable[[], AbstractAsyncContextManager[DB]]
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class StatEventRecord:
     event_type: str
     actor_id: str | None
@@ -23,6 +23,7 @@ class StatEventRecord:
     x: int | None
     y: int | None
     value: int | None
+    # ponytail: payload는 loose JsonObject — 리뷰 합의상 추후 이벤트별 구조화 타입으로 교체 예정
     payload: JsonObject | None
 
 
