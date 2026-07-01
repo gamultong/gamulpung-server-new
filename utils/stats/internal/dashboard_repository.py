@@ -51,18 +51,12 @@ TILE_HEATMAP_EVENT_TYPES = {MOVE_EVENT}
 
 KEY_STARTED_AT = "started_at"
 KEY_UPTIME_SECONDS = "uptime_seconds"
-KEY_CONNECTION_ID = "connection_id"
-KEY_CURSOR_ID = "cursor_id"
 KEY_CONNECTED_AT = "connected_at"
 KEY_SESSION_SECONDS = "session_seconds"
 KEY_COLOR = "color"
 KEY_TILE_ID = "tile_id"
 KEY_X = "x"
 KEY_Y = "y"
-KEY_SCORE = "score"
-KEY_IS_ALIVE = "is_alive"
-KEY_ACTIVE_AT = "active_at"
-KEY_WINDOW = "window"
 KEY_WIDTH = "width"
 KEY_HEIGHT = "height"
 KEY_CONNECTION_COUNT = "connection_count"
@@ -260,7 +254,7 @@ async def get_dashboard(
     range_value: str = DEFAULT_RANGE_VALUE,
     bucket: str = DEFAULT_BUCKET,
     limit: int = DEFAULT_LIMIT,
-    active_cursors: list[Mapping[str, object]] | None = None,
+    active_cursors: list[ActiveCursor] | None = None,
     current_connections: int | None = None,
     uptime: Mapping[str, object] | None = None,
 ) -> JsonObject:
@@ -291,7 +285,7 @@ async def get_dashboard(
     recent_logs = [_app_log(row) for row in await get_recent_app_logs(db, limit)]
     active_cursor_list = _with_connection_times(
         await get_latest_join_times(db),
-        [_active_cursor(cursor) for cursor in active_cursors or []],
+        list(active_cursors or []),
         now,
     )
 
@@ -746,31 +740,6 @@ def _tile_stats(events: list[StatEvent]) -> list[TileStat]:
     )
 
 
-def _active_cursor(raw: Mapping[str, object]) -> ActiveCursor:
-    cursor_id = _str_or_empty(raw.get(KEY_CURSOR_ID))
-    return ActiveCursor(
-        connection_id=_str_or_default(raw.get(KEY_CONNECTION_ID), cursor_id),
-        cursor_id=cursor_id,
-        color=_int_or_none(raw.get(KEY_COLOR)),
-        tile_id=_str_or_none(raw.get(KEY_TILE_ID)),
-        x=_int_or_none(raw.get(KEY_X)),
-        y=_int_or_none(raw.get(KEY_Y)),
-        score=_int_or_default(raw.get(KEY_SCORE)),
-        is_alive=_bool_or_default(raw.get(KEY_IS_ALIVE), True),
-        active_at=_str_or_none(raw.get(KEY_ACTIVE_AT)),
-        window=_window(raw.get(KEY_WINDOW)),
-    )
-
-
-def _window(raw: object | None) -> CursorWindow:
-    if not isinstance(raw, Mapping):
-        return CursorWindow()
-    return CursorWindow(
-        width=_int_or_none(raw.get(KEY_WIDTH)),
-        height=_int_or_none(raw.get(KEY_HEIGHT)),
-    )
-
-
 def _uptime(raw: Mapping[str, object] | None) -> Uptime:
     if raw is None:
         return Uptime()
@@ -796,12 +765,6 @@ def _str_or_empty(value: object | None) -> str:
     return str(value)
 
 
-def _str_or_default(value: object | None, default: str) -> str:
-    if value is None:
-        return default
-    return str(value)
-
-
 def _int_or_none(value: object | None) -> int | None:
     if isinstance(value, int):
         return value
@@ -810,11 +773,5 @@ def _int_or_none(value: object | None) -> int | None:
 
 def _int_or_default(value: object | None, default: int = 0) -> int:
     if isinstance(value, int):
-        return value
-    return default
-
-
-def _bool_or_default(value: object | None, default: bool) -> bool:
-    if isinstance(value, bool):
         return value
     return default

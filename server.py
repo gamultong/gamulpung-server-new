@@ -12,7 +12,7 @@ from handler.connection import ConnectionHandler, Conn
 from handler.board import initialize_board
 from handler.bomb import start_bomb_scheduler, stop_bomb_scheduler
 from handler.cursor import CursorHandler
-from utils.stats import get_dashboard
+from utils.stats import ActiveCursor, CursorWindow, get_dashboard
 from handler.board.storage import (
     get_db,
     set_cursor_table,
@@ -174,24 +174,21 @@ def _active_cursors():
 
         position = cursor.position
         cursors.append(
-            {
-                "connection_id": cursor_id,
-                "cursor_id": cursor_id,
-                "color": int(cursor.color),
-                "tile_id": f"tile:{position.x}:{position.y}",
-                "x": position.x,
-                "y": position.y,
-                "score": cursor.score,
-                "is_alive": cursor.is_alive,
-                "active_at": cursor.active_at.isoformat(),
-                "window": {
-                    "width": cursor.width,
-                    "height": cursor.height,
-                },
-            }
+            ActiveCursor(
+                connection_id=cursor_id,
+                cursor_id=cursor_id,
+                color=int(cursor.color),
+                tile_id=f"tile:{position.x}:{position.y}",
+                x=position.x,
+                y=position.y,
+                score=cursor.score,
+                is_alive=cursor.is_alive,
+                active_at=cursor.active_at.isoformat(),
+                window=CursorWindow(width=cursor.width, height=cursor.height),
+            )
         )
 
-    return sorted(cursors, key=lambda cursor: cursor["cursor_id"])
+    return sorted(cursors, key=lambda cursor: cursor.cursor_id)
 
 
 def _uptime():

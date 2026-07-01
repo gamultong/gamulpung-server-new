@@ -1,4 +1,4 @@
-from .internal.dashboard_repository import get_dashboard
+from .internal.dashboard_repository import ActiveCursor, CursorWindow, get_dashboard
 from .internal.event_recorder import (
     drain_stat_event_queue,
     record_stat_event,
