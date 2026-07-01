@@ -38,9 +38,15 @@ class CursorHandler:
             await EventBroker.publish(event=event)
 
     @classmethod
+    @LifeCycle.with_async_lifecycle(
+        factory=HLife.create_factory("CursorHandler", "delete")
+    )
     async def delete(cls, id: str) -> None:
+        hlife = HLife.get_lifecycle()
         if id in cls.cursor_dict:
+            old_cur = cls.cursor_dict[id].copy()
             del cls.cursor_dict[id]
+            hlife.set_snapshot(before=old_cur, after=None)
 
     @classmethod
     async def get_by_id(cls, id: str) -> Cursor:

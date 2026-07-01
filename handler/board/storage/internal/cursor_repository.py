@@ -1,8 +1,8 @@
-from functools import cache
 import aiosqlite
 from data.board import Point, PointRange, Tiles, Section, TileKind
 from config import BoardConfig
 import os
+from utils.sql import get_sql
 
 SQL_PATH = os.path.join(os.path.dirname(__file__), "sql", "cursor") + os.sep
 
@@ -15,22 +15,15 @@ SECTION_CREATE = "cursor_create_section.sql"
 DB = aiosqlite.Connection
 
 
-@cache
-def get_sql(path: str):
-    with open(f"{SQL_PATH}{path}", "r", encoding="utf-8") as f:
-        query = f.read()
-    return query
-
-
 async def set_table(db: DB):
-    query = get_sql(TABLE_SET)
+    query = get_sql(SQL_PATH, TABLE_SET)
 
     await db.execute(query)
     await db.commit()
 
 
 async def get_section(db: DB, point: Point):
-    query = get_sql(SECTION_GET)
+    query = get_sql(SQL_PATH, SECTION_GET)
 
     async with db.execute(query, (point.x, point.y)) as cur:
         row = await cur.fetchone()
@@ -52,7 +45,7 @@ async def get_section(db: DB, point: Point):
 
 
 async def get_iter_by_section_range(db: DB, point_range: PointRange):
-    query = get_sql(SECTION_GET_BY_RANGE)
+    query = get_sql(SQL_PATH, SECTION_GET_BY_RANGE)
     pr = point_range
 
     async with db.execute(query, (pr.left, pr.right, pr.bottom, pr.top)) as cur:
@@ -97,7 +90,7 @@ async def create_section(db: DB, section: Section):
     point = section.point
     tiles = section.tiles
 
-    query = get_sql(SECTION_CREATE)
+    query = get_sql(SQL_PATH, SECTION_CREATE)
 
     await db.execute(query, (point.x, point.y, tiles.data))
     await db.commit()
@@ -107,7 +100,7 @@ async def update_section(db: DB, section: Section):
     point = section.point
     tiles = section.tiles
 
-    query = get_sql(SECTION_UPDATE)
+    query = get_sql(SQL_PATH, SECTION_UPDATE)
 
     await db.execute(query, (tiles.data, point.x, point.y))
     await db.commit()

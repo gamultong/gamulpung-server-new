@@ -21,6 +21,8 @@ class Receiver:
 
 class EventBroker:
     event_dict: dict[str, list[Receiver]] = {}
+    _idle_event: asyncio.Event | None = None
+    _idle_loop: asyncio.AbstractEventLoop | None = None
 
     @staticmethod
     def add_receiver(event_name: str):
@@ -49,10 +51,12 @@ class EventBroker:
         async def counter(receiver, event):
             global EVENT_COUNT
             EVENT_COUNT += 1
+            EventBroker._mark_running()
             try:
                 await receiver(event)
             finally:
                 EVENT_COUNT -= 1
+                EventBroker._mark_done()
 
         for receiver in receivers:
             coroutines.append(counter(receiver, event))
@@ -65,3 +69,32 @@ class EventBroker:
             return True
         else:
             return False
+
+    @staticmethod
+    async def wait_until_idle(timeout: float | None = None):
+        # 셧다운 근거: publish 중인 receiver가 남아 있으면 그 부수효과(stat/log 기록 등)가
+        # 누락된다. teardown에서 이 메서드로 in-flight 이벤트가 모두 끝날 때까지 대기한 뒤
+        # 워커/DB를 정리하려고 idle 추적(_mark_running/_mark_done)을 둔다.
+        event = EventBroker._get_idle_event()
+        await asyncio.wait_for(event.wait(), timeout=timeout)
+
+    @staticmethod
+    def _get_idle_event():
+        loop = asyncio.get_running_loop()
+        if EventBroker._idle_event is None or EventBroker._idle_loop is not loop:
+            EventBroker._idle_event = asyncio.Event()
+            EventBroker._idle_loop = loop
+            if EventBroker.is_end():
+                EventBroker._idle_event.set()
+        return EventBroker._idle_event
+
+    @staticmethod
+    def _mark_running():
+        event = EventBroker._get_idle_event()
+        event.clear()
+
+    @staticmethod
+    def _mark_done():
+        if EventBroker.is_end():
+            event = EventBroker._get_idle_event()
+            event.set()

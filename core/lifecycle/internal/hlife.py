@@ -3,6 +3,7 @@ from .lifecycle import LifeCycle
 from .caller import Caller
 from .parameter import Parameter
 from .profiler import LifecycleProfiler
+from .sink import emit_lifecycle
 from core.lifecycle.metrics import LifecycleMetrics
 from typing import Any
 from loguru import logger
@@ -133,4 +134,5 @@ class HLife(LifeCycle):
                 else:
                     event_names.append(str(e))
 
+        emit_lifecycle(self)
         logger.debug(f"{self}")
